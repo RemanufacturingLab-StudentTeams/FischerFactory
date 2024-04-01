@@ -1,0 +1,100 @@
+﻿FUNCTION_BLOCK "PRG_SSC_Calibration_Color"
+TITLE = Program Calibration Color Sensor SSC
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Start_TON_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Start_Positioning_m { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lt_TON_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Time;
+      li_StepCase { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      ldi_Pos_Horizontal { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : DInt;
+      ldi_Pos_Vertical { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : DInt;
+      lfb_R_Trig_Deaktivate {InstructionName := 'R_TRIG'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : R_TRIG;
+      lfb_TON_Wait {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // FB TON Wait
+	    #lfb_TON_Wait(IN := #lx_Start_TON_Wait,
+	                  PT := #lt_TON_Wait);
+	    
+	    #lfb_R_Trig_Deaktivate(CLK := NOT "gtyp_Setup".x_Color_Sensor_Calibration
+	                           OR NOT ("gtyp_Setup".i_Color_Sensor_Selection = 1));
+	    // Deaktivate step 0   
+	    IF #lfb_R_Trig_Deaktivate.Q THEN
+	        "gtyp_Setup".x_Calculate_Value_Color := FALSE;
+	        "gtyp_Setup".x_Set_Calib_Value_Color_Blue := FALSE;
+	        "gtyp_Setup".x_Set_Calib_Value_Color_Red := FALSE;
+	        "gtyp_Setup".x_Set_Calib_Value_Color_White := FALSE;
+	        "gtyp_Setup".w_Calib_ColorValue_Blue := 0;
+	        "gtyp_Setup".w_Calib_ColorValue_Red := 0;
+	        "gtyp_Setup".w_Calib_ColorValue_White := 0;
+	        "gtyp_Setup".w_Threshold_Red_Blue := 0;
+	        "gtyp_Setup".w_Threshold_White_Red := 0;
+	        #li_StepCase := 0;
+	    END_IF;
+	    
+	    // step chain HBW
+	    CASE #li_StepCase OF
+	            
+	        0:  // init
+	            #lx_Start_TON_Wait := FALSE;
+	            #li_StepCase := 10;
+	            
+	        10:  // Set Calibration activ?
+	            IF "gtyp_Setup".x_Color_Sensor_Calibration
+	                AND ("gtyp_Setup".i_Color_Sensor_Selection = 1) THEN
+	                "gtyp_Setup".x_Calculate_Value_Color := FALSE;
+	                "gtyp_Setup".x_Set_Calib_Value_Color_Blue := FALSE;
+	                "gtyp_Setup".x_Set_Calib_Value_Color_Red := FALSE;
+	                "gtyp_Setup".x_Set_Calib_Value_Color_White := FALSE;
+	                "gtyp_Setup".w_Calib_ColorValue_Blue := 0;
+	                "gtyp_Setup".w_Calib_ColorValue_Red := 0;
+	                "gtyp_Setup".w_Calib_ColorValue_White := 0;
+	                "gtyp_Setup".w_Threshold_Red_Blue := 0;
+	                "gtyp_Setup".w_Threshold_White_Red := 0;
+	                #li_StepCase := 20;
+	            END_IF;
+	            
+	        20: // wait for set Values or Calculate
+	            
+	            // Start new Positioning
+	            IF "gtyp_Setup".x_Set_Calib_Value_Color_Blue THEN
+	                "gtyp_Setup".w_Calib_ColorValue_Blue := "IW_SSC_ColorSensor_A1";
+	                "gtyp_Setup".x_Set_Calib_Value_Color_Blue := FALSE;
+	            ELSIF "gtyp_Setup".x_Set_Calib_Value_Color_Red THEN
+	                "gtyp_Setup".w_Calib_ColorValue_Red := "IW_SSC_ColorSensor_A1";
+	                "gtyp_Setup".x_Set_Calib_Value_Color_Red := FALSE;
+	            ELSIF "gtyp_Setup".x_Set_Calib_Value_Color_White THEN
+	                "gtyp_Setup".w_Calib_ColorValue_White := "IW_SSC_ColorSensor_A1";
+	                "gtyp_Setup".x_Set_Calib_Value_Color_White := FALSE;
+	            END_IF;
+	            
+	            "gtyp_Setup".w_Threshold_White_Red := "gtyp_Setup".w_Calib_ColorValue_White + (("gtyp_Setup".w_Calib_ColorValue_Red - "gtyp_Setup".w_Calib_ColorValue_White) / 2);
+	            "gtyp_Setup".w_Threshold_Red_Blue := "gtyp_Setup".w_Calib_ColorValue_Red + (("gtyp_Setup".w_Calib_ColorValue_Blue - "gtyp_Setup".w_Calib_ColorValue_Red) / 2);
+	            
+	            IF "gtyp_Setup".x_Calculate_Value_Color THEN
+	                "gtyp_SSC".w_Threshold_White_Red := "gtyp_Setup".w_Threshold_White_Red;
+	                "gtyp_SSC".w_Threshold_Red_Blue := "gtyp_Setup".w_Threshold_Red_Blue;
+	                "gtyp_Setup".x_Calculate_Value_Color := FALSE;
+	            END_IF;
+	            
+	            // Statement section ELSE    
+	        ELSE
+	            ;
+	    END_CASE;
+	    
+	    IF ("gtyp_Setup".i_Color_Sensor_Selection = 1) THEN
+	        // Reload Pos Value
+	        "gtyp_Setup".w_Actual_ColorValue := "IW_SSC_ColorSensor_A1";
+	    END_IF;
+	ELSE
+	    #lx_Init := TRUE;
+	END_IF;
+END_FUNCTION_BLOCK
+

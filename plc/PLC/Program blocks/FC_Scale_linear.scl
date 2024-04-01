@@ -1,0 +1,36 @@
+﻿FUNCTION "FC_Scale_linear" : Real
+TITLE = Function scale linear
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR_INPUT 
+      inr_Y1 : Real;   // Initial scaling value for Y (INPUT)
+      inr_Y2 : Real;   // Scaling end value for Y (INPUT)
+      inr_X1 : Real;   // Initial scaling value for X (INPUT)
+      inr_X2 : Real;   // Scaling end value for X (INPUT)
+      inr_X : Real;   // Value to be scaled
+   END_VAR
+
+   VAR_TEMP 
+      lr_y_delta : Real;   // Temp delta y
+      lr_x_delta : Real;   // Temp delta x
+      lr_m : Real;   // Temp gradient m
+   END_VAR
+
+
+BEGIN
+	(********************************************************)
+	(* FC for linear scaling. Line function  y=m*(x-x1)+y1  *)
+	(********************************************************)
+	
+	#lr_y_delta := (#inr_Y2 - #inr_Y1);
+	#lr_x_delta := (#inr_X2 - #inr_X1);
+	
+	IF #lr_y_delta <> 0 AND #lr_x_delta <> 0 THEN
+	    #lr_m := (#lr_y_delta / #lr_x_delta);
+	    #FC_Scale_linear := (#lr_m * (#inr_X - #inr_X1)) + #inr_Y1;
+	ELSE
+	    #FC_Scale_linear := 0;
+	END_IF;
+END_FUNCTION
+

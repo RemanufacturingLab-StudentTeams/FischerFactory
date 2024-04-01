@@ -1,0 +1,200 @@
+﻿FUNCTION_BLOCK "PRG_SSC_Set_Positioning"
+TITLE = Program Set Positioning SSC
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Start_TON_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Start_Positioning_m { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lt_TON_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Time;
+      li_StepCase { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      ldi_Pos_Horizontal { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : DInt;
+      ldi_Pos_Vertical { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : DInt;
+      lfb_R_Trig_Deaktivate {InstructionName := 'R_TRIG'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : R_TRIG;
+      lfb_TON_Wait {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // FB TON Wait
+	    #lfb_TON_Wait(IN := #lx_Start_TON_Wait,
+	                  PT := #lt_TON_Wait);
+	    
+	    #lfb_R_Trig_Deaktivate(CLK := NOT "gtyp_Setup".x_Set_Pos_Activ
+	                           OR NOT (("gtyp_Setup".i_Pos_Selection > 0)
+	                           AND ("gtyp_Setup".i_Pos_Selection < 21)));
+	    // Deaktivate step 10   
+	    IF #lfb_R_Trig_Deaktivate.Q THEN
+	        "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := FALSE;
+	        "gtyp_SSC".Vertical_Axis.x_Start_Positioning := FALSE;
+	        "gtyp_SSC".Horizontal_Axis.x_Reference := FALSE;
+	        "gtyp_SSC".Vertical_Axis.x_Reference := FALSE;
+	        "gtyp_Setup".x_Start_Positioning := FALSE;
+	        "gtyp_Setup".x_Final_Positioning := FALSE;
+	        "gtyp_Setup".x_Home_Positioning := FALSE;
+	        "gtyp_Setup".x_Start_Offset := FALSE;
+	        #lx_Start_Positioning_m := FALSE;
+	        IF (#li_StepCase > 10) THEN
+	            #li_StepCase := 70;
+	        END_IF;
+	    END_IF;
+	    
+	    // Set Positioning activ?
+	    IF "gtyp_Setup".x_Set_Pos_Activ
+	        AND (("gtyp_Setup".i_Pos_Selection > 0)
+	        AND ("gtyp_Setup".i_Pos_Selection < 21))
+	        AND ((#li_StepCase = 40)
+	        OR (#li_StepCase = 60)) THEN
+	        
+	        // Deciding which Position
+	        // Position - Centre
+	        IF "gtyp_Setup".i_Pos_Selection = 1 THEN
+	            #ldi_Pos_Horizontal := "gtyp_SSC".di_Pos_Centre_Horizontal;
+	            #ldi_Pos_Vertical := "gtyp_SSC".di_Pos_Centre_Vertical;
+	            // Position - HBW 
+	        ELSIF "gtyp_Setup".i_Pos_Selection = 2 THEN
+	            #ldi_Pos_Horizontal := "gtyp_SSC".di_Pos_HBW_Horizontal;
+	            #ldi_Pos_Vertical := "gtyp_SSC".di_Pos_HBW_Vertical;
+	        END_IF;
+	    END_IF;
+	    
+	    // Set Positioning activ?
+	    IF NOT "gtyp_Setup".x_Set_Pos_Activ THEN
+	        "gtyp_Setup".i_Pos_Selection := 0;
+	    END_IF;
+	    
+	    // step chain HBW
+	    CASE #li_StepCase OF
+	            
+	        0:  // init
+	            #lx_Start_TON_Wait := FALSE;
+	            #li_StepCase := 10;
+	            
+	        10:  // Set Positioning activ?
+	            IF "gtyp_Setup".x_Set_Pos_Activ
+	                AND (("gtyp_Setup".i_Pos_Selection > 0)
+	                AND ("gtyp_Setup".i_Pos_Selection < 21)) THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := FALSE;
+	                "gtyp_SSC".Vertical_Axis.x_Start_Positioning := FALSE;
+	                "gtyp_SSC".Horizontal_Axis.x_Reference := FALSE;
+	                "gtyp_SSC".Vertical_Axis.x_Reference := FALSE;
+	                "gtyp_Setup".x_Start_Positioning := FALSE;
+	                "gtyp_Setup".x_Final_Positioning := FALSE;
+	                "gtyp_Setup".x_Home_Positioning := FALSE;
+	                "gtyp_Setup".x_Start_Offset := FALSE;
+	                #li_StepCase := 20;
+	            END_IF;
+	            
+	        20: //homing vertical/horizontal axis
+	            
+	            "gtyp_SSC".Horizontal_Axis.x_Reference := TRUE;
+	            "gtyp_SSC".Vertical_Axis.x_Reference := TRUE;
+	            
+	            IF NOT "gtyp_SSC".Horizontal_Axis.x_Referenced AND NOT "gtyp_SSC".Vertical_Axis.x_Referenced THEN
+	                #li_StepCase := 30;
+	            END_IF;
+	            
+	        30: // homed vertical/horizontal axis
+	            IF "gtyp_SSC".Horizontal_Axis.x_Referenced THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Reference := FALSE;
+	            END_IF;
+	            IF "gtyp_SSC".Vertical_Axis.x_Referenced THEN
+	                "gtyp_SSC".Vertical_Axis.x_Reference := FALSE;
+	            END_IF;
+	            
+	            IF "gtyp_SSC".Horizontal_Axis.x_Referenced AND "gtyp_SSC".Vertical_Axis.x_Referenced THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Reference := FALSE;
+	                "gtyp_SSC".Vertical_Axis.x_Reference := FALSE;
+	                #li_StepCase := 40;
+	            END_IF;
+	            
+	        40:  // Start Positioning Step next
+	            IF "gtyp_Setup".x_Start_Positioning OR #lx_Start_Positioning_m THEN
+	                #lx_Start_Positioning_m := FALSE;
+	                #li_StepCase := 50;
+	            END_IF;
+	            
+	        50: // Position vertical/horizontal HBW
+	            "gtyp_SSC".Horizontal_Axis.di_Target_Position := #ldi_Pos_Horizontal;
+	            "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := TRUE;
+	            "gtyp_SSC".Vertical_Axis.di_Target_Position := #ldi_Pos_Vertical;
+	            "gtyp_SSC".Vertical_Axis.x_Start_Positioning := TRUE;
+	            
+	            IF ("gtyp_SSC".Horizontal_Axis.di_Actual_Position <= (#ldi_Pos_Horizontal + "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Horizontal_Axis.di_Actual_Position >= (#ldi_Pos_Horizontal - "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Horizontal_Axis.x_Position_Reached THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := FALSE;
+	            END_IF;
+	            
+	            IF ("gtyp_SSC".Vertical_Axis.di_Actual_Position <= (#ldi_Pos_Vertical + "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Vertical_Axis.di_Actual_Position >= (#ldi_Pos_Vertical - "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Vertical_Axis.x_Position_Reached THEN
+	                "gtyp_SSC".Vertical_Axis.x_Start_Positioning := FALSE;
+	            END_IF;
+	            
+	            IF ("gtyp_SSC".Horizontal_Axis.di_Actual_Position <= (#ldi_Pos_Horizontal + "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Horizontal_Axis.di_Actual_Position >= (#ldi_Pos_Horizontal - "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Horizontal_Axis.x_Position_Reached
+	                AND ("gtyp_SSC".Vertical_Axis.di_Actual_Position <= (#ldi_Pos_Vertical + "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Vertical_Axis.di_Actual_Position >= (#ldi_Pos_Vertical - "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Vertical_Axis.x_Position_Reached THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := FALSE;
+	                "gtyp_SSC".Vertical_Axis.x_Start_Positioning := FALSE;
+	                "gtyp_Setup".x_Start_Positioning := FALSE;
+	                #li_StepCase := 60;
+	            END_IF;
+	            
+	        60: // Deciding which doing
+	            
+	            // Start new Positioning
+	            IF "gtyp_Setup".x_Start_Positioning OR "gtyp_Setup".x_Home_Positioning THEN
+	                #lx_Start_Positioning_m := TRUE;
+	                #li_StepCase := 10;
+	            ELSIF #lfb_R_Trig_Deaktivate.Q THEN
+	                "gtyp_Setup".x_Home_Positioning := FALSE;
+	                #li_StepCase := 70;
+	            END_IF;
+	            
+	        70: //homing vertical/horizontal axis
+	            
+	            "gtyp_SSC".Horizontal_Axis.x_Reference := TRUE;
+	            "gtyp_SSC".Vertical_Axis.x_Reference := TRUE;
+	            
+	            IF NOT "gtyp_SSC".Horizontal_Axis.x_Referenced AND NOT "gtyp_SSC".Vertical_Axis.x_Referenced THEN
+	                #li_StepCase := 80;
+	            END_IF;
+	            
+	        80: // homed vertical/horizontal axis
+	            IF "gtyp_SSC".Horizontal_Axis.x_Referenced THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Reference := FALSE;
+	            END_IF;
+	            IF "gtyp_SSC".Vertical_Axis.x_Referenced THEN
+	                "gtyp_SSC".Vertical_Axis.x_Reference := FALSE;
+	            END_IF;
+	            
+	            IF "gtyp_SSC".Horizontal_Axis.x_Referenced AND "gtyp_SSC".Vertical_Axis.x_Referenced THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Reference := FALSE;
+	                "gtyp_SSC".Vertical_Axis.x_Reference := FALSE;
+	                #li_StepCase := 0;
+	            END_IF;
+	            
+	            // Statement section ELSE    
+	        ELSE
+	            ;
+	    END_CASE;
+	    
+	    IF (("gtyp_Setup".i_Pos_Selection > 0)
+	        AND ("gtyp_Setup".i_Pos_Selection < 21)) THEN
+	        // Reload Pos Value
+	        "gtyp_Setup".di_Pos_Horizontal := #ldi_Pos_Horizontal;
+	        "gtyp_Setup".di_Pos_Vertical := #ldi_Pos_Vertical;
+	        "gtyp_Setup".di_Pos_Rotate := 0;
+	    END_IF;
+	ELSE
+	    #lx_Init := TRUE;
+	END_IF;
+END_FUNCTION_BLOCK
+

@@ -1,0 +1,26 @@
+﻿ORGANIZATION_BLOCK "Cyclic interrupt"
+TITLE = Cyclic interrupt
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR_TEMP 
+      li_Return_LDT : Int;
+   END_VAR
+
+
+BEGIN
+	
+	"PRG_SSC_Axis_Horizontal_Act_Pos_DB"();
+	"PRG_SSC_Axis_Vertical_Act_Pos_DB"();
+	
+	"PRG_HBW_Axis_Horizontal_Act_Pos_DB"();
+	"PRG_HBW_Axis_Vertical_Act_Pos_DB"();
+	
+	"PRG_VGR_Axis_horizontal_Act_Pos_DB"();
+	"PRG_VGR_Axis_vertical_Act_Pos_DB"();
+	"PRG_VGR_Axis_rotate_Act_Pos_DB"();
+	
+	
+	
+END_ORGANIZATION_BLOCK
+

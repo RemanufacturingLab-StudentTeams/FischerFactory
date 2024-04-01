@@ -1,0 +1,20 @@
+﻿FUNCTION_BLOCK "PRG_VGR_Axis_horizontal_Act_Pos"
+TITLE = Program Axis horizontal Actual Position VGR
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lfb_IN_DEC { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : "FB_INC_DEC";
+   END_VAR
+
+
+BEGIN
+	// FB increment axis
+	#lfb_IN_DEC(inx_CHa := "IX_VGR_EncoderHorizontalAxisImp1_B3",
+	            inx_CHb := "IX_VGR_EncoderHorizontalAxisImp2_B4",
+	            ini_Ref_Wert := DINT_TO_INT("gtyp_VGR".horizontal_Axis.Config.di_Ref_Pos),
+	            inx_RST := "IX_VGR_RefSwitchHorizontalAxis_I2");
+	
+	"gtyp_VGR".horizontal_Axis.di_Increment := #lfb_IN_DEC.outi_cnt;
+END_FUNCTION_BLOCK
+

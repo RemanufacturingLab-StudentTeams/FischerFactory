@@ -1,0 +1,125 @@
+﻿FUNCTION_BLOCK "Copy_Simulation_Variables"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+
+BEGIN
+	"Simulation_Variables".HBW_Horizontal_Encoder := DINT_TO_INT("gtyp_HBW".Horizontal_Axis.di_Actual_Position);
+	"Simulation_Variables".HBW_Vertical_Encoder := DINT_TO_INT("gtyp_HBW".Vertical_Axis.di_Actual_Position);
+	"Simulation_Variables".HBW_Gripper_Pos_In := "IX_HBW_SwitchCantileverBack_I6";
+	"Simulation_Variables".HBW_Gripper_Pos_Out := "IX_HBW_SwitchCantileverFront_I5";
+	"Simulation_Variables".HBW_Gripper_Forward := "QX_HBW_M4_CantileverForward_Q7";
+	"Simulation_Variables".HBW_Gripper_Backward := "QX_HBW_M4_CantileverBackward_Q8";
+	"Simulation_Variables".HBW_Gripper_PWM := "gtyp_HBW".i_PWM_Cantilever;
+	"Simulation_Variables".HBW_Belt_Pos_In := "IX_HBW_LightBarrierInside_I2";
+	"Simulation_Variables".HBW_Belt_Pos_Out := "IX_HBW_LightBarrierOutside_I3";
+	"Simulation_Variables".HBW_Belt_Forward := "QX_HBW_M1_ConveyorBeltForward_Q1";
+	"Simulation_Variables".HBW_Belt_Backward := "QX_HBW_M1_ConveyorBeltBackward_Q2";
+	"Simulation_Variables".HBW_Belt_PWM := "gtyp_HBW".i_PWM_ConveyorBelt;
+	
+	IF ("gtyp_HBW".Rack_Workpiece[1, 1].s_type = 'WHITE') THEN
+	    "Simulation_Variables".HBW_Product_1_Color := 1;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[1, 1].s_type = 'RED') THEN
+	    "Simulation_Variables".HBW_Product_1_Color := 2;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[1, 1].s_type = 'BLUE') THEN
+	    "Simulation_Variables".HBW_Product_1_Color := 3;
+	ELSE
+	    "Simulation_Variables".HBW_Product_1_Color := 0;
+	END_IF;
+	
+	IF ("gtyp_HBW".Rack_Workpiece[2, 1].s_type = 'WHITE') THEN
+	    "Simulation_Variables".HBW_Product_2_Color := 1;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[2, 1].s_type = 'RED') THEN
+	    "Simulation_Variables".HBW_Product_2_Color := 2;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[2, 1].s_type = 'BLUE') THEN
+	    "Simulation_Variables".HBW_Product_2_Color := 3;
+	ELSE
+	    "Simulation_Variables".HBW_Product_2_Color := 0;
+	END_IF;
+	
+	IF ("gtyp_HBW".Rack_Workpiece[3, 1].s_type = 'WHITE') THEN
+	    "Simulation_Variables".HBW_Product_3_Color := 1;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[3, 1].s_type = 'RED') THEN
+	    "Simulation_Variables".HBW_Product_3_Color := 2;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[3, 1].s_type = 'BLUE') THEN
+	    "Simulation_Variables".HBW_Product_3_Color := 3;
+	ELSE
+	    "Simulation_Variables".HBW_Product_3_Color := 0;
+	END_IF;
+	
+	IF ("gtyp_HBW".Rack_Workpiece[1, 2].s_type = 'WHITE') THEN
+	    "Simulation_Variables".HBW_Product_4_Color := 1;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[1, 2].s_type = 'RED') THEN
+	    "Simulation_Variables".HBW_Product_4_Color := 2;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[1, 2].s_type = 'BLUE') THEN
+	    "Simulation_Variables".HBW_Product_4_Color := 3;
+	ELSE
+	    "Simulation_Variables".HBW_Product_4_Color := 0;
+	END_IF;
+	
+	IF ("gtyp_HBW".Rack_Workpiece[2, 2].s_type = 'WHITE') THEN
+	    "Simulation_Variables".HBW_Product_5_Color := 1;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[2, 2].s_type = 'RED') THEN
+	    "Simulation_Variables".HBW_Product_5_Color := 2;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[2, 2].s_type = 'BLUE') THEN
+	    "Simulation_Variables".HBW_Product_5_Color := 3;
+	ELSE
+	    "Simulation_Variables".HBW_Product_5_Color := 0;
+	END_IF;
+	
+	IF ("gtyp_HBW".Rack_Workpiece[3, 2].s_type = 'WHITE') THEN
+	    "Simulation_Variables".HBW_Product_6_Color := 1;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[3, 2].s_type = 'RED') THEN
+	    "Simulation_Variables".HBW_Product_6_Color := 2;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[3, 2].s_type = 'BLUE') THEN
+	    "Simulation_Variables".HBW_Product_6_Color := 3;
+	ELSE
+	    "Simulation_Variables".HBW_Product_6_Color := 0;
+	END_IF;
+	
+	IF ("gtyp_HBW".Rack_Workpiece[1, 3].s_type = 'WHITE') THEN
+	    "Simulation_Variables".HBW_Product_7_Color := 1;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[1, 3].s_type = 'RED') THEN
+	    "Simulation_Variables".HBW_Product_7_Color := 2;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[1, 3].s_type = 'BLUE') THEN
+	    "Simulation_Variables".HBW_Product_7_Color := 3;
+	ELSE
+	    "Simulation_Variables".HBW_Product_7_Color := 0;
+	END_IF;
+	
+	IF ("gtyp_HBW".Rack_Workpiece[2, 3].s_type = 'WHITE') THEN
+	    "Simulation_Variables".HBW_Product_8_Color := 1;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[2, 3].s_type = 'RED') THEN
+	    "Simulation_Variables".HBW_Product_8_Color := 2;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[2, 3].s_type = 'BLUE') THEN
+	    "Simulation_Variables".HBW_Product_8_Color := 3;
+	ELSE
+	    "Simulation_Variables".HBW_Product_8_Color := 0;
+	END_IF;
+	
+	IF ("gtyp_HBW".Rack_Workpiece[3, 3].s_type = 'WHITE') THEN
+	    "Simulation_Variables".HBW_Product_9_Color := 1;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[3, 3].s_type = 'RED') THEN
+	    "Simulation_Variables".HBW_Product_9_Color := 2;
+	ELSIF ("gtyp_HBW".Rack_Workpiece[3, 3].s_type = 'BLUE') THEN
+	    "Simulation_Variables".HBW_Product_9_Color := 3;
+	ELSE
+	    "Simulation_Variables".HBW_Product_9_Color := 0;
+	END_IF;
+	
+	"Simulation_Variables".VGR_Rotate_Encoder := DINT_TO_INT("gtyp_VGR".rotate_Axis.di_Actual_Position);
+	"Simulation_Variables".VGR_Vertical_Encoder := DINT_TO_INT("gtyp_VGR".vertical_Axis.di_Actual_Position);
+	"Simulation_Variables".VGR_Horizontal_Encoder := DINT_TO_INT("gtyp_VGR".horizontal_Axis.di_Actual_Position);
+	
+	IF ("gtyp_VGR".Workpiece.s_type = 'WHITE') THEN
+	    "Simulation_Variables".VGR_Product_Color := 1;
+	ELSIF ("gtyp_VGR".Workpiece.s_type = 'RED') THEN
+	    "Simulation_Variables".VGR_Product_Color := 2;
+	ELSIF ("gtyp_VGR".Workpiece.s_type = 'BLUE') THEN
+	    "Simulation_Variables".VGR_Product_Color := 3;
+	ELSIF ("gtyp_VGR".Workpiece.s_state <> '') THEN
+	    "Simulation_Variables".VGR_Product_Color := 4;
+	ELSE
+	    "Simulation_Variables".VGR_Product_Color := 0;
+	END_IF;
+END_FUNCTION_BLOCK
+

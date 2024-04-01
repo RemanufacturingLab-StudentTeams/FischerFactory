@@ -1,0 +1,107 @@
+﻿FUNCTION_BLOCK "PRG_Order"
+TITLE = Program Order
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      li_StepCase { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      lldt_ts_old { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : LDT;
+      ldt_MQTT { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Date_And_Time;
+      li_Return_LDT { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      lfb_TON_Wait {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lx_Start_TON_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+   END_VAR
+
+   VAR_TEMP 
+      ti_Que_Counter : Int;
+      ti_Que_Output : Int;
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    #lfb_TON_Wait(IN := #lx_Start_TON_Wait,
+	                  PT := T#20s);
+	    
+	    // step chain order
+	    CASE #li_StepCase OF
+	            
+	        0:  // init
+	            #lx_Start_TON_Wait := FALSE;
+	            #li_StepCase := 10;
+	            
+	        10: // check whether order button has been pressed (time stamp changes)
+	            
+	            IF ("gtyp_Interface_Dashboard".Publish.OrderWorkpieceButton.ldt_ts > #lldt_ts_old) THEN
+	                #lldt_ts_old := "gtyp_Interface_Dashboard".Publish.OrderWorkpieceButton.ldt_ts;
+	                IF ("Queue".i_Queue_Index < "Ci_Queue_Length") THEN
+	                    "Queue".Queue["Queue".i_Queue_Index] := "gtyp_Interface_Dashboard".Publish.OrderWorkpieceButton;
+	                    #li_Return_LDT := RD_SYS_T(#ldt_MQTT);
+	                    "gtyp_Interface_Dashboard".Subscribe.State_Order.ldt_ts := DT_TO_LDT(#ldt_MQTT);
+	                    "gtyp_Interface_Dashboard".Subscribe.State_Order.s_state := 'ORDERED';
+	                    "gtyp_Interface_Dashboard".Subscribe.State_Order.s_type := "Queue".Queue["Queue".i_Queue_Index].s_type;
+	                    "Queue".i_Queue_Index += 1;
+	                    IF ("Queue".i_Queue_Index = "Ci_Queue_Length") THEN
+	                        "Queue".x_Queue_Full := TRUE;
+	                    END_IF;
+	                END_IF;
+	                //Reset the parameters when the order has been processed
+	                "gtyp_Interface_Dashboard".Publish.OrderWorkpieceButton.Workpiece_Parameters := "Queue".Queue["Ci_Queue_Length"].Workpiece_Parameters;
+	            END_IF;
+	            
+	            //There is an order in the que
+	            IF ("Queue".i_Queue_Index > 0) THEN
+	                //The VGR is ready to start with the next product in the que
+	                IF "gtyp_VGR".x_Ready_For_Order AND "gtyp_VGR".x_Ready_For_Outsource THEN
+	                    //We want to output the first order
+	                    FOR #ti_Que_Output := 0 TO "Queue".i_Queue_Index - 1 DO
+	                        IF ("Queue".Queue[#ti_Que_Output].s_type = 'RED' AND "gtyp_HBW".i_Red_Available = 0) THEN
+	                            CONTINUE;
+	                        ELSIF ("Queue".Queue[#ti_Que_Output].s_type = 'BLUE' AND "gtyp_HBW".i_Blue_Available = 0) THEN
+	                            CONTINUE;
+	                        ELSIF ("Queue".Queue[#ti_Que_Output].s_type = 'WHITE' AND "gtyp_HBW".i_White_Available = 0) THEN
+	                            CONTINUE;
+	                        END_IF;
+	                        //Possible order found
+	                        //Set index back
+	                        "Queue".i_Queue_Index -= 1;
+	                        "Queue".x_Queue_Full := FALSE;
+	                        //VGR is ready
+	                        "gtyp_VGR".x_Ready_For_Order := FALSE;
+	                        //Copy que to VGR
+	                        "gtyp_VGR".s_HBW_Outsource_Typ := "Queue".Queue[#ti_Que_Output].s_type;
+	                        "gtyp_VGR".Worpiece_Parameters := "Queue".Queue[#ti_Que_Output].Workpiece_Parameters;
+	                        
+	                        //ADDED TO MAKE DISPLAYING PARAMETERS ON DASHBOARD EASIER
+	                        "gtyp_VGR".Workpiece.Workpiece_Parameters := "Queue".Queue[#ti_Que_Output].Workpiece_Parameters;
+	                        //Shift que
+	                        FOR #ti_Que_Counter := #ti_Que_Output TO "Ci_Queue_Length" - 1 DO
+	                            "Queue".Queue[#ti_Que_Counter] := "Queue".Queue[#ti_Que_Counter + 1];
+	                        END_FOR;
+	                        //Start the HBW and VGR
+	                        "gtyp_VGR".x_HBW_Outsource := TRUE;
+	                        EXIT;
+	                    END_FOR;
+	                END_IF;
+	            END_IF;
+	            
+	            IF "gtyp_VGR".x_HBW_PickedUp THEN
+	                "gtyp_VGR".x_HBW_Outsource := FALSE;
+	                "gtyp_VGR".s_HBW_Outsource_Typ := '';
+	                #li_StepCase := 0;
+	            END_IF;
+	            
+	            // Statement section ELSE
+	        ELSE
+	            ;
+	    END_CASE;
+	    
+	ELSE
+	    #lx_Init := TRUE;
+	    "Queue".i_Queue_Index := 0;
+	    "Queue".x_Queue_Full := FALSE;
+	    #lldt_ts_old := LDT#1970-01-01-00:00:00;
+	END_IF;
+END_FUNCTION_BLOCK
+

@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Document>
+  <Engineering version="V17" />
+  <DocumentInfo>
+    <Created>2024-03-30T11:14:16.1957856Z</Created>
+    <ExportSetting>WithDefaults</ExportSetting>
+    <InstalledProducts>
+      <Product>
+        <DisplayName>Totally Integrated Automation Portal</DisplayName>
+        <DisplayVersion>V17</DisplayVersion>
+      </Product>
+      <OptionPackage>
+        <DisplayName>TIA Portal Openness</DisplayName>
+        <DisplayVersion>V17</DisplayVersion>
+      </OptionPackage>
+      <OptionPackage>
+        <DisplayName>TIA Portal Version Control Interface</DisplayName>
+        <DisplayVersion>V17</DisplayVersion>
+      </OptionPackage>
+      <Product>
+        <DisplayName>STEP 7 Professional</DisplayName>
+        <DisplayVersion>V17</DisplayVersion>
+      </Product>
+      <OptionPackage>
+        <DisplayName>STEP 7 Safety</DisplayName>
+        <DisplayVersion>V17</DisplayVersion>
+      </OptionPackage>
+      <Product>
+        <DisplayName>WinCC Advanced</DisplayName>
+        <DisplayVersion>V17</DisplayVersion>
+      </Product>
+    </InstalledProducts>
+  </DocumentInfo>
+  <SW.Blocks.InstanceDB ID="0">
+    <AttributeList>
+      <AutoNumber>true</AutoNumber>
+      <DBAccessibleFromOPCUA>true</DBAccessibleFromOPCUA>
+      <DBAccessibleFromWebserver>true</DBAccessibleFromWebserver>
+      <HeaderAuthor>A.Schaefer</HeaderAuthor>
+      <HeaderFamily />
+      <HeaderName />
+      <HeaderVersion>0.1</HeaderVersion>
+      <InstanceOfName>PRG_HBW_Axis_Vertical</InstanceOfName>
+      <InstanceOfType>FB</InstanceOfType>
+      <Interface><Sections xmlns="http://www.siemens.com/automation/Openness/SW/Interface/v5">
+  <Section Name="Input" />
+  <Section Name="Output" />
+  <Section Name="InOut" />
+  <Section Name="Static">
+    <Member Name="lx_Init" Datatype="Bool" Remanence="NonRetain" Accessibility="Public"><AttributeList><BooleanAttribute Name="ExternalAccessible" SystemDefined="true">false</BooleanAttribute><BooleanAttribute Name="ExternalVisible" SystemDefined="true">false</BooleanAttribute><BooleanAttribute Name="ExternalWritable" SystemDefined="true">false</BooleanAttribute><BooleanAttribute Name="SetPoint" SystemDefined="true">false</BooleanAttribute></AttributeList></Member>
+    <Member Name="lfb_Vertical_Axis" Datatype="&quot;FB_Axis_Auto&quot;" Accessibility="Public"><AttributeList><BooleanAttribute Name="ExternalAccessible" SystemDefined="true">false</BooleanAttribute><BooleanAttribute Name="ExternalVisible" SystemDefined="true">false</BooleanAttribute><BooleanAttribute Name="ExternalWritable" SystemDefined="true">false</BooleanAttribute><BooleanAttribute Name="SetPoint" SystemDefined="true">false</BooleanAttribute></AttributeList><Sections><Section Name="Input"><Member Name="ini_Axis" Datatype="Int" /><Member Name="indi_Increment" Datatype="DInt" /><Member Name="inx_Ref_Switch" Datatype="Bool" /><Member Name="inx_Start_Positioning" Datatype="Bool" /><Member Name="inx_Referencing" Datatype="Bool" /><Member Name="ini_PWM" Datatype="Int" /><Member Name="indi_Target_Position" Datatype="DInt" /></Section><Section Name="Output"><Member Name="outx_Referenced" Datatype="Bool" /><Member Name="outx_Position_Reached" Datatype="Bool" /><Member Name="outx_Motor_Pos" Datatype="Bool" /><Member Name="outx_Motor_Neg" Datatype="Bool" /><Member Name="outi_Motor_PWM" Datatype="Int" /><Member Name="outdi_Actual_Position" Datatype="DInt" /></Section><Section Name="InOut"><Member Name="inouttyp_Config" Datatype="&quot;typ_Axis_Data&quot;"><Sections><Section Name="None" /></Sections></Member><Member Name="inouttyp_Setup" Datatype="&quot;typ_SetupAxis&quot;"><Sections><Section Name="None" /></Sections></Member></Section><Section Name="Static"><Member Name="li_StepCaseSetup" Datatype="Int" /><Member Name="li_StepCase" Datatype="Int" /><Member Name="lx_Init" Datatype="Bool" /><Member Name="lx_Motor_Neg" Datatype="Bool" /><Member Name="lx_Motor_Pos" Datatype="Bool" /><Member Name="lx_Start_TON_Wait" Datatype="Bool" /><Member Name="li_PWM" Datatype="Int" /><Member Name="ldi_ValueStep" Datatype="DInt" /><Member Name="ldi_Actual_Position" Datatype="DInt" /><Member Name="ldi_Actual_Position_Old" Datatype="DInt" /><Member Name="lfb_R_Trig_Setup" Datatype="R_TRIG" Version="1.0"><Sections><Section Name="Input"><Member Name="CLK" Datatype="Bool" /></Section><Section Name="Output"><Member Name="Q" Datatype="Bool" /></Section><Section Name="InOut" /><Section Name="Static"><Member Name="Stat_Bit" Datatype="Bool" /></Section></Sections></Member><Member Name="lfb_R_Trig_Referencing" Datatype="R_TRIG" Version="1.0"><Sections><Section Name="Input"><Member Name="CLK" Datatype="Bool" /></Section><Section Name="Output"><Member Name="Q" Datatype="Bool" /></Section><Section Name="InOut" /><Section Name="Static"><Member Name="Stat_Bit" Datatype="Bool" /></Section></Sections></Member><Member Name="lfb_TON_Wait" Datatype="TON_TIME" Version="1.0"><Sections><Section Name="None"><Member Name="PT" Datatype="Time" /><Member Name="ET" Datatype="Time" /><Member Name="IN" Datatype="Bool" /><Member Name="Q" Datatype="Bool" /></Section></Sections></Member></Section></Sections></Member>
+  </Section>
+</Sections></Interface>
+      <Name>PRG_HBW_Axis_Vertical_DB</Name>
+      <Number>14</Number>
+      <ProgrammingLanguage>DB</ProgrammingLanguage>
+    </AttributeList>
+    <ObjectList>
+      <MultilingualText ID="1" CompositionName="Comment">
+        <ObjectList>
+          <MultilingualTextItem ID="2" CompositionName="Items">
+            <AttributeList>
+              <Culture>en-US</Culture>
+              <Text />
+            </AttributeList>
+          </MultilingualTextItem>
+        </ObjectList>
+      </MultilingualText>
+      <MultilingualText ID="3" CompositionName="Title">
+        <ObjectList>
+          <MultilingualTextItem ID="4" CompositionName="Items">
+            <AttributeList>
+              <Culture>en-US</Culture>
+              <Text />
+            </AttributeList>
+          </MultilingualTextItem>
+        </ObjectList>
+      </MultilingualText>
+    </ObjectList>
+  </SW.Blocks.InstanceDB>
+</Document>

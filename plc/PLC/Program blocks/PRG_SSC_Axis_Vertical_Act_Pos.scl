@@ -1,0 +1,21 @@
+﻿FUNCTION_BLOCK "PRG_SSC_Axis_Vertical_Act_Pos"
+TITLE = Program Axis vertical Actual Position SSC
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lfb_IN_DEC { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : "FB_INC_DEC";
+   END_VAR
+
+
+BEGIN
+	// FB increment axis
+	#lfb_IN_DEC(inx_CHa := "IX_SSC_EncoderVerticalAxisImp2_B2",
+	            inx_CHb := "IX_SSC_EncoderVerticalAxisImp1_B1",
+	            ini_Ref_Wert := DINT_TO_INT("gtyp_SSC".Vertical_Axis.Config.di_Ref_Pos),
+	            inx_RST := "IX_SSC_RefSwitchVerticalAxis_I1");
+	
+	"gtyp_SSC".Vertical_Axis.di_Increment := #lfb_IN_DEC.outi_cnt;
+	
+END_FUNCTION_BLOCK
+

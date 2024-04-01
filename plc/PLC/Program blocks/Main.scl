@@ -1,0 +1,78 @@
+﻿ORGANIZATION_BLOCK "Main"
+TITLE = "Main Program Sweep (Cycle)"
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+
+BEGIN
+	
+	//SSC: Sensor Station with Camera
+	//HBW: High-Bay Warehouse
+	//VGR: Vacuum Gripper Robot
+	//DPS: Delivery AND Pickup Station
+	//MPO: Multi-Processing Station with Oven
+	//SLD: Sorting Line with Color Detection
+	
+	
+	
+	// current cycle Time OB30
+	"RT_INFO_scl_OB30".mode := 1;
+	"RT_INFO_scl_OB30".obNbr := 30;
+	"RT_INFO_scl_OB30".returnValue := RT_INFO(MODE := "RT_INFO_scl_OB30".mode,
+	                                          OB := "RT_INFO_scl_OB30".obNbr,
+	                                          INFO := "RT_INFO_scl_OB30".infoData);
+	
+	// current cycle Time OB1
+	"RT_INFO_scl_OB1".mode := 1;
+	"RT_INFO_scl_OB1".obNbr := 1;
+	"RT_INFO_scl_OB1".returnValue := RT_INFO(MODE := "RT_INFO_scl_OB1".mode,
+	                                         OB := "RT_INFO_scl_OB1".obNbr,
+	                                         INFO := "RT_INFO_scl_OB1".infoData);
+	
+	// sources SSC: Sensor Station with Camera
+	"PRG_SSC_Ablauf_DB"();
+	"PRG_SSC_Set_Positioning_DB"();
+	"PRG_SSC_Set_Park_Position_DB"();
+	"PRG_SSC_Calibration_Color_DB"();
+	"PRG_SSC_Axis_Vertical_DB"();
+	"PRG_SSC_Axis_Horizontal_DB"();
+	"PRG_SSC_Light_DB"();
+	
+	// sources VGR: Vacuum Gripper Robot
+	"PRG_VGR_Ablauf_DB"();
+	"PRG_VGR_Set_Positioning_DB"();
+	"PRG_VGR_Set_Park_Position_DB"();
+	"PRG_VGR_Axis_horizontal_DB"();
+	"PRG_VGR_Axis_vertical_DB"();
+	"PRG_VGR_Axis_rotate_DB"();
+	"PRG_NFC_DB"();
+	
+	// sources HBW: High-Bay Warehouse
+	"PRG_HBW_Ablauf_DB"();
+	"PRG_HBW_Set_Positioning_DB"();
+	"PRG_HBW_Set_Park_Position_DB"();
+	"PRG_HBW_Axis_Vertical_DB"();
+	"PRG_HBW_Axis_Horizontal_DB"();
+	
+	// sources MPO: Multi-Processing Station with Oven
+	"PRG_MPO_Ablauf_DB"();
+	"PRG_MPO_Set_Park_Position_DB"();
+	
+	// sources SLD: Sorting Line with Color Detection
+	"PRG_SLD_Ablauf_DB"();
+	"PRG_SLD_Calibration_Color_DB"();
+	"PRG_SLD_Set_Counter_Values_DB"();
+	
+	// sources input/output
+	"PRG_DSI_Status_DB"();
+	"PRG_DSO_Status_DB"();
+	
+	// sources dashboard
+	"PRG_Order_DB"();
+	"PRG_Acknowledge_DB"();
+	
+	// communication 
+	"Copy_Simulation_Variables_DB"();
+	
+END_ORGANIZATION_BLOCK
+

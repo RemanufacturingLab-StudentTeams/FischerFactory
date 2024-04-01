@@ -1,0 +1,32 @@
+﻿FUNCTION_BLOCK "FB_Blinker"
+TITLE = Functionblock Blinker
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR_INPUT 
+      int_periodendauer { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Time;
+   END_VAR
+
+   VAR_OUTPUT 
+      outx_blinker { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+   END_VAR
+
+   VAR 
+      lfb_ton {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lx_esv_timer { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_blinker { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+   END_VAR
+
+
+BEGIN
+	#lfb_ton(IN := NOT #lx_esv_timer,
+	         PT := #int_periodendauer / 2,
+	         Q => #lx_esv_timer);
+	
+	IF #lx_esv_timer THEN
+	    #lx_blinker := NOT #lx_blinker;
+	END_IF;
+	
+	#outx_blinker := #lx_blinker;
+END_FUNCTION_BLOCK
+

@@ -1,0 +1,58 @@
+﻿FUNCTION_BLOCK "PRG_DSI_Status"
+TITLE = Program Status DSI
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Start { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      li_StepCase { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      ldt_MQTT { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Date_And_Time;
+      li_Return_LDT { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      lfb_R_Trig_Storage {InstructionName := 'R_TRIG'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : R_TRIG;
+      lfb_F_Trig_Storage {InstructionName := 'F_TRIG'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : F_TRIG;
+      lfb_TON_Status {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lx_StartStatus { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lfb_TON_Schritt {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lx_StartTimer { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // wait time state
+	    #lfb_TON_Status(IN := NOT #lx_StartStatus,
+	                    PT := T#2s);
+	    
+	    // rising/falling edge light barrier DSI
+	    #lfb_R_Trig_Storage(CLK := NOT "IX_SSC_LightBarrierStorage_I3");
+	    #lfb_F_Trig_Storage(CLK := NOT "IX_SSC_LightBarrierStorage_I3");
+	    
+	    // state of the DSI transmitted to the cloud
+	    IF (#lfb_TON_Status.Q OR #lfb_R_Trig_Storage.Q OR #lfb_F_Trig_Storage.Q) AND NOT #lx_StartStatus THEN
+	        #lx_StartStatus := TRUE;
+	        #li_Return_LDT := RD_SYS_T(#ldt_MQTT);
+	        IF NOT "IX_SSC_LightBarrierStorage_I3" THEN
+	            "gtyp_Interface_Dashboard".Subscribe.State_DSI.i_code := 0;
+	            "gtyp_Interface_Dashboard".Subscribe.State_DSI.x_active := TRUE;
+	        ELSE
+	            "gtyp_Interface_Dashboard".Subscribe.State_DSI.i_code := 1;
+	            IF #lfb_F_Trig_Storage.Q THEN
+	                "gtyp_Interface_Dashboard".Subscribe.State_DSI.x_active := FALSE;
+	            END_IF;
+	        END_IF;
+	        "gtyp_Interface_Dashboard".Subscribe.State_DSI.ldt_ts := DT_TO_LDT(#ldt_MQTT);
+	        "gtyp_Interface_Dashboard".Subscribe.State_DSI.s_station := 'dsi';
+	        "gtyp_Interface_Dashboard".Subscribe.State_DSI.s_target := '';
+	        "gtyp_Interface_Dashboard".Subscribe.State_DSI.s_description := '';
+	    END_IF;
+	    
+	    IF NOT #lfb_TON_Status.Q AND #lx_StartStatus THEN
+	        #lx_StartStatus := FALSE;
+	    END_IF;
+	ELSE
+	    #lx_Init := TRUE;
+	END_IF;
+END_FUNCTION_BLOCK
+

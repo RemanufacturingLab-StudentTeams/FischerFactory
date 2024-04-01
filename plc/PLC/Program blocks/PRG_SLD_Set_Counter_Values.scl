@@ -1,0 +1,34 @@
+﻿FUNCTION_BLOCK "PRG_SLD_Set_Counter_Values"
+TITLE = Program Set counter Values SLD
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lfb_R_Trig_Calib_activ {InstructionName := 'R_TRIG'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : R_TRIG;
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // Reload act. Counter Values
+	    IF NOT "gtyp_Setup".x_Counter_Value_Calibration THEN
+	        "gtyp_Setup".i_Calib_CounterValue_Blue := "gtyp_SLD".i_CounterValue_Blue;
+	        "gtyp_Setup".i_Calib_CounterValue_Red := "gtyp_SLD".i_CounterValue_Red;
+	        "gtyp_Setup".i_Calib_CounterValue_White := "gtyp_SLD".i_CounterValue_White;
+	    END_IF;
+	    
+	    // Set Counter Values   
+	    IF "gtyp_Setup".x_Set_CounterValues AND "gtyp_Setup".x_Counter_Value_Calibration THEN
+	        "gtyp_SLD".i_CounterValue_Blue := "gtyp_Setup".i_Calib_CounterValue_Blue;
+	        "gtyp_SLD".i_CounterValue_Red := "gtyp_Setup".i_Calib_CounterValue_Red;
+	        "gtyp_SLD".i_CounterValue_White := "gtyp_Setup".i_Calib_CounterValue_White;
+	        "gtyp_Setup".x_Set_CounterValues := FALSE;
+	    END_IF;
+	    
+	ELSE
+	    #lx_Init := TRUE;
+	END_IF;
+END_FUNCTION_BLOCK
+

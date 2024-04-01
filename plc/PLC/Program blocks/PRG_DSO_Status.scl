@@ -1,0 +1,74 @@
+﻿FUNCTION_BLOCK "PRG_DSO_Status"
+TITLE = Program Status DSO
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Start { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      li_StepCase { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      ldt_MQTT { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Date_And_Time;
+      li_Return_LDT { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      li_code_old { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      lfb_R_Trig_Outsourcing {InstructionName := 'R_TRIG'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : R_TRIG;
+      lfb_R_Trig_Take_Workpiece {InstructionName := 'R_TRIG'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : R_TRIG;
+      lfb_TON_Status {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lfb_TON_End_Order {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lx_StartStatus { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_StartEndOrder { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_StartTimer { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // wait time state
+	    #lfb_TON_Status(IN := NOT #lx_StartStatus,
+	                    PT := T#2s);
+	    
+	    // rising/falling edge light barrier DSI
+	    #lfb_R_Trig_Outsourcing(CLK := NOT "IX_SSC_LightBarrierOutsourcing_I4");
+	    #lfb_R_Trig_Take_Workpiece(CLK := "IX_SSC_LightBarrierOutsourcing_I4");
+	    
+	    // start wait time end order 
+	    IF NOT "IX_SSC_LightBarrierOutsourcing_I4" AND ("gtyp_Interface_Dashboard".Subscribe.State_Order.s_state = 'SHIPPED') THEN
+	        #lx_StartEndOrder := TRUE;
+	    END_IF;
+	    
+	    // wait time end order
+	    #lfb_TON_End_Order(IN := #lx_StartEndOrder,
+	                       PT := T#5s);
+	    
+	    IF #lfb_R_Trig_Take_Workpiece.Q OR #lfb_TON_End_Order.Q THEN
+	        #lx_StartEndOrder := FALSE;
+	        "gtyp_Interface_Dashboard".Subscribe.State_Order.ldt_ts := DT_TO_LDT(#ldt_MQTT);
+	        "gtyp_Interface_Dashboard".Subscribe.State_Order.s_state := 'WAITING_FOR_ORDER';
+	        "gtyp_Interface_Dashboard".Subscribe.State_Order.s_type := '';
+	        "gtyp_Interface_Dashboard".Subscribe.State_DSO.x_active := FALSE;
+	    END_IF;
+	    
+	    // state of the DSO transmitted to the cloud
+	    IF (#lfb_TON_Status.Q OR #lfb_R_Trig_Outsourcing.Q OR #lfb_R_Trig_Take_Workpiece.Q) AND NOT #lx_StartStatus THEN
+	        #lx_StartStatus := TRUE;
+	        #li_Return_LDT := RD_SYS_T(#ldt_MQTT);
+	        IF NOT "IX_SSC_LightBarrierOutsourcing_I4" THEN
+	            "gtyp_Interface_Dashboard".Subscribe.State_DSO.i_code := 0;
+	        ELSE
+	            "gtyp_Interface_Dashboard".Subscribe.State_DSO.i_code := 1;
+	        END_IF;
+	        "gtyp_Interface_Dashboard".Subscribe.State_DSO.ldt_ts := DT_TO_LDT(#ldt_MQTT);
+	        "gtyp_Interface_Dashboard".Subscribe.State_DSO.s_station := 'dso';
+	        "gtyp_Interface_Dashboard".Subscribe.State_DSO.s_target := '';
+	        "gtyp_Interface_Dashboard".Subscribe.State_DSO.s_description := '';
+	    END_IF;
+	    
+	    IF NOT #lfb_TON_Status.Q AND #lx_StartStatus THEN
+	        #lx_StartStatus := FALSE;
+	    END_IF;
+	ELSE
+	    #lx_Init := TRUE;
+	    #lx_StartEndOrder := FALSE;
+	END_IF;
+END_FUNCTION_BLOCK
+

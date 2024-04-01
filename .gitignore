@@ -1,0 +1,19 @@
+# Local files
+local
+
+# Secret files
+secret
+
+# Generated files
+pi/nodejs/dist
+server/mqtt_testing_tool/target
+server/mqtt_testing_tool/Cargo.lock
+
+# Local development files
+todo.md
+
+# Downloaded files
+# InfluxDB
+influxdata-archive_compat.key
+influxdata-archive_compat.key.1
+influxdb2_2.7.4-1_amd64.deb

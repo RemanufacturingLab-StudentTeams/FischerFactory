@@ -1,0 +1,36 @@
+﻿FUNCTION_BLOCK "PRG_VGR_Axis_vertical"
+TITLE = Program Axis vertical VGR
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lfb_vertical_Axis { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : "FB_Axis_Auto";
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // FB Axis vertical
+	    #lfb_vertical_Axis(ini_Axis := 2,
+	                       indi_Increment := "gtyp_VGR".vertical_Axis.di_Increment,
+	                       inx_Ref_Switch := "IX_VGR_RefSwitchVerticalAxis_I1",
+	                       inx_Referencing := "gtyp_VGR".vertical_Axis.x_Reference,
+	                       inx_Start_Positioning := "gtyp_VGR".vertical_Axis.x_Start_Positioning,
+	                       indi_Target_Position := "gtyp_VGR".vertical_Axis.di_Target_Position,
+	                       ini_PWM := "gtyp_VGR".vertical_Axis.i_PWM,
+	                       inouttyp_Config := "gtyp_VGR".vertical_Axis.Config,
+	                       inouttyp_Setup := "gtyp_SetupAxis");
+	    
+	    "QX_VGR_M1_VerticalAxisUp_Q1" := #lfb_vertical_Axis.outx_Motor_Neg;
+	    "QX_VGR_M1_VerticalAxisDown_Q2" := #lfb_vertical_Axis.outx_Motor_Pos;
+	    "QW_VGR_PWM_Vertical_M1" := #lfb_vertical_Axis.outi_Motor_PWM;
+	    "gtyp_VGR".vertical_Axis.di_Actual_Position := #lfb_vertical_Axis.outdi_Actual_Position;
+	    "gtyp_VGR".vertical_Axis.x_Referenced := #lfb_vertical_Axis.outx_Referenced;
+	    "gtyp_VGR".vertical_Axis.x_Position_Reached := #lfb_vertical_Axis.outx_Position_Reached;
+	ELSE
+	    #lx_Init := TRUE;
+	END_IF;
+END_FUNCTION_BLOCK
+

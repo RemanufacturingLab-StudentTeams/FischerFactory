@@ -1,0 +1,68 @@
+﻿FUNCTION_BLOCK "FB_INC_DEC"
+TITLE = Funktionblock Increment decodition
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR_INPUT 
+      inx_CHa { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool := FALSE;
+      inx_CHb { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool := FALSE;
+      inx_RST { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool := FALSE;
+      ini_Ref_Wert { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int := 0;
+   END_VAR
+
+   VAR_OUTPUT 
+      outx_dir { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool := FALSE;
+      outi_cnt { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int := 0;
+   END_VAR
+
+   VAR 
+      lx_edgea { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool := FALSE;
+      lx_clka { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_clkb { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_edgeb { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_axb { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_dir { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      li_cnt { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+   END_VAR
+
+
+BEGIN
+	
+	#lx_axb := #inx_CHa XOR #inx_CHb;
+	
+	(* create pulses for channel a *)
+	#lx_clka := #inx_CHa XOR #lx_edgea;
+	#lx_edgea := #inx_CHa;
+	
+	#lx_clkb := #inx_CHb XOR #lx_edgeb;
+	#lx_edgeb := #inx_CHb;
+	
+	(* create pulses for both channels *)
+	#lx_clka := #lx_clka OR #lx_clkb;
+	
+	(* set the direction output *)
+	IF #lx_axb AND #lx_clka THEN
+	    #lx_dir := TRUE;
+	END_IF;
+	IF #lx_axb AND #lx_clkb THEN
+	    #lx_dir := FALSE;
+	END_IF;
+	
+	(* increment or decrement the counter *)
+	IF #lx_clka AND #lx_dir THEN
+	    #li_cnt := #li_cnt + 1;
+	END_IF;
+	IF #lx_clka AND NOT #lx_dir THEN
+	    #li_cnt := #li_cnt - 1;
+	END_IF;
+	
+	(* reset the counter if rst active *)
+	IF #inx_RST THEN
+	    #li_cnt := #ini_Ref_Wert;
+	END_IF;
+	
+	#outx_dir := #lx_dir;
+	#outi_cnt := #li_cnt;
+	
+END_FUNCTION_BLOCK
+

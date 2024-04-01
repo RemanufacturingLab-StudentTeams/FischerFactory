@@ -1,0 +1,36 @@
+﻿FUNCTION_BLOCK "PRG_HBW_Axis_Horizontal"
+TITLE = Program Axis horizontal HBW
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lfb_Horizontal_Axis { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : "FB_Axis_Auto";
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // FB Axis horizontal
+	    #lfb_Horizontal_Axis(ini_Axis := 6,
+	                         indi_Increment := "gtyp_HBW".Horizontal_Axis.di_Increment,
+	                         inx_Ref_Switch := "IX_HBW_RefSwitchHorizontalAxis_I1",
+	                         inx_Referencing := "gtyp_HBW".Horizontal_Axis.x_Reference,
+	                         inx_Start_Positioning := "gtyp_HBW".Horizontal_Axis.x_Start_Positioning,
+	                         indi_Target_Position := "gtyp_HBW".Horizontal_Axis.di_Target_Position,
+	                         ini_PWM := "gtyp_HBW".Horizontal_Axis.i_PWM,
+	                         inouttyp_Config := "gtyp_HBW".Horizontal_Axis.Config,
+	                         inouttyp_Setup := "gtyp_SetupAxis");
+	    
+	    "QX_HBW_M2_HorizontalTowardsRack_Q3" := #lfb_Horizontal_Axis.outx_Motor_Pos;
+	    "QX_HBW_M2_HorizontalTowardsConveyorBelt_Q4" := #lfb_Horizontal_Axis.outx_Motor_Neg;
+	    "QW_HBW_PWM_HorizontalAxis_M2" := #lfb_Horizontal_Axis.outi_Motor_PWM;
+	    "gtyp_HBW".Horizontal_Axis.di_Actual_Position := #lfb_Horizontal_Axis.outdi_Actual_Position;
+	    "gtyp_HBW".Horizontal_Axis.x_Referenced := #lfb_Horizontal_Axis.outx_Referenced;
+	    "gtyp_HBW".Horizontal_Axis.x_Position_Reached := #lfb_Horizontal_Axis.outx_Position_Reached;
+	ELSE
+	    #lx_Init := TRUE;
+	END_IF;
+END_FUNCTION_BLOCK
+

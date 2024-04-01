@@ -1,0 +1,142 @@
+﻿FUNCTION_BLOCK "PRG_VGR_Set_Park_Position"
+TITLE = Program Set Positioning VGR
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Start_TON_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lt_TON_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Time;
+      li_StepCase { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      lfb_TON_Wait {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lfb_R_Trig_Start_Park_Pos {InstructionName := 'R_TRIG'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : R_TRIG;
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // FB TON Wait
+	    #lfb_TON_Wait(IN := #lx_Start_TON_Wait,
+	                  PT := #lt_TON_Wait);
+	    
+	    #lfb_R_Trig_Start_Park_Pos(CLK := "gtyp_Setup".x_Park_Position
+	                               OR "IX_Set_Park_Position");
+	    
+	    // Set Start Park Position   
+	    IF #lfb_R_Trig_Start_Park_Pos.Q THEN
+	        "gtyp_VGR".x_Start_Park_Position := TRUE;
+	        #li_StepCase := 0;
+	    END_IF;
+	    
+	    // not Start Park Pos Step 0
+	    IF NOT "gtyp_VGR".x_Start_Park_Position THEN
+	        #li_StepCase := 0;
+	    END_IF;
+	    
+	    // step chain HBW
+	    CASE #li_StepCase OF
+	            
+	        0:  // init
+	            #lx_Start_TON_Wait := FALSE;
+	            #li_StepCase := 10;
+	            
+	        10:  // Set Positioning activ?
+	            IF "gtyp_VGR".x_Start_Park_Position AND NOT "gtyp_VGR".x_Park_Position_Reached THEN
+	                "gtyp_VGR".horizontal_Axis.x_Start_Positioning := FALSE;
+	                "gtyp_VGR".vertical_Axis.x_Start_Positioning := FALSE;
+	                "gtyp_VGR".rotate_Axis.x_Start_Positioning := FALSE;
+	                "gtyp_VGR".horizontal_Axis.x_Reference := FALSE;
+	                "gtyp_VGR".vertical_Axis.x_Reference := FALSE;
+	                "gtyp_VGR".rotate_Axis.x_Reference := FALSE;
+	                "gtyp_VGR".vertical_Axis.i_PWM := 800;
+	                #li_StepCase := 20;
+	            END_IF;
+	            
+	        20: // homing vertical axis
+	            "gtyp_VGR".vertical_Axis.x_Reference := TRUE;
+	            
+	            IF NOT "gtyp_VGR".vertical_Axis.x_Referenced THEN
+	                #li_StepCase := 30;
+	            END_IF;
+	            
+	        30: // homed vertical axis
+	            IF "gtyp_VGR".vertical_Axis.x_Referenced THEN
+	                "gtyp_VGR".vertical_Axis.x_Reference := FALSE;
+	                #li_StepCase := 40;
+	            END_IF;
+	            
+	        40: // homing horizontal axis
+	            "gtyp_VGR".horizontal_Axis.x_Reference := TRUE;
+	            
+	            IF NOT "gtyp_VGR".horizontal_Axis.x_Referenced THEN
+	                #li_StepCase := 50;
+	            END_IF;
+	            
+	        50: // homed horizontal axis
+	            IF "gtyp_VGR".horizontal_Axis.x_Referenced THEN
+	                "gtyp_VGR".horizontal_Axis.x_Reference := FALSE;
+	                #li_StepCase := 60;
+	            END_IF;
+	            
+	        60: // homing rotate axis
+	            "gtyp_VGR".rotate_Axis.x_Reference := TRUE;
+	            
+	            IF NOT "gtyp_VGR".rotate_Axis.x_Referenced THEN
+	                #li_StepCase := 70;
+	            END_IF;
+	            
+	        70: // homed rotate axis
+	            IF "gtyp_VGR".rotate_Axis.x_Referenced THEN
+	                "gtyp_VGR".rotate_Axis.x_Reference := FALSE;
+	                #li_StepCase := 80;
+	            END_IF;
+	            
+	        80: // Position rotate Axis
+	            "gtyp_VGR".rotate_Axis.di_Target_Position := "gtyp_VGR".di_Pos_Park_rotate;
+	            "gtyp_VGR".rotate_Axis.x_Start_Positioning := TRUE;
+	            
+	            IF ("gtyp_VGR".rotate_Axis.di_Actual_Position <= ("gtyp_VGR".di_Pos_Park_rotate + "gtyp_VGR".rotate_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_VGR".rotate_Axis.di_Actual_Position >= ("gtyp_VGR".di_Pos_Park_rotate - "gtyp_VGR".rotate_Axis.Config.di_Pos_Window))
+	                AND "gtyp_VGR".rotate_Axis.x_Position_Reached THEN
+	                "gtyp_VGR".rotate_Axis.x_Start_Positioning := FALSE;
+	                #li_StepCase := 90;
+	            END_IF;
+	            
+	        90: // Position horizontal Axis
+	            "gtyp_VGR".horizontal_Axis.di_Target_Position := "gtyp_VGR".di_Pos_Park_horizontal;
+	            "gtyp_VGR".horizontal_Axis.x_Start_Positioning := TRUE;
+	            
+	            IF ("gtyp_VGR".horizontal_Axis.di_Actual_Position <= ("gtyp_VGR".di_Pos_Park_horizontal + "gtyp_VGR".horizontal_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_VGR".horizontal_Axis.di_Actual_Position >= ("gtyp_VGR".di_Pos_Park_horizontal - "gtyp_VGR".horizontal_Axis.Config.di_Pos_Window))
+	                AND "gtyp_VGR".horizontal_Axis.x_Position_Reached THEN
+	                "gtyp_VGR".horizontal_Axis.x_Start_Positioning := FALSE;
+	                #li_StepCase := 100;
+	            END_IF;
+	            
+	        100: // Position vertical Axis
+	            "gtyp_VGR".vertical_Axis.i_PWM := 500;
+	            "gtyp_VGR".vertical_Axis.di_Target_Position := "gtyp_VGR".di_Pos_Park_vertical;
+	            "gtyp_VGR".vertical_Axis.x_Start_Positioning := TRUE;
+	            
+	            IF ("gtyp_VGR".vertical_Axis.di_Actual_Position <= ("gtyp_VGR".di_Pos_Park_vertical + "gtyp_VGR".vertical_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_VGR".vertical_Axis.di_Actual_Position >= ("gtyp_VGR".di_Pos_Park_vertical - "gtyp_VGR".vertical_Axis.Config.di_Pos_Window))
+	                AND "gtyp_VGR".vertical_Axis.x_Position_Reached THEN
+	                "gtyp_VGR".vertical_Axis.x_Start_Positioning := FALSE;
+	                #li_StepCase := 110;
+	            END_IF;
+	            
+	        110: // Deciding which doing
+	            "gtyp_VGR".x_Park_Position_Reached := TRUE;
+	            
+	            
+	            // Statement section ELSE    
+	        ELSE
+	            ;
+	    END_CASE;
+	    
+	ELSE
+	    #lx_Init := TRUE;
+	END_IF;
+END_FUNCTION_BLOCK
+

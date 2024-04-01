@@ -1,0 +1,80 @@
+﻿FUNCTION_BLOCK "PRG_SSC_Light"
+TITLE = Program Lights
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Start { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      li_StepCase { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      ldt_MQTT { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Date_And_Time;
+      lldt_ts_old { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : LDT;
+      li_Return_LDT { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      lfb_TOF_Camera {InstructionName := 'TOF_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TOF_TIME;
+      lfb_TON_Schritt {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lfb_blinker_cam { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : "FB_Blinker";
+      lfb_blinker_config { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : "FB_Blinker";
+      lx_StartTimer { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // if camera sen picture - Red light flash
+	    IF "gtyp_Interface_Dashboard".Subscribe.CameraPicture.ldt_ts > #lldt_ts_old THEN
+	        #lldt_ts_old := "gtyp_Interface_Dashboard".Subscribe.CameraPicture.ldt_ts;
+	        #lfb_blinker_cam(int_periodendauer := T#50ms);
+	    END_IF;
+	    
+	    // reload flash
+	    "QX_SSC_LED_Red_Online_Q8" := #lfb_blinker_cam.outx_blinker;
+	    
+	    // FB flash config
+	    #lfb_blinker_config(int_periodendauer := T#500ms);
+	    
+	    //  Deciding which state
+	    //  Setup - Calibration State
+	    IF "gtyp_Setup".x_Set_Pos_Activ OR "gtyp_Setup".x_Color_Sensor_Calibration
+	        OR "gtyp_Setup".x_Counter_Value_Calibration
+	        OR "gtyp_Setup".x_Clean_Rack_HBW THEN
+	        "QX_SSC_LED_Green_Q5" := #lfb_blinker_config.outx_blinker;
+	        "QX_SSC_LED_Yellow_Q6" := #lfb_blinker_config.outx_blinker;
+	        "QX_SSC_LED_Red_Q7" := #lfb_blinker_config.outx_blinker;
+	        //  Error State
+	    ELSIF ("gtyp_Interface_Dashboard".Subscribe.State_HBW.i_code = 4)
+	        OR ("gtyp_Interface_Dashboard".Subscribe.State_MPO.i_code = 4)
+	        OR ("gtyp_Interface_Dashboard".Subscribe.State_SLD.i_code = 4)
+	        OR ("gtyp_Interface_Dashboard".Subscribe.State_VGR.i_code = 4) THEN
+	        "QX_SSC_LED_Green_Q5" := FALSE;
+	        "QX_SSC_LED_Yellow_Q6" := FALSE;
+	        "QX_SSC_LED_Red_Q7" := TRUE;
+	        //  Proccessing State
+	    ELSIF ("gtyp_Interface_Dashboard".Subscribe.State_HBW.i_code = 2)
+	        OR ("gtyp_Interface_Dashboard".Subscribe.State_MPO.i_code = 2)
+	        OR ("gtyp_Interface_Dashboard".Subscribe.State_SLD.i_code = 2)
+	        OR ("gtyp_Interface_Dashboard".Subscribe.State_VGR.i_code = 2) THEN
+	        "QX_SSC_LED_Green_Q5" := FALSE;
+	        "QX_SSC_LED_Yellow_Q6" := TRUE;
+	        "QX_SSC_LED_Red_Q7" := FALSE;
+	        //  Idle State
+	    ELSIF ("gtyp_Interface_Dashboard".Subscribe.State_HBW.i_code = 1)
+	        AND ("gtyp_Interface_Dashboard".Subscribe.State_MPO.i_code = 1)
+	        AND ("gtyp_Interface_Dashboard".Subscribe.State_SLD.i_code = 1)
+	        AND ("gtyp_Interface_Dashboard".Subscribe.State_VGR.i_code = 1) THEN
+	        "QX_SSC_LED_Green_Q5" := TRUE;
+	        "QX_SSC_LED_Yellow_Q6" := FALSE;
+	        "QX_SSC_LED_Red_Q7" := FALSE;
+	        //  nothing State
+	    ELSE
+	        "QX_SSC_LED_Green_Q5" := FALSE;
+	        "QX_SSC_LED_Yellow_Q6" := FALSE;
+	        "QX_SSC_LED_Red_Q7" := FALSE;
+	    END_IF;
+	    
+	    
+	ELSE
+	    #lx_Init := TRUE;
+	END_IF;
+END_FUNCTION_BLOCK
+

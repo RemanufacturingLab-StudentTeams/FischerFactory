@@ -1,0 +1,301 @@
+﻿FUNCTION_BLOCK "PRG_SSC_Ablauf"
+TITLE = Program Ablauf SSC
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_FirstCentre { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Start { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Start_TON_State { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lt_TON_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Time;
+      li_StepCase { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      ldi_TargetPosition_Horizontal { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : DInt;
+      ldi_TargetPosition_Vertical { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : DInt;
+      lldt_ts_old { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : LDT;
+      ldt_write { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Date_And_Time;
+      li_Return_write { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      ldt_MQTT { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Date_And_Time;
+      li_Return_LDT { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      lx_Start_TON_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      ldi_StepHorizontal { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : DInt;
+      ldi_StepVertical { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : DInt;
+      lfb_TON_Wait {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lfb_TON_State {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lfb_F_TRIG_Set_Pos {InstructionName := 'F_TRIG'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : F_TRIG;
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // Restart after set Positioning
+	    IF "gtyp_Setup".x_Set_Pos_Activ OR "gtyp_SSC".x_Start_Park_Position THEN
+	        #li_StepCase := 0;
+	    END_IF;
+	    
+	    // falling edge Set Pos
+	    #lfb_F_TRIG_Set_Pos(CLK := "gtyp_Setup".x_Set_Pos_Activ);
+	    
+	    IF #lfb_F_TRIG_Set_Pos.Q THEN
+	        #lx_FirstCentre := TRUE;
+	    END_IF;
+	    
+	    #lfb_TON_Wait(IN := #lx_Start_TON_Wait,
+	                  PT := #lt_TON_Wait);
+	    
+	    // wait time state
+	    #lfb_TON_State(IN := NOT #lx_Start_TON_State,
+	                   PT := T#2s);
+	    
+	    // state of the ssc cyclically transmitted to the cloud
+	    IF #lfb_TON_State.Q AND NOT #lx_Start_TON_State THEN
+	        #lx_Start_TON_State := TRUE;
+	        #li_Return_LDT := RD_SYS_T(#ldt_MQTT);
+	        "gtyp_Interface_Dashboard".Subscribe.PosPanTiltUnit.ldt_ts := DT_TO_LDT(#ldt_MQTT);
+	    END_IF;
+	    
+	    // restart wait time state
+	    IF NOT #lfb_TON_State.Q AND #lx_Start_TON_State THEN
+	        #lx_Start_TON_State := FALSE;
+	    END_IF;
+	    
+	    CASE #li_StepCase OF
+	            
+	        0:  // Init
+	            #lx_Start_TON_State := FALSE;
+	            "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := FALSE;
+	            "gtyp_SSC".Vertical_Axis.x_Start_Positioning := FALSE;
+	            
+	            IF NOT "gtyp_Setup".x_Set_Pos_Activ AND NOT "gtyp_SSC".x_Start_Park_Position THEN
+	                #li_StepCase := 10;
+	            END_IF;
+	            
+	        10: // Deciding which route to take 
+	            
+	            IF ("gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.ldt_ts > #lldt_ts_old) OR #lx_FirstCentre THEN
+	                
+	                #lldt_ts_old := "gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.ldt_ts;
+	                
+	                // convert the degrees to position
+	                #ldi_StepHorizontal := REAL_TO_DINT("FC_Scale_linear"(inr_Y1 := DINT_TO_REAL("gtyp_SSC".Horizontal_Axis.Config.di_Neg_Soft_Switch),
+	                                                                                                          inr_Y2 := DINT_TO_REAL("gtyp_SSC".Horizontal_Axis.Config.di_Pos_Soft_Switch),
+	                                                                                                          inr_X1 := 0.0,
+	                                                                                                          inr_X2 := 180.0,
+	                                                                                                          inr_X := DINT_TO_REAL("gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.i_degree)));
+	                #ldi_StepVertical := REAL_TO_DINT("FC_Scale_linear"(inr_Y1 := DINT_TO_REAL("gtyp_SSC".Vertical_Axis.Config.di_Neg_Soft_Switch),
+	                                                                                                      inr_Y2 := DINT_TO_REAL("gtyp_SSC".Vertical_Axis.Config.di_Pos_Soft_Switch),
+	                                                                                                      inr_X1 := 0.0,
+	                                                                                                      inr_X2 := 180.0,
+	                                                                                                      inr_X := DINT_TO_REAL("gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.i_degree)));
+	                // Procedure - relmove_left
+	                IF ("gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.s_cmd = 'relmove_left')
+	                    AND (("gtyp_SSC".Horizontal_Axis.di_Actual_Position - #ldi_StepHorizontal) > "gtyp_SSC".Horizontal_Axis.Config.di_Neg_Soft_Switch + 15)
+	                    AND NOT "IX_SSC_RefSwitchHorizontalAxis_I2" THEN
+	                    #ldi_TargetPosition_Horizontal := "gtyp_SSC".Horizontal_Axis.di_Actual_Position - #ldi_StepHorizontal;
+	                    "gtyp_SSC".Horizontal_Axis.di_Target_Position := #ldi_TargetPosition_Horizontal;
+	                    "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := TRUE;
+	                    #li_StepCase := 70;
+	                    // Procedure - relmove_right
+	                ELSIF ("gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.s_cmd = 'relmove_right')
+	                    AND (("gtyp_SSC".Horizontal_Axis.di_Actual_Position + #ldi_StepHorizontal) < "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Soft_Switch - 15) THEN
+	                    #ldi_TargetPosition_Horizontal := "gtyp_SSC".Horizontal_Axis.di_Actual_Position + #ldi_StepHorizontal;
+	                    "gtyp_SSC".Horizontal_Axis.di_Target_Position := #ldi_TargetPosition_Horizontal;
+	                    "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := TRUE;
+	                    #li_StepCase := 70;
+	                    // Procedure - relmove_up
+	                ELSIF ("gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.s_cmd = 'relmove_up')
+	                    AND (("gtyp_SSC".Vertical_Axis.di_Actual_Position + #ldi_StepHorizontal) < "gtyp_SSC".Vertical_Axis.Config.di_Pos_Soft_Switch - 15) THEN
+	                    #ldi_TargetPosition_Vertical := "gtyp_SSC".Vertical_Axis.di_Actual_Position + #ldi_StepVertical;
+	                    "gtyp_SSC".Vertical_Axis.di_Target_Position := #ldi_TargetPosition_Vertical;
+	                    "gtyp_SSC".Vertical_Axis.x_Start_Positioning := TRUE;
+	                    #li_StepCase := 80;
+	                    // Procedure - relmove_down
+	                ELSIF ("gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.s_cmd = 'relmove_down')
+	                    AND (("gtyp_SSC".Vertical_Axis.di_Actual_Position - #ldi_StepVertical) > "gtyp_SSC".Vertical_Axis.Config.di_Neg_Soft_Switch + 15)
+	                    AND NOT "IX_SSC_RefSwitchVerticalAxis_I1" THEN
+	                    #ldi_TargetPosition_Vertical := "gtyp_SSC".Vertical_Axis.di_Actual_Position - #ldi_StepVertical;
+	                    "gtyp_SSC".Vertical_Axis.di_Target_Position := #ldi_TargetPosition_Vertical;
+	                    "gtyp_SSC".Vertical_Axis.x_Start_Positioning := TRUE;
+	                    #li_StepCase := 80;
+	                    // Procedure - first 
+	                ELSIF #lx_FirstCentre THEN
+	                    #li_StepCase := 20;
+	                    // Procedure - home
+	                ELSIF ("gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.s_cmd = 'home') THEN
+	                    #li_StepCase := 60;
+	                    // Procedure - start_pan
+	                ELSIF ("gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.s_cmd = 'start_pan')
+	                    AND ("gtyp_SSC".Horizontal_Axis.di_Actual_Position > "gtyp_SSC".Horizontal_Axis.Config.di_Neg_Soft_Switch + 15)
+	                    AND NOT "IX_SSC_RefSwitchHorizontalAxis_I2" THEN
+	                    #ldi_TargetPosition_Horizontal := "gtyp_SSC".Horizontal_Axis.Config.di_Neg_Soft_Switch + 15;
+	                    "gtyp_SSC".Horizontal_Axis.di_Target_Position := #ldi_TargetPosition_Horizontal;
+	                    "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := TRUE;
+	                    #li_StepCase := 70;
+	                    // Procedure - end_pan
+	                ELSIF ("gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.s_cmd = 'end_pan')
+	                    AND ("gtyp_SSC".Horizontal_Axis.di_Actual_Position < "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Soft_Switch - 15) THEN
+	                    #ldi_TargetPosition_Horizontal := "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Soft_Switch - 15;
+	                    "gtyp_SSC".Horizontal_Axis.di_Target_Position := #ldi_TargetPosition_Horizontal;
+	                    "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := TRUE;
+	                    #li_StepCase := 70;
+	                    // Procedure - start_tilt
+	                ELSIF ("gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.s_cmd = 'start_tilt')
+	                    AND ("gtyp_SSC".Vertical_Axis.di_Actual_Position > "gtyp_SSC".Vertical_Axis.Config.di_Neg_Soft_Switch + 15)
+	                    AND NOT "IX_SSC_RefSwitchVerticalAxis_I1" THEN
+	                    #ldi_TargetPosition_Vertical := "gtyp_SSC".Vertical_Axis.Config.di_Neg_Soft_Switch + 15;
+	                    "gtyp_SSC".Vertical_Axis.di_Target_Position := #ldi_TargetPosition_Vertical;
+	                    "gtyp_SSC".Vertical_Axis.x_Start_Positioning := TRUE;
+	                    #li_StepCase := 80;
+	                    // Procedure - end_tilt
+	                ELSIF ("gtyp_Interface_Dashboard".Publish.PosPanTiltUnit.s_cmd = 'end_tilt')
+	                    AND ("gtyp_SSC".Vertical_Axis.di_Actual_Position < "gtyp_SSC".Vertical_Axis.Config.di_Pos_Soft_Switch - 15) THEN
+	                    #ldi_TargetPosition_Vertical := "gtyp_SSC".Vertical_Axis.Config.di_Pos_Soft_Switch - 15;
+	                    "gtyp_SSC".Vertical_Axis.di_Target_Position := #ldi_TargetPosition_Vertical;
+	                    "gtyp_SSC".Vertical_Axis.x_Start_Positioning := TRUE;
+	                    #li_StepCase := 80;
+	                END_IF;
+	            END_IF;
+	            
+	        20: // homing vertical/horizontal axis
+	            "gtyp_SSC".Horizontal_Axis.x_Reference := TRUE;
+	            "gtyp_SSC".Vertical_Axis.x_Reference := TRUE;
+	            
+	            IF NOT "gtyp_SSC".Horizontal_Axis.x_Referenced AND NOT "gtyp_SSC".Vertical_Axis.x_Referenced THEN
+	                #li_StepCase := 30;
+	            END_IF;
+	            
+	        30: // homed vertical/horizontal axis
+	            IF "gtyp_SSC".Horizontal_Axis.x_Referenced THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Reference := FALSE;
+	            END_IF;
+	            IF "gtyp_SSC".Vertical_Axis.x_Referenced THEN
+	                "gtyp_SSC".Vertical_Axis.x_Reference := FALSE;
+	            END_IF;
+	            
+	            IF "gtyp_SSC".Horizontal_Axis.x_Referenced AND "gtyp_SSC".Vertical_Axis.x_Referenced THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Reference := FALSE;
+	                "gtyp_SSC".Vertical_Axis.x_Reference := FALSE;
+	                #lx_Start_TON_Wait := TRUE;
+	                #li_StepCase := 40;
+	            END_IF;
+	            
+	        40: // wait sequence
+	            IF #lfb_TON_Wait.Q THEN
+	                #lx_Start_TON_Wait := FALSE;
+	                #li_StepCase := 50;
+	            END_IF;
+	            
+	        50: // Position horizontal/vertical axis and reached
+	            "gtyp_SSC".Horizontal_Axis.di_Target_Position := "gtyp_SSC".di_Pos_HBW_Horizontal;
+	            "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := TRUE;
+	            "gtyp_SSC".Vertical_Axis.di_Target_Position := "gtyp_SSC".di_Pos_HBW_Vertical;
+	            "gtyp_SSC".Vertical_Axis.x_Start_Positioning := TRUE;
+	            
+	            IF ("gtyp_SSC".Horizontal_Axis.di_Actual_Position <= ("gtyp_SSC".di_Pos_HBW_Horizontal + "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Horizontal_Axis.di_Actual_Position >= ("gtyp_SSC".di_Pos_HBW_Horizontal - "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Horizontal_Axis.x_Position_Reached THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := FALSE;
+	            END_IF;
+	            
+	            IF ("gtyp_SSC".Vertical_Axis.di_Actual_Position <= ("gtyp_SSC".di_Pos_HBW_Vertical + "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Vertical_Axis.di_Actual_Position >= ("gtyp_SSC".di_Pos_HBW_Vertical - "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Vertical_Axis.x_Position_Reached THEN
+	                "gtyp_SSC".Vertical_Axis.x_Start_Positioning := FALSE;
+	            END_IF;
+	            
+	            IF ("gtyp_SSC".Horizontal_Axis.di_Actual_Position <= ("gtyp_SSC".di_Pos_HBW_Horizontal + "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Horizontal_Axis.di_Actual_Position >= ("gtyp_SSC".di_Pos_HBW_Horizontal - "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Horizontal_Axis.x_Position_Reached
+	                AND ("gtyp_SSC".Vertical_Axis.di_Actual_Position <= ("gtyp_SSC".di_Pos_HBW_Vertical + "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Vertical_Axis.di_Actual_Position >= ("gtyp_SSC".di_Pos_HBW_Vertical - "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Vertical_Axis.x_Position_Reached THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := FALSE;
+	                "gtyp_SSC".Vertical_Axis.x_Start_Positioning := FALSE;
+	                #lx_FirstCentre := FALSE;
+	                #li_StepCase := 90;
+	            END_IF;
+	            
+	        60: // Position Centre horizontal/vertical axis and reached
+	            "gtyp_SSC".Horizontal_Axis.di_Target_Position := "gtyp_SSC".di_Pos_Centre_Horizontal;
+	            "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := TRUE;
+	            "gtyp_SSC".Vertical_Axis.di_Target_Position := "gtyp_SSC".di_Pos_Centre_Vertical;
+	            "gtyp_SSC".Vertical_Axis.x_Start_Positioning := TRUE;
+	            
+	            IF ("gtyp_SSC".Horizontal_Axis.di_Actual_Position <= ("gtyp_SSC".di_Pos_Centre_Horizontal + "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Horizontal_Axis.di_Actual_Position >= ("gtyp_SSC".di_Pos_Centre_Horizontal - "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Horizontal_Axis.x_Position_Reached THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := FALSE;
+	            END_IF;
+	            
+	            IF ("gtyp_SSC".Vertical_Axis.di_Actual_Position <= ("gtyp_SSC".di_Pos_Centre_Vertical + "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Vertical_Axis.di_Actual_Position >= ("gtyp_SSC".di_Pos_Centre_Vertical - "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Vertical_Axis.x_Position_Reached THEN
+	                "gtyp_SSC".Vertical_Axis.x_Start_Positioning := FALSE;
+	            END_IF;
+	            
+	            IF ("gtyp_SSC".Horizontal_Axis.di_Actual_Position <= ("gtyp_SSC".di_Pos_Centre_Horizontal + "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Horizontal_Axis.di_Actual_Position >= ("gtyp_SSC".di_Pos_Centre_Horizontal - "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Horizontal_Axis.x_Position_Reached
+	                AND ("gtyp_SSC".Vertical_Axis.di_Actual_Position <= ("gtyp_SSC".di_Pos_Centre_Vertical + "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Vertical_Axis.di_Actual_Position >= ("gtyp_SSC".di_Pos_Centre_Vertical - "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Vertical_Axis.x_Position_Reached THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := FALSE;
+	                "gtyp_SSC".Vertical_Axis.x_Start_Positioning := FALSE;
+	                #lx_FirstCentre := FALSE;
+	                #li_StepCase := 90;
+	            END_IF;
+	            
+	        70: // Position horizontal axis reached
+	            IF ("gtyp_SSC".Horizontal_Axis.di_Actual_Position <= (#ldi_TargetPosition_Horizontal + "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Horizontal_Axis.di_Actual_Position >= (#ldi_TargetPosition_Horizontal - "gtyp_SSC".Horizontal_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Horizontal_Axis.x_Position_Reached THEN
+	                "gtyp_SSC".Horizontal_Axis.x_Start_Positioning := FALSE;
+	                #li_StepCase := 90;
+	            END_IF;
+	            
+	        80: // Position vertical axis reached
+	            IF ("gtyp_SSC".Vertical_Axis.di_Actual_Position <= (#ldi_TargetPosition_Vertical + "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND ("gtyp_SSC".Vertical_Axis.di_Actual_Position >= (#ldi_TargetPosition_Vertical - "gtyp_SSC".Vertical_Axis.Config.di_Pos_Window))
+	                AND "gtyp_SSC".Vertical_Axis.x_Position_Reached THEN
+	                "gtyp_SSC".Vertical_Axis.x_Start_Positioning := FALSE;
+	                #li_StepCase := 90;
+	            END_IF;
+	            
+	        90: // convert the position to degrees
+	            "gtyp_Interface_Dashboard".Subscribe.PosPanTiltUnit.r_pan := "FC_Scale_linear"(inr_Y1 := -1.0,
+	                                                                                           inr_Y2 := 1.0,
+	                                                                                           inr_X1 := DINT_TO_REAL("gtyp_SSC".Horizontal_Axis.Config.di_Neg_Soft_Switch),
+	                                                                                           inr_X2 := DINT_TO_REAL("gtyp_SSC".Horizontal_Axis.Config.di_Pos_Soft_Switch),
+	                                                                                           inr_X := "gtyp_SSC".Horizontal_Axis.di_Actual_Position);
+	            "gtyp_Interface_Dashboard".Subscribe.PosPanTiltUnit.r_tilt := "FC_Scale_linear"(inr_Y1 := -1.0,
+	                                                                                            inr_Y2 := 1.0,
+	                                                                                            inr_X1 := DINT_TO_REAL("gtyp_SSC".Vertical_Axis.Config.di_Neg_Soft_Switch),
+	                                                                                            inr_X2 := DINT_TO_REAL("gtyp_SSC".Vertical_Axis.Config.di_Pos_Soft_Switch),
+	                                                                                            inr_X := "gtyp_SSC".Vertical_Axis.di_Actual_Position);
+	            
+	            #li_Return_write := RD_SYS_T(#ldt_write);
+	            "gtyp_Interface_Dashboard".Subscribe.PosPanTiltUnit.ldt_ts := DT_TO_LDT(#ldt_write);
+	            #lx_Start_TON_Wait := TRUE;
+	            #li_StepCase := 100;
+	            
+	        100:// wait sequence
+	            IF #lfb_TON_Wait.Q THEN
+	                #lx_Start_TON_Wait := FALSE;
+	                #li_StepCase := 0;
+	            END_IF;
+	            // Statement section ELSE        
+	        ELSE
+	            ;
+	    END_CASE;
+	    
+	ELSE
+	    #lx_Init := TRUE;
+	    #lx_FirstCentre := TRUE;
+	    
+	    "gtyp_SSC".x_Start_Park_Position := FALSE;
+	    "gtyp_SSC".x_Park_Position_Reached := FALSE;
+	    "gtyp_SSC".x_Error := FALSE;
+	END_IF;
+END_FUNCTION_BLOCK
+

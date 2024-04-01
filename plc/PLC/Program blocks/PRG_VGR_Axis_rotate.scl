@@ -1,0 +1,36 @@
+﻿FUNCTION_BLOCK "PRG_VGR_Axis_rotate"
+TITLE = Program Axis rotate VGR
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lfb_rotate_Axis { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : "FB_Axis_Auto";
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // FB Axis rotate
+	    #lfb_rotate_Axis(ini_Axis := 3,
+	                     indi_Increment := "gtyp_VGR".rotate_Axis.di_Increment,
+	                     inx_Ref_Switch := "IX_VGR_RefSwitchRotate_I3",
+	                     inx_Referencing := "gtyp_VGR".rotate_Axis.x_Reference,
+	                     inx_Start_Positioning := "gtyp_VGR".rotate_Axis.x_Start_Positioning,
+	                     indi_Target_Position := "gtyp_VGR".rotate_Axis.di_Target_Position,
+	                     ini_PWM := "gtyp_VGR".rotate_Axis.i_PWM,
+	                     inouttyp_Config := "gtyp_VGR".rotate_Axis.Config,
+	                     inouttyp_Setup := "gtyp_SetupAxis");
+	    
+	    "QX_VGR_M3_RotateClockwise_Q5" := #lfb_rotate_Axis.outx_Motor_Neg;
+	    "QX_VGR_M3_RotateCounterclockwise_Q6" := #lfb_rotate_Axis.outx_Motor_Pos;
+	    "QW_VGR_PWM_Rotate_M3" := #lfb_rotate_Axis.outi_Motor_PWM;
+	    "gtyp_VGR".rotate_Axis.di_Actual_Position := #lfb_rotate_Axis.outdi_Actual_Position;
+	    "gtyp_VGR".rotate_Axis.x_Referenced := #lfb_rotate_Axis.outx_Referenced;
+	    "gtyp_VGR".rotate_Axis.x_Position_Reached := #lfb_rotate_Axis.outx_Position_Reached;
+	ELSE
+	    #lx_Init := TRUE;
+	END_IF;
+END_FUNCTION_BLOCK
+

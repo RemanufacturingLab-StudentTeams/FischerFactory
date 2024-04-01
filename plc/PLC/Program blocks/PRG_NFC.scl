@@ -1,0 +1,153 @@
+﻿FUNCTION_BLOCK "PRG_NFC"
+TITLE = Program NFC
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Start { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Time_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Time_Error { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      li_StepCase { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      ldt_MQTT { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Date_And_Time;
+      ldt_Delete_old { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : LDT;
+      ldt_Read_old { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : LDT;
+      li_Return_LDT { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      lfb_TON_Error {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lfb_TON_Wait {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // runtime monitoring error
+	    #lfb_TON_Error(IN := #lx_Time_Error,
+	                   PT := T#30s);
+	    
+	    // runtime monitoring read uid
+	    #lfb_TON_Wait(IN := #lx_Time_Wait,
+	                  PT := T#5s);
+	    
+	    // step chain NFC
+	    CASE #li_StepCase OF
+	            
+	        0:  // init
+	            #lx_Time_Wait := FALSE;
+	            "gtyp_VGR"."x_NFC_Completed" := FALSE;
+	            
+	            // delete and write first state to chip
+	            IF "gtyp_VGR".x_NFC_Start_First AND NOT "gtyp_VGR".x_Workpiece_NiO THEN
+	                "gtyp_Interface_TXT_Controler".Subscribe.State_NFC_Device.Workpiece.s_state := '';
+	                "gtyp_Interface_TXT_Controler".Subscribe.State_NFC_Device.Workpiece.s_type := '';
+	                
+	                "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.s_cmd := '';
+	                #li_StepCase := 10;
+	                // write color or processed finished to chip
+	            ELSIF "gtyp_VGR".x_NFC_Start AND NOT "gtyp_VGR".x_Workpiece_NiO THEN
+	                "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.s_cmd := '';
+	                #li_StepCase := 40;
+	                // read chip for delete HBW
+	            ELSIF "QX_SSC_LED_Green_Q5" AND NOT "gtyp_VGR".x_Workpiece_NiO THEN
+	                #ldt_Read_old := "gtyp_Interface_Dashboard".Publish.ActionButtonNFCModule.ldt_ts;
+	                "gtyp_VGR".x_NFC_Start_First := FALSE;
+	                "gtyp_VGR".x_NFC_Start := FALSE;
+	                "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.s_cmd := '';
+	                #li_StepCase := 60;
+	            END_IF;
+	            
+	        10: // delete
+	            
+	            "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.s_cmd := 'delete';
+	            #li_Return_LDT := RD_SYS_T(#ldt_MQTT);
+	            "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.ldt_ts := DT_TO_LDT(#ldt_MQTT);
+	            
+	            #li_StepCase := 20;
+	            
+	        20: // wait to answer from dashboard
+	            #lx_Time_Error := TRUE;
+	            IF ("gtyp_Interface_TXT_Controler".Subscribe.State_NFC_Device.ldt_ts > "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.ldt_ts)
+	                AND ("gtyp_Interface_TXT_Controler".Subscribe.State_NFC_Device.Workpiece.s_type = 'NONE')
+	                AND ("gtyp_Interface_TXT_Controler".Subscribe.State_NFC_Device.Workpiece.s_state <> '')
+	                AND ("gtyp_Interface_TXT_Controler".Subscribe.State_NFC_Device.Workpiece.s_id <> '') THEN
+	                "gtyp_VGR".Workpiece.s_id := "gtyp_Interface_TXT_Controler".Subscribe.State_NFC_Device.Workpiece.s_id;
+	                #lx_Time_Error := FALSE;
+	                #li_StepCase := 30;
+	            END_IF;
+	            // runtime error
+	            IF #lfb_TON_Error.Q THEN
+	                #lx_Time_Error := FALSE;
+	                "gtyp_VGR".x_Workpiece_NiO := TRUE;
+	                #li_StepCase := 0;
+	            END_IF;
+	            
+	            
+	        30: // wait of answer 
+	            IF "gtyp_Interface_TXT_Controler".Subscribe.State_NFC_Device.Workpiece.s_id <> '' THEN
+	                #li_StepCase := 40;
+	            END_IF;
+	            
+	        40:  // write
+	            "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.History := "gtyp_VGR".History;
+	            "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.Workpiece.s_type := "gtyp_VGR".Workpiece.s_type;
+	            "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.Workpiece.s_state := "gtyp_VGR".Workpiece.s_state;
+	            
+	            #li_Return_LDT := RD_SYS_T(#ldt_MQTT);
+	            
+	            "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.s_cmd := 'write';
+	            "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.ldt_ts := DT_TO_LDT(#ldt_MQTT);
+	            
+	            #li_StepCase := 50;
+	            
+	        50: // wait of answer write 
+	            #lx_Time_Error := TRUE;
+	            IF ("gtyp_Interface_TXT_Controler".Subscribe.State_NFC_Device.ldt_ts > "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.ldt_ts) THEN
+	                #lx_Time_Error := FALSE;
+	                #li_StepCase := 80;
+	            END_IF;
+	            // runtime error
+	            IF #lfb_TON_Error.Q THEN
+	                #lx_Time_Error := FALSE;
+	                "gtyp_VGR".x_Workpiece_NiO := TRUE;
+	                #li_StepCase := 0;
+	            END_IF;
+	            
+	        60: // read uid cmd
+	            
+	            #li_Return_LDT := RD_SYS_T(#ldt_MQTT);
+	            
+	            "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.s_cmd := 'read_uid';
+	            "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.ldt_ts := DT_TO_LDT(#ldt_MQTT);
+	            #lx_Time_Wait := TRUE;
+	            #li_StepCase := 70;
+	            
+	        70: // wait of answer read_uid 
+	            IF NOT "QX_SSC_LED_Green_Q5" OR #lfb_TON_Wait.Q OR ("gtyp_Interface_TXT_Controler".Subscribe.State_NFC_Device.ldt_ts > "gtyp_Interface_TXT_Controler".Publish.ActionButtonNFCModule.ldt_ts) THEN
+	                IF LEN("gtyp_Interface_TXT_Controler".Subscribe.State_NFC_Device.Workpiece.s_id) = 8 THEN
+	                    "gtyp_Setup".x_Clean_Rack_HBW := TRUE;
+	                END_IF;
+	                #lx_Time_Wait := FALSE;
+	                "gtyp_Interface_TXT_Controler".Subscribe.State_NFC_Device.Workpiece.s_id := '';
+	                #li_StepCase := 0;
+	            END_IF;
+	            
+	        80: // completed
+	            
+	            "gtyp_VGR"."x_NFC_Completed" := TRUE;
+	            
+	            IF NOT "gtyp_VGR".x_NFC_Start AND NOT "gtyp_VGR".x_NFC_Start_First THEN
+	                "gtyp_VGR"."x_NFC_Completed" := FALSE;
+	                #lx_Start := FALSE;
+	                #li_StepCase := 0;
+	            END_IF;
+	            
+	            // Statement section ELSE
+	        ELSE
+	            ;
+	    END_CASE;
+	    
+	ELSE
+	    #lx_Init := TRUE;
+	END_IF;
+END_FUNCTION_BLOCK
+

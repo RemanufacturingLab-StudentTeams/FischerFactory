@@ -1,0 +1,200 @@
+[
+  {
+    "topic": "f/i/alert",
+    "payload": {
+      "code": 0,
+      "data": "OK",
+      "id": "1234ab",
+      "ts": "2024-03-31T19:12:38.251Z"
+    }
+  },
+  {
+    "topic": "f/i/state/dsi",
+    "payload": {
+      "ts": "2024-03-31T19:12:38.251Z",
+      "station": "dsi",
+      "code": "0",
+      "description": "DSI stands for the colour sensor in the input station."
+    }
+  },
+  {
+    "topic": "f/i/state/dso",
+    "payload": {
+      "ts": "2024-03-31T19:12:38.251Z",
+      "station": "dso",
+      "code": "0",
+      "description": "DSO is the output station."
+    }
+  },
+  {
+    "topic": "f/i/state/mpo",
+    "payload": {
+      "ts": "2024-03-31T19:12:38.251Z",
+      "station": "mpo",
+      "code": 0,
+      "description": "Multi-Processing Oven.",
+      "active": 1,
+      "error": 123,
+      "errorMessage": "Something went wrong!",
+      "target": "mpo",
+      "inOven": false,
+      "tsOven": "2024-03-31T19:12:38.251Z",
+      "atSaw": false,
+      "tsSaw": "2024-03-31T19:12:38.251Z",
+      "workpieceID": 23,
+      "workpieceType": "RED",
+      "setOvenTime": 0,
+      "setSawTime": 0
+    }
+  },
+  {
+    "topic": "f/i/state/sld",
+    "payload": {
+      "station": "sld",
+      "code": 1,
+      "description": "SLD stands for the colour sensor in the sorting station",
+      "active": 1,
+      "error": 400,
+      "errorMessage": "I dont know how but it is purple",
+      "target": "sld",
+      "tsColor": "2024-03-31T19:12:38.251Z",
+      "colorObserved": false,
+      "observedColor": "BLUE",
+      "workpieceID": "PURPLE",
+      "workpieceType": "RED",
+      "onTransportBelt": false,
+      "tsTransportBelt": "2024-03-31T19:12:38.251Z"
+    }
+  },
+  {
+    "topic": "f/i/state/vgr",
+    "payload": {
+      "ts": "2024-03-31T19:12:38.251Z",
+      "station": "vgr",
+      "code": 0,
+      "description": "Vacuum gripper",
+      "active": 1,
+      "target": "vgr"
+    }
+  },
+  {
+    "topic": "f/i/state/hbw",
+    "payload": {
+      "ts": "2024-03-31T19:12:38.251Z",
+      "station": "hbw",
+      "code": 0,
+      "description": "High-bay warehouse",
+      "active": 1,
+      "target": "hbw",
+      "err": false,
+      "errorMessage": ""
+    }
+  },
+  {
+    "topic": "f/i/stock",
+    "payload": {
+      "stockItems": [
+        {
+          "workpiece": {
+            "id": "123ab",
+            "state": "available",
+            "type": "RED"
+          },
+          "location": "A1"
+        },
+        {
+          "workpiece": {},
+          "location": "A2"
+        },
+        {
+          "workpiece": {},
+          "location": "A3"
+        },
+        {
+          "workpiece": {
+            "id": "234bc",
+            "state": "available",
+            "type": "WHITE"
+          },
+          "location": "B1"
+        },
+        {
+          "workpiece": {
+            "id": "345cd",
+            "state": "available",
+            "type": "WHITE"
+          },
+          "location": "B2"
+        },
+        {
+          "workpiece": {},
+          "location": "B3"
+        },
+        {
+          "workpiece": {},
+          "location": "C1"
+        },
+        {
+          "workpiece": {},
+          "location": "C2"
+        },
+        {
+          "workpiece": {},
+          "location": "C3"
+        }
+      ]
+    }
+  },
+  {
+    "topic": "f/o/state/ack",
+    "payload": {
+      "ts": "2024-03-31T19:12:38.251Z"
+    }
+  },
+  {
+    "topic": "f/o/order",
+    "payload": {
+      "type": "BLUE",
+      "ts": "2024-03-31T19:12:38.251Z"
+    }
+  },
+  {
+    "topic": "f/o/nfc/ds",
+    "payload": {
+      "cmd": "read",
+      "ts": "2024-03-31T19:12:38.251Z"
+    }
+  },
+  {
+    "topic": "o/ptu",
+    "payload": {
+      "cmd": "relmove_right",
+      "degree": 10,
+      "ts": "2024-03-31T19:12:38.251Z"
+    }
+  },
+  {
+    "topic": "i/ldr",
+    "payload": {
+      "br": 23,
+      "ts": "2024-03-31T19:12:38.251Z"
+    }
+  },
+  {
+    "topic": "i/ptu",
+    "payload": {
+      "ts": "2024-03-31T19:12:38.251Z"
+    }
+  },
+  {
+    "topic": "i/bme680",
+    "payload": {
+      "ts": "2024-03-31T19:12:38.251Z",
+      "t": 21,
+      "p": 2.4,
+      "iaq": 44,
+      "aq": 40,
+      "h": 19
+    }
+  }
+]

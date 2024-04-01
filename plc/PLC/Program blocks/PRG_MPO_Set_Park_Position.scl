@@ -1,0 +1,88 @@
+﻿FUNCTION_BLOCK "PRG_MPO_Set_Park_Position"
+TITLE = Program Set Positioning HBW
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lx_Start_TON_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      lt_TON_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Time;
+      li_StepCase { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      lfb_TON_Wait {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lfb_R_Trig_Start_Park_Pos {InstructionName := 'R_TRIG'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : R_TRIG;
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    
+	    // FB TON Wait
+	    #lfb_TON_Wait(IN := #lx_Start_TON_Wait,
+	                  PT := #lt_TON_Wait);
+	    
+	    #lfb_R_Trig_Start_Park_Pos(CLK := "gtyp_Setup".x_Park_Position
+	                               OR "IX_Set_Park_Position");
+	    
+	    // Set Start Park Position   
+	    IF #lfb_R_Trig_Start_Park_Pos.Q THEN
+	        "gtyp_MPO".x_Start_Park_Position := TRUE;
+	        #li_StepCase := 0;
+	    END_IF;
+	    
+	    // not Start Park Pos Step 0
+	    IF NOT "gtyp_MPO".x_Start_Park_Position THEN
+	        #li_StepCase := 0;
+	    END_IF;
+	    
+	    // step chain HBW
+	    CASE #li_StepCase OF
+	            
+	        0:  // init
+	            #lx_Start_TON_Wait := FALSE;
+	            #li_StepCase := 10;
+	            
+	        10:  // Set Positioning activ?
+	            IF "gtyp_MPO".x_Start_Park_Position AND NOT "gtyp_MPO".x_Park_Position_Reached THEN
+	                #li_StepCase := 20;
+	            END_IF;
+	            
+	        20: // Towards
+	            "QX_MPO_M5_VacuumTowardsTurnTable_Q8" := FALSE;
+	            "QX_MPO_M5_VacuumTowardsOven_Q7" := TRUE;
+	            #lx_Start_TON_Wait := TRUE;
+	            #lt_TON_Wait := T#4000ms;
+	            
+	            IF #lfb_TON_Wait.Q THEN
+	                "QX_MPO_M5_VacuumTowardsTurnTable_Q8" := FALSE;
+	                "QX_MPO_M5_VacuumTowardsOven_Q7" := FALSE;
+	                #lx_Start_TON_Wait := FALSE;
+	                #li_StepCase := 30;
+	            END_IF;
+	            
+	        30: // homing vertical axis
+	            "QX_MPO_M1_TurnTableClockwise_Q1" := TRUE;
+	            "QX_MPO_M1_TurnTableCounterclockwise_Q2" := FALSE;
+	            #lx_Start_TON_Wait := TRUE;
+	            #lt_TON_Wait := T#1000ms;
+	            
+	            IF #lfb_TON_Wait.Q THEN
+	                "QX_MPO_M1_TurnTableClockwise_Q1" := FALSE;
+	                "QX_MPO_M1_TurnTableCounterclockwise_Q2" := FALSE;
+	                #lx_Start_TON_Wait := FALSE;
+	                #li_StepCase := 40;
+	            END_IF;
+	            
+	        40: // Deciding which doing
+	            "gtyp_MPO".x_Park_Position_Reached := TRUE;
+	            
+	            
+	            // Statement section ELSE    
+	        ELSE
+	            ;
+	    END_CASE;
+	    
+	ELSE
+	    #lx_Init := TRUE;
+	END_IF;
+END_FUNCTION_BLOCK
+

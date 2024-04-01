@@ -1,0 +1,22 @@
+﻿FUNCTION_BLOCK "PRG_HBW_Axis_Horizontal_Act_Pos"
+TITLE = Program Axis horizontal Actual Position
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lfb_IN_DEC { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : "FB_INC_DEC";
+   END_VAR
+
+
+BEGIN
+	// FB increment axis
+	#lfb_IN_DEC(inx_CHa := "IX_HBW_EncoderHorizontalAxisImp2_B2",
+	            inx_CHb := "IX_HBW_EncoderHorizontalAxisImp1_B1",
+	            ini_Ref_Wert := DINT_TO_INT("gtyp_HBW".Horizontal_Axis.Config.di_Ref_Pos),
+	            inx_RST := "IX_HBW_RefSwitchHorizontalAxis_I1");
+	
+	"gtyp_HBW".Horizontal_Axis.di_Increment := #lfb_IN_DEC.outi_cnt;
+	
+	
+END_FUNCTION_BLOCK
+

@@ -1,0 +1,54 @@
+﻿FUNCTION_BLOCK "PRG_Acknowledge"
+TITLE = Program Acknowledge
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : 'A.Schaefer'
+VERSION : 0.0
+   VAR 
+      lx_Init { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      li_StepCase { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      lldt_Ack_old { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : LDT;
+      lfb_TON_Wait {InstructionName := 'TON_TIME'; LibVersion := '1.0'; ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'; S7_SetPoint := 'False'} : TON_TIME;
+      lx_Start_TON_Wait { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+   END_VAR
+
+
+BEGIN
+	IF #lx_Init THEN
+	    #lfb_TON_Wait(IN := #lx_Start_TON_Wait,
+	                  PT := T#20s);
+	    
+	    CASE #li_StepCase OF
+	            
+	        0:  // Init
+	            #lx_Start_TON_Wait := FALSE;
+	            
+	            // check whether acknowledgment has been pressed (time stamp changes)
+	            IF ("gtyp_Interface_Dashboard".Publish.ldt_AcknowledgeButton > #lldt_Ack_old)
+	                OR "gtyp_Setup".x_AcknowledgeButton THEN
+	                #lldt_Ack_old := "gtyp_Interface_Dashboard".Publish.ldt_AcknowledgeButton;
+	                #li_StepCase := 10;
+	            END_IF;
+	            
+	        10: // acknowledge Errors
+	            "gtyp_HBW".x_Error := FALSE;
+	            "gtyp_HBW".s_ErrorMessage := 'No error';
+	            "gtyp_MPO".x_Error := FALSE;
+	            "gtyp_MPO".s_ErrorMessage := 'No error';
+	            "gtyp_SLD".x_Error := FALSE;
+	            "gtyp_SLD".s_ErrorMessage := 'No error';
+	            
+	            #li_StepCase := 20;
+	            
+	        20: // Reset acknowledge button
+	            "gtyp_Setup".x_AcknowledgeButton := FALSE;
+	            #li_StepCase := 0;
+	            // Statement section ELSE
+	        ELSE
+	            ;
+	    END_CASE;
+	    
+	ELSE
+	    #lx_Init := TRUE;
+	END_IF;
+END_FUNCTION_BLOCK
+
