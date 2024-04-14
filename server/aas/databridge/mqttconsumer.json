@@ -1,0 +1,8 @@
+[
+	{
+		"uniqueId": "temperatureSensor",
+		"serverUrl": "localhost",
+		"serverPort": 1883,
+		"topic": "f/i/state/mpo"
+	}
+]
