@@ -1,0 +1,9 @@
+ID,Location ,X_coord,Y_coord,Puck 1,Puck 2,Puck 3
+0,Warehouse,330,160,R2,,
+1,Input bay,140,421,R1,,
+2,Output bay,140,500,,,
+3,Baking,564,320,B2,,
+4,Milling,521,562,,,
+5,Colour_sorter,335,667,R2,,
+6,Logistic robot 1,318,385,,,
+7,Logistic robot 2,485,620,W1,,

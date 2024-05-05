@@ -1,0 +1,16 @@
+Puck,Colour,Consumed Energy,Baking time,Time baked,Milling time,Time milled,Status
+R1,Red,1000,1000,,0,,Normal
+R2,Red,2000,1000,,0,,Normal
+R3,Red,100,1000,,0,,Normal
+R4,Red,200,1000,,0,,Normal
+R5,Red,0,1000,,0,,Normal
+B1,Blue,500,0,,1000,,Normal
+B2,Blue,0,0,,1000,,Normal
+B3,Blue,300,0,,1000,,Normal
+B4,Blue,450,0,,1000,,Normal
+B5,Blue,2000,0,,1000,,Normal
+W1,White,1000,1000,,1000,,Normal
+W2,White,0,1000,,1000,,Normal
+W3,White,200,1000,,1000,,Normal
+W4,White,300,1000,,1000,,Normal
+W5,White,750,1000,,1000,,Normal

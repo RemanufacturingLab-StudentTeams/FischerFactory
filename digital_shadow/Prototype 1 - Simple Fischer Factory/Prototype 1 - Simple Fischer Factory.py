@@ -1,17 +1,24 @@
+#import packages
 import dash
 from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import pandas as pd
+import os
 import math
 from PIL import Image
 
+current_directory = os.path.dirname(__file__)
+
+def getPath(name):
+    file_path = os.path.join(current_directory, name)
+    return file_path
+
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-df_loc_path = "C:/Users/antoi/Documents/TranSIT/Data/Tagging locations.csv"
-df_puck_path = "C:/Users/antoi/Documents/TranSIT/Data/Puck Properties.csv"
-factory_img_path = "C:/Users/antoi/Documents/TranSIT/Images/Fischer_Factory.png"
-
+df_loc_path = getPath("Tagging locations.csv")
+df_puck_path = getPath("Puck Properties.csv")
+factory_img_path = getPath("Assets/Fischer_Factory.png")
 
 df_puck = pd.read_csv(df_puck_path)
 
@@ -29,13 +36,13 @@ def getCoordsPer(df, x):
 def getPuck(df, i):
 
     if (df.loc[i, 'Puck 1'])[0] =='R':
-        puck_img_path = "C:/Users/antoi/Documents/TranSIT/Images/Puck_Red.png"
+        puck_img_path = getPath("Assets/Puck_red.png")
     elif (df.loc[i, 'Puck 1'])[0] =='B':
-        puck_img_path = "C:/Users/antoi/Documents/TranSIT/Images/Puck_Blue.png"
+        puck_img_path = getPath("Assets/Puck_blue.png")
     elif (df.loc[i, 'Puck 1'])[0] == 'W':
-        puck_img_path = "C:/Users/antoi/Documents/TranSIT/Images/Puck_White.png"
+        puck_img_path = getPath("Assets/Puck_white.png")
     else:
-        puck_img_path = "C:/Users/antoi/Documents/TranSIT/Images/Puck_Test.png"
+        puck_img_path = getPath("Assets/Puck_green.png")
 
     puck_img = Image.open(puck_img_path)
     return puck_img
