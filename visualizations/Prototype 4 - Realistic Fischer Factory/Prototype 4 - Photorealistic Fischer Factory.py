@@ -1,43 +1,61 @@
+#import packages
 import dash
 from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import pandas as pd
+import os
 import math
 from PIL import Image
 
+#create the dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-df_loc_path = "C:/Users/antoi/Documents/TranSIT/Prototype 4 - Realistic Fischer Factory/Locations (B&W).csv"
-#df_puck_path = "C:/Users/antoi/Documents/TranSIT/Prototype 4 - Realistic Fischer Factory/"
-factory_img_path = "C:/Users/antoi/Documents/TranSIT/Prototype 4 - Realistic Fischer Factory/Fischer with colour masks, labels, and arrows (cropped, transparent background).png"
+#get current dir for paths
+current_directory = os.path.dirname(__file__)
+def getPath(name):
+    file_path = os.path.join(current_directory, name)
+    return file_path
 
+df_loc_path = getPath("Locations (B&W).csv")
+print(df_loc_path)
+
+factory_img_path = getPath("Assets/Fischer with colour masks, labels, and arrows (cropped, transparent background).png")
+
+
+#df_puck_path = "C:/Users/antoi/Documents/TranSIT/Prototype 4 - Realistic Fischer Factory/"
 #df_puck = pd.read_csv(df_puck_path)
 
+#Open factory img
 factory_img = Image.open(factory_img_path)
+
+#to check if cells are empty
 def notNaN(x):
     return x == x
 
+#to get coordinates for pucks from dataset, returns % of img x, y
 def getCoordsPer(df, x):
     coord_per_x = 100 * (df.loc[x, 'X_coord'] / factory_img.size[0])
     coord_per_y = 100 * (df.loc[x, 'Y_coord'] / factory_img.size[1])
 
     return coord_per_x, coord_per_y
 
+#get different img for puck appearance based on values in df_loc
 def getPuck(df, i):
 
     if (df.loc[i, 'Puck 1'])[0] =='R':
-        puck_img_path = "C:/Users/antoi/Documents/TranSIT/Images/Puck_red.png"
+        puck_img_path = getPath("Assets/Puck_red.png")
     elif (df.loc[i, 'Puck 1'])[0] =='B':
-        puck_img_path = "C:/Users/antoi/Documents/TranSIT/Images/Puck_blue.png"
+        puck_img_path = getPath("Assets/Puck_blue.png")
     elif (df.loc[i, 'Puck 1'])[0] == 'W':
-        puck_img_path = "C:/Users/antoi/Documents/TranSIT/Images/Puck_white.png"
+        puck_img_path = getPath("Assets/Puck_white.png")
     else:
-        puck_img_path = "C:/Users/antoi/Documents/TranSIT/Images/Puck_gree.png"
+        puck_img_path = getPath("Assets/Puck_green.png")
 
     puck_img = Image.open(puck_img_path)
     return puck_img
 
+#create app layout
 app.layout = dbc.Container([
     dbc.Row([
         dbc.Col([
@@ -49,10 +67,10 @@ app.layout = dbc.Container([
                                                     'text-decoration': 'underline',
                                                     'font-size': 'xx-large',
                                                     'padding': '20px'})
-                ], width=8),
+                ], width=10),
                 dbc.Col([html.Button("Refresh", id="Refresh-button", n_clicks=0,
-                                     style={'text-align': 'center', 'padding': '5px', 'margin': '30px'})
-                         ], width=4)
+                                     style={'text-align': 'center', 'padding': '5px', 'margin': '20px'})
+                         ], width=2)
             ]),
 
             html.Div([
@@ -65,7 +83,7 @@ app.layout = dbc.Container([
 
             ], style={'position': 'relative'})
 
-        ], style={'position': 'relative'}, width=6),
+        ], style={'position': 'relative'}, width=7),
 
         dbc.Col([
             html.H1("Product Information", style={'textAlign': 'center',
@@ -86,15 +104,15 @@ app.layout = dbc.Container([
                                              #'maxWidth': '100px',
                                              #'whiteSpace': 'normal',
                                              #'height': 'auto'})
-        ], width=6)
+        ], width=5)
     ])
 ])
 
-#The callback currently shows where the products (pucks are) more interesting is to show locations,
+# The callback currently shows where the products (pucks are) more interesting is to show locations,
 # which can be modified easily, with the ability to add new ones, and then to just check at which
 # location each product is, to know what number to display for each.
 
-#Important idea (but complicated to implement), would be the ability to "zoom" in on areas of the factory,
+# Important idea (but complicated to implement), would be the ability to "zoom" in on areas of the factory,
 # could have a general view and then a zoomed in view for each section
 
 @app.callback(
@@ -115,16 +133,16 @@ def update_pucks(n_clicks):
             puck_element = html.Button(
                 id={'type': 'puck', 'index': index},
                 children=[
-                    html.Img(src=puck_img, style={'width': '33%', 'height': '33%'}
+                    html.Img(src=puck_img, style={'width': '60%', 'height': '60%'}
                     ),
-                    #html.P(text, style={'position': 'absolute', 'top': '50%', 'left': '50%',
-                                        #'transform': 'translate(-50%, -50%)', 'font-size': 'smaller'})
+                    html.P(text, style={'position': 'absolute', 'top': '50%', 'left': '50%',
+                                        'transform': 'translate(-50%, -50%)', 'font-size': 'xx-small'})
                 ],
                 style={
                     'position': 'absolute',
                     'top': f'{y}%',
                     'left': f'{x}%',
-                    #'transform': 'translate(-50%, -50%)',
+                    'transform': 'translate(-50%, -50%)',
                     'padding': '0',
                     'margin': '0',
                     'background-color': 'transparent',
