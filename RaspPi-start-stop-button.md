@@ -18,8 +18,11 @@ Youtube: 'https://www.youtube.com/watch?v=wVnMZ4DXDNo&t=595s&ab_channel=Howchoo'
 1. Download Git if necessary 'sudo apt-get install git'
 1. Clone github repository `git clone https://github.com/Howchoo/pi-power-button.git`
 1. Run the setup script: `./pi-power-button/script/install`
+1. Now the start-stop button should work
 
 ## Uninstallation
 If you need to uninstall the power button script in order to use GPIO3 for another project or something:
 
 1. Run the uninstall script: `./pi-power-button/script/uninstall`
+
+
