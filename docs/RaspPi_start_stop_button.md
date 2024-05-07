@@ -25,4 +25,16 @@ If you need to uninstall the power button script in order to use GPIO3 for anoth
 
 1. Run the uninstall script: `./pi-power-button/script/uninstall`
 
+## Status indicator LED Raspberry Pi
+Used link: https://howchoo.com/pi/build-a-simple-raspberry-pi-led-power-status-indicator/
+To indicate if the Pi is running or not, a LED is added. The green LED turns on, when the Pi is completely running (not booting). And it will turn of when the Pi is completely inactive. 
+# Hardware
+1. Green LED 2.2V
+1. Resistor 100Ω connected to the possitve 
+1. Connect the possitive of the LED to the TxD pin (GPIO 14)
+1. Connect the negative of the LED to the ground
 
+# Software
+1. Connect to Rasp Pi and open config.txt 'suda nano /boot/config.txt
+1. Add the following line: 'enable_uart=1'
+1. Reboot the Pi 'sudo reboot'
