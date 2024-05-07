@@ -51,6 +51,7 @@ This project has been worked on for some years by many other people before, and 
 
 - Project manager: [Dr. Rufus Fraanje](https://github.com/prfraanje)
 - Collaborator - Server dev/admin: [Madeline Sebastian](https://github.com/blooburry)
+- Collaborator: [Jip Rasenberg](https://github.com/Jipr)
 - Collaborator (inactive): [Mariska van Beek](https://github.com/mariskavanbeek)
 - Collaborator - PLC development: Yves Kersten
 - Collaborator - Remote dashboard development: Antoine Dunand
