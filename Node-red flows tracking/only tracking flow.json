@@ -1,0 +1,2670 @@
+[
+    {
+        "id": "a6c727372ac542cf",
+        "type": "tab",
+        "label": "tracking",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "b730ac8b92c07375",
+        "type": "inject",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "8",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 1870,
+        "y": 2140,
+        "wires": [
+            [
+                "b36ae4a570bc91c7"
+            ]
+        ]
+    },
+    {
+        "id": "1f39d341de7caca4",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "read State_Track",
+        "func": "msg.payload.nodetype = \"inject\";\nmsg.payload.injectType = \"read\";\n\n//Items for state MPO\nmsg.payload.addressSpaceItems = [\n    {   \"name\":\"\",\n        \"nodeId\":'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"i_code\"',\n        \"datatypeName\":'Int16'},\n    {   \"name\":\"\",\n        \"nodeId\":'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"ldt_ts\"',\n        \"datatypeName\":'DateTime'},\n    {   \"name\":\"\",\n        \"nodeId\":'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"s_description\"',\n        \"datatypeName\":'String'},\n    {   \"name\":\"\",\n        \"nodeId\":'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"s_station\"',\n        \"datatypeName\":'String'},\n    {   \"name\":\"\",\n        \"nodeId\":'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"s_target\"',\n        \"datatypeName\":'String'},\n    {   \"name\":\"\",\n        \"nodeId\":'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"x_active\"',\n        \"datatypeName\":'Bool'},\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"x_error\"',\n        \"datatypeName\": 'Bool'\n    },\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"s_errorMessage\"',\n        \"datatypeName\": 'String'\n    },\n\n    //Color has been observed\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"Workpiece\".\"Workpiece_States\".\"x_ColorObserved\"',\n        \"datatypeName\": 'Bool'\n    },\n        //Color time\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"Workpiece\".\"Workpiece_States\".\"ldt_Color\"',\n        \"datatypeName\": 'DateTime'\n    },\n    //Observed Color\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"Workpiece\".\"Workpiece_States\".\"s_ObservedColor\"',\n        \"datatypeName\": 'DateTime'\n    },\n    //Workpiece\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"Workpiece\".\"s_id\"',\n        \"datatypeName\": 'String'\n    },\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"Workpiece\".\"s_type\"',\n        \"datatypeName\": 'String'\n    },\n\n    \n    //On transport belt\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"Workpiece\".\"Workpiece_States\".\"x_onTransportBelt\"',\n        \"datatypeName\": 'Bool'\n    },\n    //Transport belt timestamp\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_SLD\".\"Workpiece\".\"Workpiece_States\".\"ldt_TransportBelt\"',\n        \"datatypeName\": 'DateTime'\n    },\n        \n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_Track\".\"track_puck\"',\n        \"datatypeName\": 'String'\n    },\n\n    ]\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2310,
+        "y": 2140,
+        "wires": [
+            [
+                "4a58464e003cd618"
+            ]
+        ]
+    },
+    {
+        "id": "7df26d80565d0806",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Format Output Message",
+        "func": "var new_msg = { payload: \"\" };\nvar state_sld = {\n    ts: \"<yyyy-mmddThh:mm:ss.fffZ>\",\n    station: \"sld\",\n    code: 0,\n    description: \"Exakte Beschreibung\",\n    active: 1,\n    error: 0,\n    errorMessage: \"\",\n    target: \"sld\",\n    tsColor: \"<yyyy-mmddThh:mm:ss.fffZ>\",\n    colorObserved: false,\n    observedColor: String,\n    workpieceID: \"\",\n    workpieceType: \"\",\n    onTransportBelt: false,\n    tsTransportBelt: \"<yyyy-mmddThh:mm:ss.fffZ>\"\n    }\n\n\nstate_sld.code = msg.payload.value[0].value.value;            //[0] = code\nstate_sld.ts = msg.payload.value[1].value.value;             //[1] = timestamp\nstate_sld.description = msg.payload.value[2].value.value;    //[2] = description\nstate_sld.station = msg.payload.value[3].value.value;        //[3] = station\nstate_sld.target = msg.payload.value[4].value.value;          //[1] = target\nstate_sld.active = msg.payload.value[5].value.value;         //[2] = active\nstate_sld.error = msg.payload.value[6].value.value;\nstate_sld.errorMessage = msg.payload.value[7].value.value;\nstate_sld.colorObserved = msg.payload.value[8].value.value;\nstate_sld.tsColor = msg.payload.value[9].value.value;\nstate_sld.observedColor = msg.payload.value[10].value.value;\nstate_sld.workpieceID = msg.payload.value[11].value.value;\nstate_sld.workpieceType = msg.payload.value[12].value.value;\nstate_sld.onTransportBelt = msg.payload.value[13].value.value;\nstate_sld.tsTransportBelt = msg.payload.value[14].value.value;\nstate_sld.track_puck = msg.payload.value[15].value.value;         //[2] = active\n\nnew_msg.payload = JSON.stringify(state_sld);\n\nreturn new_msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2650,
+        "y": 2140,
+        "wires": [
+            [
+                "39565a65eb283bbe",
+                "ac81b9956338a84c"
+            ]
+        ]
+    },
+    {
+        "id": "cf21d73f94254c9b",
+        "type": "comment",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Receiving tracking data",
+        "info": "",
+        "x": 1860,
+        "y": 2100,
+        "wires": []
+    },
+    {
+        "id": "b36ae4a570bc91c7",
+        "type": "OPCUA-IIoT-Node",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "injectType": "listen",
+        "nodeId": "ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_Track\".\"track_puck\"",
+        "datatype": "",
+        "value": "",
+        "name": "",
+        "topic": "",
+        "showErrors": true,
+        "x": 2010,
+        "y": 2140,
+        "wires": [
+            [
+                "3905da952a12f6b7",
+                "78a1feb4cea88198"
+            ]
+        ]
+    },
+    {
+        "id": "3905da952a12f6b7",
+        "type": "OPCUA-IIoT-Listener",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "connector": "74a7d84.2350d28",
+        "action": "subscribe",
+        "queueSize": "5",
+        "name": "",
+        "topic": "",
+        "justValue": true,
+        "useGroupItems": false,
+        "showStatusActivities": false,
+        "showErrors": true,
+        "x": 2140,
+        "y": 2140,
+        "wires": [
+            [
+                "1f39d341de7caca4",
+                "78a1feb4cea88198"
+            ]
+        ]
+    },
+    {
+        "id": "4a58464e003cd618",
+        "type": "OPCUA-IIoT-Read",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "attributeId": "13",
+        "maxAge": 1,
+        "depth": 1,
+        "connector": "74a7d84.2350d28",
+        "name": "",
+        "justValue": true,
+        "showStatusActivities": false,
+        "showErrors": true,
+        "parseStrings": false,
+        "historyDays": "",
+        "x": 2470,
+        "y": 2140,
+        "wires": [
+            [
+                "7df26d80565d0806",
+                "e634497c6904b2d5"
+            ]
+        ]
+    },
+    {
+        "id": "e634497c6904b2d5",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 18",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 2620,
+        "y": 2100,
+        "wires": []
+    },
+    {
+        "id": "39565a65eb283bbe",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 19",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 2900,
+        "y": 2100,
+        "wires": []
+    },
+    {
+        "id": "78a1feb4cea88198",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 20",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 2300,
+        "y": 2100,
+        "wires": []
+    },
+    {
+        "id": "b0fd4cb1439dde0d",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Tracking",
+        "func": "msg.payload = msg.payload.track_puck;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2880,
+        "y": 2200,
+        "wires": [
+            [
+                "dee9916075e8648c",
+                "215c5426b88239aa"
+            ]
+        ]
+    },
+    {
+        "id": "dee9916075e8648c",
+        "type": "ui_text",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "group": "8c243ea4a5732789",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Status SLD",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 3050,
+        "y": 2200,
+        "wires": []
+    },
+    {
+        "id": "215c5426b88239aa",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 21",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3040,
+        "y": 2240,
+        "wires": []
+    },
+    {
+        "id": "fd2cc496f04cb658",
+        "type": "comment",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Stock HBW - actual values to MQTT  ",
+        "info": "",
+        "x": 3450,
+        "y": 1120,
+        "wires": []
+    },
+    {
+        "id": "af8f91f20a255b33",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "read data from PLC",
+        "func": "//msg.payload.nodetype = \"inject\";\nmsg.payload.injectType = \"read\";\n\n//Items for NFC action\nmsg.payload.addressSpaceItems = [\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_HBW\".\"track_puck\"',\n        \"datatypeName\": 'String'\n    },          \n        ]\n\n\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3910,
+        "y": 1160,
+        "wires": [
+            [
+                "4e067a394f793f95"
+            ]
+        ]
+    },
+    {
+        "id": "ecc8f767c37de2f8",
+        "type": "inject",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "6.5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 3400,
+        "y": 1160,
+        "wires": [
+            [
+                "0148735e95d7d73b"
+            ]
+        ]
+    },
+    {
+        "id": "0148735e95d7d73b",
+        "type": "OPCUA-IIoT-Node",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "injectType": "listen",
+        "nodeId": "ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_HBW\".\"track_puck\"",
+        "datatype": "",
+        "value": "",
+        "name": "",
+        "topic": "",
+        "showErrors": false,
+        "x": 3560,
+        "y": 1160,
+        "wires": [
+            [
+                "07681f1b7ac7b3c8"
+            ]
+        ]
+    },
+    {
+        "id": "07681f1b7ac7b3c8",
+        "type": "OPCUA-IIoT-Listener",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "connector": "74a7d84.2350d28",
+        "action": "subscribe",
+        "queueSize": "5",
+        "name": "",
+        "topic": "",
+        "justValue": true,
+        "useGroupItems": false,
+        "showStatusActivities": false,
+        "showErrors": true,
+        "x": 3710,
+        "y": 1160,
+        "wires": [
+            [
+                "af8f91f20a255b33",
+                "44520dbeb272bc77"
+            ]
+        ]
+    },
+    {
+        "id": "4e067a394f793f95",
+        "type": "OPCUA-IIoT-Read",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "attributeId": "13",
+        "maxAge": 1,
+        "depth": 1,
+        "connector": "74a7d84.2350d28",
+        "name": "",
+        "justValue": true,
+        "showStatusActivities": false,
+        "showErrors": false,
+        "parseStrings": false,
+        "historyDays": "",
+        "x": 4120,
+        "y": 1160,
+        "wires": [
+            [
+                "fa408dac6bf00760"
+            ]
+        ]
+    },
+    {
+        "id": "69e193ed8b3580da",
+        "type": "mqtt in",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "topic": "f/i/state/track",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "788959e0.92f718",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 1850,
+        "y": 2200,
+        "wires": [
+            [
+                "019eb0d640c920ac",
+                "b0fd4cb1439dde0d"
+            ]
+        ]
+    },
+    {
+        "id": "ac81b9956338a84c",
+        "type": "mqtt out",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "topic": "f/i/state/track",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "788959e0.92f718",
+        "x": 2890,
+        "y": 2140,
+        "wires": []
+    },
+    {
+        "id": "fa408dac6bf00760",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Format Output Message",
+        "func": "var new_msg = { payload: \"\" };\nvar Stock_HBW = {\n    ts :msg.payload.value[0].value.value\n    }\n\n//Stock_HBW.track_puck = msg.payload.value[0].value.value;\n\n\nnew_msg.payload = JSON.stringify(Stock_HBW);\n\nreturn new_msg",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 4320,
+        "y": 1160,
+        "wires": [
+            [
+                "34ef6d874f09523d",
+                "2e49d0cbc6243906"
+            ]
+        ]
+    },
+    {
+        "id": "34ef6d874f09523d",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 23",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 4570,
+        "y": 1100,
+        "wires": []
+    },
+    {
+        "id": "019eb0d640c920ac",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 26",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 2020,
+        "y": 2240,
+        "wires": []
+    },
+    {
+        "id": "740832f8c0c6ee69",
+        "type": "ui_text",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "group": "8ff342296dd06026",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Status HBW",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 3780,
+        "y": 1200,
+        "wires": []
+    },
+    {
+        "id": "44520dbeb272bc77",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 27",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3770,
+        "y": 1240,
+        "wires": []
+    },
+    {
+        "id": "932c3ed43433b91d",
+        "type": "mqtt in",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "topic": "f/i/state/hbwtrack",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "788959e0.92f718",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 3410,
+        "y": 1200,
+        "wires": [
+            [
+                "8e8e700b93394014"
+            ]
+        ]
+    },
+    {
+        "id": "2e49d0cbc6243906",
+        "type": "mqtt out",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "topic": "f/i/state/hbwtrack",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "788959e0.92f718",
+        "x": 4580,
+        "y": 1160,
+        "wires": []
+    },
+    {
+        "id": "8e8e700b93394014",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Tracking",
+        "func": "msg.payload = msg.payload.ts;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3590,
+        "y": 1200,
+        "wires": [
+            [
+                "740832f8c0c6ee69",
+                "44520dbeb272bc77",
+                "88e42009861fb777"
+            ]
+        ]
+    },
+    {
+        "id": "c72c35b08bcde840",
+        "type": "comment",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "DSI",
+        "info": "",
+        "x": 3380,
+        "y": 1560,
+        "wires": []
+    },
+    {
+        "id": "200fe1e617c308b8",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "read data from PLC",
+        "func": "//msg.payload.nodetype = \"inject\";\nmsg.payload.injectType = \"read\";\n\n//Items for NFC action\nmsg.payload.addressSpaceItems = [\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_DSI\".\"track_puck\"',\n        \"datatypeName\": 'String'\n    },          \n        ]\n\n\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3930,
+        "y": 1600,
+        "wires": [
+            [
+                "e5796f482d036014"
+            ]
+        ]
+    },
+    {
+        "id": "26f73ddf7cc457ac",
+        "type": "inject",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "6.5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 3420,
+        "y": 1600,
+        "wires": [
+            [
+                "a2d4f79bd9960eb8"
+            ]
+        ]
+    },
+    {
+        "id": "a2d4f79bd9960eb8",
+        "type": "OPCUA-IIoT-Node",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "injectType": "listen",
+        "nodeId": "ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_DSI\".\"track_puck\"",
+        "datatype": "",
+        "value": "",
+        "name": "",
+        "topic": "",
+        "showErrors": false,
+        "x": 3580,
+        "y": 1600,
+        "wires": [
+            [
+                "1b2fc40c9444b1ef"
+            ]
+        ]
+    },
+    {
+        "id": "1b2fc40c9444b1ef",
+        "type": "OPCUA-IIoT-Listener",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "connector": "74a7d84.2350d28",
+        "action": "subscribe",
+        "queueSize": "5",
+        "name": "",
+        "topic": "",
+        "justValue": true,
+        "useGroupItems": false,
+        "showStatusActivities": false,
+        "showErrors": true,
+        "x": 3710,
+        "y": 1600,
+        "wires": [
+            [
+                "200fe1e617c308b8",
+                "a3ea55adbd1b5657"
+            ]
+        ]
+    },
+    {
+        "id": "e5796f482d036014",
+        "type": "OPCUA-IIoT-Read",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "attributeId": "13",
+        "maxAge": 1,
+        "depth": 1,
+        "connector": "74a7d84.2350d28",
+        "name": "",
+        "justValue": true,
+        "showStatusActivities": false,
+        "showErrors": false,
+        "parseStrings": false,
+        "historyDays": "",
+        "x": 4140,
+        "y": 1600,
+        "wires": [
+            [
+                "f044b72b16e40177",
+                "56353df26a3a2dbb"
+            ]
+        ]
+    },
+    {
+        "id": "f044b72b16e40177",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Format Output Message",
+        "func": "var new_msg = { payload: \"\" };\nvar Stock_HBW = {\n    ts :msg.payload.value[0].value.value\n    }\n\n//Stock_HBW.track_puck = msg.payload.value[0].value.value;\n\n\nnew_msg.payload = JSON.stringify(Stock_HBW);\n\nreturn new_msg",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 4340,
+        "y": 1600,
+        "wires": [
+            [
+                "2b04c0d5433358e3",
+                "b12576bb8bd6166d"
+            ]
+        ]
+    },
+    {
+        "id": "2b04c0d5433358e3",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 28",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 4590,
+        "y": 1540,
+        "wires": []
+    },
+    {
+        "id": "d4d045ddb4189bc0",
+        "type": "ui_text",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "group": "b01c85a9c7216ef2",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Status DSI",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 3800,
+        "y": 1640,
+        "wires": []
+    },
+    {
+        "id": "33a1c8d7f47bd5d6",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 29",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3790,
+        "y": 1680,
+        "wires": []
+    },
+    {
+        "id": "86c18505b064929f",
+        "type": "mqtt in",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "topic": "f/i/state/DSItrack",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "788959e0.92f718",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 3430,
+        "y": 1640,
+        "wires": [
+            [
+                "51a1a783a14bea03"
+            ]
+        ]
+    },
+    {
+        "id": "b12576bb8bd6166d",
+        "type": "mqtt out",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "topic": "f/i/state/DSItrack",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "788959e0.92f718",
+        "x": 4590,
+        "y": 1600,
+        "wires": []
+    },
+    {
+        "id": "51a1a783a14bea03",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Tracking",
+        "func": "msg.payload = msg.payload.ts;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3610,
+        "y": 1640,
+        "wires": [
+            [
+                "d4d045ddb4189bc0",
+                "33a1c8d7f47bd5d6",
+                "c44b41091aa2cd01"
+            ]
+        ]
+    },
+    {
+        "id": "a3ea55adbd1b5657",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 30",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3910,
+        "y": 1560,
+        "wires": []
+    },
+    {
+        "id": "56353df26a3a2dbb",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 31",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 4290,
+        "y": 1560,
+        "wires": []
+    },
+    {
+        "id": "d7cd353728bda038",
+        "type": "comment",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "DSO",
+        "info": "",
+        "x": 3380,
+        "y": 1820,
+        "wires": []
+    },
+    {
+        "id": "5abca5bed77a7ab6",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "read data from PLC",
+        "func": "//msg.payload.nodetype = \"inject\";\nmsg.payload.injectType = \"read\";\n\n//Items for NFC action\nmsg.payload.addressSpaceItems = [\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_DSO\".\"track_puck\"',\n        \"datatypeName\": 'String'\n    },          \n        ]\n\n\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3930,
+        "y": 1860,
+        "wires": [
+            [
+                "a278f66cf3932343"
+            ]
+        ]
+    },
+    {
+        "id": "2ecb2c0bb4b71d36",
+        "type": "inject",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "6.5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 3420,
+        "y": 1860,
+        "wires": [
+            [
+                "9983811f608934c5"
+            ]
+        ]
+    },
+    {
+        "id": "9983811f608934c5",
+        "type": "OPCUA-IIoT-Node",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "injectType": "listen",
+        "nodeId": "ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_DSO\".\"track_puck\"",
+        "datatype": "",
+        "value": "",
+        "name": "",
+        "topic": "",
+        "showErrors": false,
+        "x": 3560,
+        "y": 1860,
+        "wires": [
+            [
+                "2d5c7db6f9ed3429"
+            ]
+        ]
+    },
+    {
+        "id": "2d5c7db6f9ed3429",
+        "type": "OPCUA-IIoT-Listener",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "connector": "74a7d84.2350d28",
+        "action": "subscribe",
+        "queueSize": "5",
+        "name": "",
+        "topic": "",
+        "justValue": true,
+        "useGroupItems": false,
+        "showStatusActivities": false,
+        "showErrors": true,
+        "x": 3710,
+        "y": 1860,
+        "wires": [
+            [
+                "5abca5bed77a7ab6",
+                "1509f62853509f4e"
+            ]
+        ]
+    },
+    {
+        "id": "a278f66cf3932343",
+        "type": "OPCUA-IIoT-Read",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "attributeId": "13",
+        "maxAge": 1,
+        "depth": 1,
+        "connector": "74a7d84.2350d28",
+        "name": "",
+        "justValue": true,
+        "showStatusActivities": false,
+        "showErrors": false,
+        "parseStrings": false,
+        "historyDays": "",
+        "x": 4140,
+        "y": 1860,
+        "wires": [
+            [
+                "100fb58117fa5f6a",
+                "782f6e5fdf78743e"
+            ]
+        ]
+    },
+    {
+        "id": "100fb58117fa5f6a",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Format Output Message",
+        "func": "var new_msg = { payload: \"\" };\nvar Stock_HBW = {\n    ts :msg.payload.value[0].value.value\n    }\n\n//Stock_HBW.track_puck = msg.payload.value[0].value.value;\n\n\nnew_msg.payload = JSON.stringify(Stock_HBW);\n\nreturn new_msg",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 4340,
+        "y": 1860,
+        "wires": [
+            [
+                "42134dac1efe33c3",
+                "9ddb078781098c7e"
+            ]
+        ]
+    },
+    {
+        "id": "42134dac1efe33c3",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 32",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 4590,
+        "y": 1820,
+        "wires": []
+    },
+    {
+        "id": "cd1676b77a98858b",
+        "type": "ui_text",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "group": "b01c85a9c7216ef2",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Status DSO",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 3800,
+        "y": 1920,
+        "wires": []
+    },
+    {
+        "id": "7c32fef402b9f04e",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 33",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3790,
+        "y": 1960,
+        "wires": []
+    },
+    {
+        "id": "df572eb02b5fe89e",
+        "type": "mqtt in",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "topic": "f/i/state/State_DSO",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "788959e0.92f718",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 3440,
+        "y": 1920,
+        "wires": [
+            [
+                "7c0be267dac4232b"
+            ]
+        ]
+    },
+    {
+        "id": "9ddb078781098c7e",
+        "type": "mqtt out",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "topic": "f/i/state/State_DSO",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "788959e0.92f718",
+        "x": 4600,
+        "y": 1860,
+        "wires": []
+    },
+    {
+        "id": "7c0be267dac4232b",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Tracking",
+        "func": "msg.payload = msg.payload.ts;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3610,
+        "y": 1920,
+        "wires": [
+            [
+                "cd1676b77a98858b",
+                "7c32fef402b9f04e",
+                "1e903a867f2c46c7"
+            ]
+        ]
+    },
+    {
+        "id": "1509f62853509f4e",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 34",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3910,
+        "y": 1820,
+        "wires": []
+    },
+    {
+        "id": "782f6e5fdf78743e",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 35",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 4290,
+        "y": 1820,
+        "wires": []
+    },
+    {
+        "id": "c44b41091aa2cd01",
+        "type": "link out",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "DSI out",
+        "mode": "link",
+        "links": [
+            "7ee7f942d6dd2f22"
+        ],
+        "x": 3675,
+        "y": 1720,
+        "wires": []
+    },
+    {
+        "id": "1e903a867f2c46c7",
+        "type": "link out",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "DSO out",
+        "mode": "link",
+        "links": [
+            "94cada71f6e32a09"
+        ],
+        "x": 3695,
+        "y": 2000,
+        "wires": []
+    },
+    {
+        "id": "88e42009861fb777",
+        "type": "link out",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "HBW out",
+        "mode": "link",
+        "links": [
+            "b9ba0e3e9c0bee59"
+        ],
+        "x": 3685,
+        "y": 1280,
+        "wires": []
+    },
+    {
+        "id": "529f750ad78474bc",
+        "type": "link in",
+        "z": "a6c727372ac542cf",
+        "name": "link in 2",
+        "links": [
+            "fbd46330e06b7650",
+            "e8eba05086b0aede"
+        ],
+        "x": 2305,
+        "y": 1880,
+        "wires": [
+            [
+                "efa576d718155c64"
+            ]
+        ]
+    },
+    {
+        "id": "b9ba0e3e9c0bee59",
+        "type": "link in",
+        "z": "a6c727372ac542cf",
+        "name": "link in 3",
+        "links": [
+            "88e42009861fb777"
+        ],
+        "x": 2305,
+        "y": 1920,
+        "wires": [
+            [
+                "efa576d718155c64"
+            ]
+        ]
+    },
+    {
+        "id": "94cada71f6e32a09",
+        "type": "link in",
+        "z": "a6c727372ac542cf",
+        "name": "link in 4",
+        "links": [
+            "1e903a867f2c46c7"
+        ],
+        "x": 2305,
+        "y": 1960,
+        "wires": [
+            [
+                "efa576d718155c64"
+            ]
+        ]
+    },
+    {
+        "id": "7ee7f942d6dd2f22",
+        "type": "link in",
+        "z": "a6c727372ac542cf",
+        "name": "link in 5",
+        "links": [
+            "c44b41091aa2cd01"
+        ],
+        "x": 2305,
+        "y": 2000,
+        "wires": [
+            [
+                "efa576d718155c64"
+            ]
+        ]
+    },
+    {
+        "id": "efa576d718155c64",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "name": "Filter",
+        "func": "if (msg.payload !== \"\") {\n    return msg;\n} else {\n    return null;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2410,
+        "y": 1880,
+        "wires": [
+            [
+                "26e53588b3bc6984"
+            ]
+        ]
+    },
+    {
+        "id": "26e53588b3bc6984",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "name": "debug 36",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 2540,
+        "y": 1840,
+        "wires": []
+    },
+    {
+        "id": "989135300e8948a8",
+        "type": "comment",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Stock MPO- actual values to MQTT  ",
+        "info": "",
+        "x": 3450,
+        "y": 1340,
+        "wires": []
+    },
+    {
+        "id": "f54852335981aceb",
+        "type": "inject",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "6.5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 3400,
+        "y": 1380,
+        "wires": [
+            [
+                "67ad458e9a182eb4"
+            ]
+        ]
+    },
+    {
+        "id": "67ad458e9a182eb4",
+        "type": "OPCUA-IIoT-Node",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "injectType": "listen",
+        "nodeId": "ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_MPO\".\"track_puck\"",
+        "datatype": "",
+        "value": "",
+        "name": "",
+        "topic": "",
+        "showErrors": false,
+        "x": 3560,
+        "y": 1380,
+        "wires": [
+            [
+                "20bea2bf165bf5a0"
+            ]
+        ]
+    },
+    {
+        "id": "20bea2bf165bf5a0",
+        "type": "OPCUA-IIoT-Listener",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "connector": "74a7d84.2350d28",
+        "action": "subscribe",
+        "queueSize": "5",
+        "name": "",
+        "topic": "",
+        "justValue": true,
+        "useGroupItems": false,
+        "showStatusActivities": false,
+        "showErrors": true,
+        "x": 3710,
+        "y": 1380,
+        "wires": [
+            [
+                "84d48a43a5f3202c",
+                "a2d85e3583c1747d"
+            ]
+        ]
+    },
+    {
+        "id": "84d48a43a5f3202c",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "read data from PLC",
+        "func": "//msg.payload.nodetype = \"inject\";\nmsg.payload.injectType = \"read\";\n\n//Items for NFC action\nmsg.payload.addressSpaceItems = [\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_MPO\".\"track_puck\"',\n        \"datatypeName\": 'String'\n    },          \n        ]\n\n\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3930,
+        "y": 1400,
+        "wires": [
+            [
+                "90edb429519b5efc"
+            ]
+        ]
+    },
+    {
+        "id": "90edb429519b5efc",
+        "type": "OPCUA-IIoT-Read",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "attributeId": "13",
+        "maxAge": 1,
+        "depth": 1,
+        "connector": "74a7d84.2350d28",
+        "name": "",
+        "justValue": true,
+        "showStatusActivities": false,
+        "showErrors": false,
+        "parseStrings": false,
+        "historyDays": "",
+        "x": 4120,
+        "y": 1380,
+        "wires": [
+            [
+                "f6d73b8908f6474f"
+            ]
+        ]
+    },
+    {
+        "id": "f6d73b8908f6474f",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Format Output Message",
+        "func": "var new_msg = { payload: \"\" };\nvar StateMPO = {\n    ts :msg.payload.value[0].value.value\n    }\n\n//Stock_HBW.track_puck = msg.payload.value[0].value.value;\n\n\nnew_msg.payload = JSON.stringify(StateMPO);\n\nreturn new_msg",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 4320,
+        "y": 1380,
+        "wires": [
+            [
+                "c6290881f8b032d2"
+            ]
+        ]
+    },
+    {
+        "id": "c6290881f8b032d2",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 38",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 4530,
+        "y": 1380,
+        "wires": []
+    },
+    {
+        "id": "a2d85e3583c1747d",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 39",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3870,
+        "y": 1340,
+        "wires": []
+    },
+    {
+        "id": "39fd779471fa3ee8",
+        "type": "inject",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "8",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 3430,
+        "y": 780,
+        "wires": [
+            [
+                "65213ea46e0c2bb3"
+            ]
+        ]
+    },
+    {
+        "id": "20ed3e07b95efee5",
+        "type": "comment",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Receiving tracking data",
+        "info": "",
+        "x": 3440,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "65213ea46e0c2bb3",
+        "type": "OPCUA-IIoT-Node",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "injectType": "listen",
+        "nodeId": "ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_Track\".\"track_puck\"",
+        "datatype": "",
+        "value": "",
+        "name": "",
+        "topic": "",
+        "showErrors": true,
+        "x": 3590,
+        "y": 780,
+        "wires": [
+            [
+                "494d48cc82df3d90",
+                "cc13d039e9633d91"
+            ]
+        ]
+    },
+    {
+        "id": "494d48cc82df3d90",
+        "type": "OPCUA-IIoT-Listener",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "connector": "74a7d84.2350d28",
+        "action": "subscribe",
+        "queueSize": "5",
+        "name": "",
+        "topic": "",
+        "justValue": true,
+        "useGroupItems": false,
+        "showStatusActivities": false,
+        "showErrors": true,
+        "x": 3720,
+        "y": 780,
+        "wires": [
+            [
+                "cc13d039e9633d91",
+                "37d0b81d95e4cc28"
+            ]
+        ]
+    },
+    {
+        "id": "0c899dcb1366bce2",
+        "type": "OPCUA-IIoT-Read",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "attributeId": "13",
+        "maxAge": 1,
+        "depth": 1,
+        "connector": "74a7d84.2350d28",
+        "name": "",
+        "justValue": true,
+        "showStatusActivities": false,
+        "showErrors": true,
+        "parseStrings": false,
+        "historyDays": "",
+        "x": 4050,
+        "y": 780,
+        "wires": [
+            [
+                "8e8addd143c86957",
+                "77516ad9ae693852"
+            ]
+        ]
+    },
+    {
+        "id": "8e8addd143c86957",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 40",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 4180,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "17d41b08eade2fd0",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 41",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 4420,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "cc13d039e9633d91",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 42",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3860,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "d4d940d474409c93",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Tracking",
+        "func": "msg.payload = msg.payload.track_puck;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 4280,
+        "y": 840,
+        "wires": [
+            [
+                "cad35d782baf2d3b",
+                "9b857c6e650b6912"
+            ]
+        ]
+    },
+    {
+        "id": "cad35d782baf2d3b",
+        "type": "ui_text",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "group": "8c243ea4a5732789",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Status SLD",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 4470,
+        "y": 840,
+        "wires": []
+    },
+    {
+        "id": "9b857c6e650b6912",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 43",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 4460,
+        "y": 880,
+        "wires": []
+    },
+    {
+        "id": "01a23976a6403ced",
+        "type": "mqtt in",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "topic": "f/i/state/track",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "788959e0.92f718",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 4050,
+        "y": 940,
+        "wires": [
+            [
+                "2090301e4fb2e37e"
+            ]
+        ]
+    },
+    {
+        "id": "ecce3864a0ced414",
+        "type": "mqtt out",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "topic": "f/i/state/track",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "788959e0.92f718",
+        "x": 4470,
+        "y": 780,
+        "wires": []
+    },
+    {
+        "id": "148a9dc6c1f0fb9f",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "name": "debug 44",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 3620,
+        "y": 1080,
+        "wires": []
+    },
+    {
+        "id": "37d0b81d95e4cc28",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "read State_Track",
+        "func": "//msg.payload.nodetype = \"inject\";\nmsg.payload.injectType = \"read\";\n\n//Items for NFC action\nmsg.payload.addressSpaceItems = [\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_Track\".\"track_puck\"',\n        \"datatypeName\": 'String'\n    },          \n        ]\n\n\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 3890,
+        "y": 780,
+        "wires": [
+            [
+                "0c899dcb1366bce2"
+            ]
+        ]
+    },
+    {
+        "id": "77516ad9ae693852",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Format Output Message",
+        "func": "var new_msg = { payload: \"\" };\nvar StateTrack = {\n    ts :msg.payload.value[0].value.value\n    }\n\n//Stock_HBW.track_puck = msg.payload.value[0].value.value;\n\n\nnew_msg.payload = JSON.stringify(StateTrack);\n\nreturn new_msg",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 4230,
+        "y": 780,
+        "wires": [
+            [
+                "ecce3864a0ced414",
+                "17d41b08eade2fd0",
+                "d4d940d474409c93"
+            ]
+        ]
+    },
+    {
+        "id": "2090301e4fb2e37e",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "Tracking",
+        "func": "msg.payload = msg.payload.track_puck;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 4240,
+        "y": 940,
+        "wires": [
+            [
+                "d832d31bbab7c8e4",
+                "e558cbcd2902b013"
+            ]
+        ]
+    },
+    {
+        "id": "d832d31bbab7c8e4",
+        "type": "ui_text",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "group": "8c243ea4a5732789",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Status SLD",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 4450,
+        "y": 940,
+        "wires": []
+    },
+    {
+        "id": "e558cbcd2902b013",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "debug 45",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 4440,
+        "y": 980,
+        "wires": []
+    },
+    {
+        "id": "df0f2cd6c709941d",
+        "type": "inject",
+        "z": "a6c727372ac542cf",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "8",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 110,
+        "y": 180,
+        "wires": [
+            [
+                "a62e6209563af7da"
+            ]
+        ]
+    },
+    {
+        "id": "a62e6209563af7da",
+        "type": "OPCUA-IIoT-Node",
+        "z": "a6c727372ac542cf",
+        "injectType": "listen",
+        "nodeId": "ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_Track\".\"track_puck\"",
+        "datatype": "",
+        "value": "",
+        "name": "",
+        "topic": "",
+        "showErrors": true,
+        "x": 270,
+        "y": 180,
+        "wires": [
+            [
+                "6e01ca3da4546397"
+            ]
+        ]
+    },
+    {
+        "id": "6e01ca3da4546397",
+        "type": "OPCUA-IIoT-Listener",
+        "z": "a6c727372ac542cf",
+        "connector": "74a7d84.2350d28",
+        "action": "subscribe",
+        "queueSize": "5",
+        "name": "",
+        "topic": "",
+        "justValue": true,
+        "useGroupItems": false,
+        "showStatusActivities": false,
+        "showErrors": true,
+        "x": 420,
+        "y": 180,
+        "wires": [
+            [
+                "15f92b16d80d64f2"
+            ]
+        ]
+    },
+    {
+        "id": "15f92b16d80d64f2",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "name": "read State_Track",
+        "func": "msg.payload.nodetype = \"inject\";\nmsg.payload.injectType = \"read\";\n\n//Items for state MPO\nmsg.payload.addressSpaceItems = [\n\n    {\n        \"name\": \"\",\n        \"nodeId\": 'ns=3;s=\"gtyp_Interface_Dashboard\".\"Subscribe\".\"State_Track\".\"track_puck\"',\n        \"datatypeName\": 'String'\n    },\n\n    ]\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 590,
+        "y": 180,
+        "wires": [
+            [
+                "83857aa51d2fe01d"
+            ]
+        ]
+    },
+    {
+        "id": "83857aa51d2fe01d",
+        "type": "OPCUA-IIoT-Read",
+        "z": "a6c727372ac542cf",
+        "attributeId": "13",
+        "maxAge": 1,
+        "depth": 1,
+        "connector": "74a7d84.2350d28",
+        "name": "",
+        "justValue": true,
+        "showStatusActivities": false,
+        "showErrors": true,
+        "parseStrings": false,
+        "historyDays": "",
+        "x": 750,
+        "y": 180,
+        "wires": [
+            [
+                "51f71e23a0911286"
+            ]
+        ]
+    },
+    {
+        "id": "8d6b0c993c119ec0",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "name": "debug 46",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1340,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "51f71e23a0911286",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "name": "Format Output Message",
+        "func": "var new_msg = { payload: \"\" };\nvar StateTrack =  msg.payload.value[0].value.value;\n\n    \n//Stock_HBW.track_puck = msg.payload.value[0].value.value;\n\n\nnew_msg.payload =  JSON.stringify(StateTrack);\n\nreturn new_msg",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 930,
+        "y": 180,
+        "wires": [
+            [
+                "a4397ab1d5b9c446"
+            ]
+        ]
+    },
+    {
+        "id": "a4397ab1d5b9c446",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "name": "msg output filtering",
+        "func": "// Get the input message\nvar new_msg = msg.payload;\n\n\n    new_msg = new_msg.replace(/^\"|\"$/g, \"\");\n\n// Set the modified message as the output\nmsg.payload = new_msg;\nglobal.set (\"prevmsg\" , msg);\n// Send the message to the next node\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1150,
+        "y": 180,
+        "wires": [
+            [
+                "8d6b0c993c119ec0",
+                "224cafa95553e180",
+                "6898b59d6480ec1c"
+            ]
+        ]
+    },
+    {
+        "id": "57222350625faca0",
+        "type": "ui_text",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "group": "8c243ea4a5732789",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Current msg",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1710,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "fe481f44c0af0c71",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "name": "Set \"order' true",
+        "func": "global.set (\"order\", \"true\");\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 300,
+        "y": 220,
+        "wires": [
+            [
+                "c2425df15ac4dc3d",
+                "0629dfc53757fd59"
+            ]
+        ]
+    },
+    {
+        "id": "41e5050f4c56b8b5",
+        "type": "link in",
+        "z": "a6c727372ac542cf",
+        "name": "link in 6",
+        "links": [
+            "bbd85e2ce60e0866"
+        ],
+        "x": 55,
+        "y": 220,
+        "wires": [
+            [
+                "fe481f44c0af0c71",
+                "0629dfc53757fd59"
+            ]
+        ]
+    },
+    {
+        "id": "3548492ba4e74495",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "name": "debug 48",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1700,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "56718a3dfaa9cf6a",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "name": "check order status",
+        "func": "msg.payload = global.get(\"order\")\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1510,
+        "y": 300,
+        "wires": [
+            [
+                "3548492ba4e74495"
+            ]
+        ]
+    },
+    {
+        "id": "c2425df15ac4dc3d",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "name": "debug 49",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 560,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "224cafa95553e180",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "name": "Filter based on if order",
+        "func": "var order = global.get(\"order\")\nif (msg.payload === \"LightB_Outsourcing\") {\n    global.set(\"order\", \"false\");\n    return msg;\n}\nif (order == \"true\") {\n    return msg;\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1400,
+        "y": 260,
+        "wires": [
+            [
+                "f43aa3a7887631e1",
+                "57222350625faca0",
+                "136fe34d51f2841d"
+            ]
+        ]
+    },
+    {
+        "id": "6898b59d6480ec1c",
+        "type": "delay",
+        "z": "a6c727372ac542cf",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1340,
+        "y": 300,
+        "wires": [
+            [
+                "56718a3dfaa9cf6a"
+            ]
+        ]
+    },
+    {
+        "id": "f43aa3a7887631e1",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "name": "debug 50",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1700,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "0629dfc53757fd59",
+        "type": "ui_button",
+        "z": "a6c727372ac542cf",
+        "name": "",
+        "group": "3168b476e15d36cd",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "label": "button",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "Warehouse",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 270,
+        "y": 260,
+        "wires": [
+            [
+                "2b846f30f0dd65ac",
+                "c2425df15ac4dc3d"
+            ]
+        ]
+    },
+    {
+        "id": "2b846f30f0dd65ac",
+        "type": "delay",
+        "z": "a6c727372ac542cf",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 520,
+        "y": 260,
+        "wires": [
+            [
+                "ff2a069bd6c2ef67"
+            ]
+        ]
+    },
+    {
+        "id": "136fe34d51f2841d",
+        "type": "link out",
+        "z": "a6c727372ac542cf",
+        "name": "Currentmsg",
+        "mode": "link",
+        "links": [
+            "d0f5977a3443565e"
+        ],
+        "x": 1525,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "d0f5977a3443565e",
+        "type": "link in",
+        "z": "a6c727372ac542cf",
+        "name": "link in 7",
+        "links": [
+            "136fe34d51f2841d"
+        ],
+        "x": 55,
+        "y": 360,
+        "wires": [
+            [
+                "ef94b9989978d064"
+            ]
+        ]
+    },
+    {
+        "id": "ef94b9989978d064",
+        "type": "function",
+        "z": "a6c727372ac542cf",
+        "name": "Change message",
+        "func": "if (msg.payload === \"Warehouse\") {\n    msg.payload = \"Warehouse\";\n    return msg;\n} else if (msg.payload === \"LightB_Inside\") {\n    msg.payload = \"BeforeCrane\";\n    return msg;\n} else if (msg.payload === \"LightB_Outside\") {\n    msg.payload = \"BeforeCrane\";\n    return msg;\n} else if (msg.payload === \"In Transit\") {\n    msg.payload = \"OnCrane\";\n    return msg;\n} else if (msg.payload === \"LightB_Oven\") {\n    msg.payload = \"OutsiteOven\";\n    return msg;\n} else if (msg.payload === \"Inside Oven\") {\n    msg.payload = \"InsideOven\";\n    return msg;\n} else if (msg.payload === \"Outside Path\") {\n    msg.payload = \"OnBelt\";\n    return msg;\n} else if (msg.payload === \"Saw\") {\n    msg.payload = \"OnSaw\";\n    return msg;\n} else if (msg.payload === \"LightB_Inlet\") {\n    msg.payload = \"OnSortBelt\";\n    return msg;\n} else if (msg.payload === \"LightB_BehindColorSensor\") {\n    msg.payload = \"Behindcolorsens\";\n    return msg;\n} else if (msg.payload === \"LightB_Red\") {\n    msg.payload = \"OnRed\";\n    return msg;\n} else if (msg.payload === \"LightB_Blue\") {\n    msg.payload = \"OnBlue\";\n    return msg;\n} else if (msg.payload === \"LightB_White\") {\n    msg.payload = \"OnWhite\";\n    return msg;\n} else if (msg.payload === \"LightB_Outsourcing\") {\n    msg.payload = \"AtEnd\";\n    return msg;\n}\nelse{\n    return null\n}\n\n\n\n\n\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 210,
+        "y": 360,
+        "wires": [
+            [
+                "69109db404500865",
+                "e832aee44f6198de",
+                "e790d2c83374c967",
+                "bb553d6ef03676ea"
+            ]
+        ]
+    },
+    {
+        "id": "ff2a069bd6c2ef67",
+        "type": "ui_button",
+        "z": "a6c727372ac542cf",
+        "name": "",
+        "group": "3168b476e15d36cd",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "label": "button",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "Warehouse",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 690,
+        "y": 260,
+        "wires": [
+            [
+                "224cafa95553e180"
+            ]
+        ]
+    },
+    {
+        "id": "69109db404500865",
+        "type": "ui_text",
+        "z": "a6c727372ac542cf",
+        "group": "6176fea48a706ea3",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "name": "",
+        "label": "Current location",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 660,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "e832aee44f6198de",
+        "type": "debug",
+        "z": "a6c727372ac542cf",
+        "name": "debug 51",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 380,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "af8b023be691a0c6",
+        "type": "inject",
+        "z": "a6c727372ac542cf",
+        "d": true,
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 280,
+        "wires": [
+            [
+                "0629dfc53757fd59"
+            ]
+        ]
+    },
+    {
+        "id": "e790d2c83374c967",
+        "type": "mqtt out",
+        "z": "a6c727372ac542cf",
+        "name": "",
+        "topic": "all/tracking",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "788959e0.92f718",
+        "x": 650,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "bb553d6ef03676ea",
+        "type": "delay",
+        "z": "a6c727372ac542cf",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "60",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 200,
+        "y": 400,
+        "wires": [
+            [
+                "24db4553745d4aab"
+            ]
+        ]
+    },
+    {
+        "id": "24db4553745d4aab",
+        "type": "ui_button",
+        "z": "a6c727372ac542cf",
+        "name": "",
+        "group": "4ca4e42e.6fa77c",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "label": "Wipe final location after 60s",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "\"Awaiting order\"",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 400,
+        "y": 400,
+        "wires": [
+            [
+                "69109db404500865"
+            ]
+        ]
+    },
+    {
+        "id": "74a7d84.2350d28",
+        "type": "OPCUA-IIoT-Connector",
+        "discoveryUrl": "",
+        "endpoint": "opc.tcp://192.168.0.1:4840",
+        "endpointMustExist": false,
+        "keepSessionAlive": true,
+        "loginEnabled": false,
+        "name": "SIEMENS PLC@192.168.0.1",
+        "showErrors": true,
+        "securityPolicy": "None",
+        "securityMode": "None",
+        "individualCerts": false,
+        "publicCertificateFile": "",
+        "privateKeyFile": "",
+        "defaultSecureTokenLifetime": "",
+        "autoSelectRightEndpoint": false,
+        "strategyMaxRetry": "",
+        "strategyInitialDelay": "27500",
+        "strategyMaxDelay": "",
+        "strategyRandomisationFactor": "",
+        "requestedSessionTimeout": "",
+        "connectionStartDelay": "",
+        "reconnectDelay": "",
+        "maxBadSessionRequests": ""
+    },
+    {
+        "id": "8c243ea4a5732789",
+        "type": "ui_group",
+        "name": "SLD station",
+        "tab": "64d3d6274d1f6004",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "788959e0.92f718",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "192.168.0.10",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "8ff342296dd06026",
+        "type": "ui_group",
+        "name": "Status HBW",
+        "tab": "64d3d6274d1f6004",
+        "order": 2,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "b01c85a9c7216ef2",
+        "type": "ui_group",
+        "name": "Status DSI & DSO",
+        "tab": "64d3d6274d1f6004",
+        "order": 3,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "3168b476e15d36cd",
+        "type": "ui_group",
+        "name": "Invis",
+        "tab": "2cb2616542d24574",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "6176fea48a706ea3",
+        "type": "ui_group",
+        "name": "Main location",
+        "tab": "64d3d6274d1f6004",
+        "order": 4,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "4ca4e42e.6fa77c",
+        "type": "ui_group",
+        "name": "Camera",
+        "tab": "127b3360.4e5a15",
+        "order": 1,
+        "disp": true,
+        "width": "15",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "64d3d6274d1f6004",
+        "type": "ui_tab",
+        "name": "Tracking pucks",
+        "icon": "dashboard",
+        "order": 9,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "2cb2616542d24574",
+        "type": "ui_tab",
+        "name": "Home",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": true
+    },
+    {
+        "id": "127b3360.4e5a15",
+        "type": "ui_tab",
+        "name": "Factory - Overview",
+        "icon": "fa-home",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    }
+]
