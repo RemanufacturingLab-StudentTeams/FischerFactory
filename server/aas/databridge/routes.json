@@ -1,6 +1,6 @@
 [
 	{
-		"datasource": "temperatureSensor",
+		"datasource": "mpoStatus",
 		"transformers": ["temperatureTransformer"],
 		"datasinks": ["TemperatureSubmodel"],
 		"trigger": "event"
