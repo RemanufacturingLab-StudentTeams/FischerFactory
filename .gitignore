@@ -12,6 +12,10 @@ server/mqtt_testing_tool/Cargo.lock
 # Local development files
 todo.md
 
+# Production files
+server/influx/config/*
+server/influx/data/*
+
 # Downloaded files
 # InfluxDB
 influxdata-archive_compat.key
