@@ -20,6 +20,11 @@ enum DataType {
 type gtyp_Interface_Dashboard = {
     // Nodes that the PLC publishes to, and that the Raspberry Pi consumes.
     Subscribe: {
+
+        State_Track:{ //node(s) used for tracking feature
+            track_puck: DataType.String
+        }
+
         EnvironmentSensor:
         {
             test: DataType.Boolean
