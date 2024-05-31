@@ -3,7 +3,8 @@ type schema = {
 
         tracking: { //topic(s) used for tracking feature
             topic: "f/tracking"
-            payload: string
+            payload: "Warehouse" | "BeforeCrane" | "OnCrane" | "OutsiteOven" | "InsideOven" | "OnBelt" | "OnSaw" | "OnSortBelt" | "Behindcolorsens" | "OnRed" | "OnBlue" | "OnWhite" | "AtEnd"
+
         }
 
 
