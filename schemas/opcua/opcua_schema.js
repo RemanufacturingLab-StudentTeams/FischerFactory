@@ -74,6 +74,15 @@ const schema = {
                 }
             },
 
+            State_Track:{ //Nodes for tracking pucks feature
+                track_puck: {
+                    name: "",
+                    nodeId: 'ns=3;s="gtyp_Interface_Dashboard"."Subscribe"."State_Track"."track_puck"',
+                    datatypeName: 'String'
+                }
+            },
+
+
             // These nodes are used to poll the state of the DSI from the PLC. The data is then sent over MQTT to the broker.
             state_DSI: {
                 // This node is subscribed to to get the State of the DSI. When the server starts, it also publishes on this node to trigger the polling process.

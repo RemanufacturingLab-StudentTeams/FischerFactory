@@ -1,5 +1,15 @@
 type schema = {
     f: { // Fischer Factory
+
+        tracking: { //topic(s) used for tracking feature
+            topic: "f/tracking"
+            payload: "Warehouse" | "BeforeCrane" | "OnCrane" | "OutsiteOven" | "InsideOven" | "OnBelt" | "OnSaw" | "OnSortBelt" | "Behindcolorsens" | "OnRed" | "OnBlue" | "OnWhite" | "AtEnd"
+
+        }
+
+
+
+
         i: { // topics that are published to to translate OPC UA messages from the PLC to MQTT
             alert: {
                 // Alert message from OPC UA
@@ -378,6 +388,7 @@ type schema = {
             topic: "transport/time"
         }
     }
+
 }
 
 type FixedLengthArray<T, L extends number> = L extends 0 ? never[] : [T, ...Array<T>];
