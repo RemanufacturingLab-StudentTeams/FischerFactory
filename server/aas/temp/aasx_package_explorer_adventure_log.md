@@ -9,3 +9,5 @@ AASX Package Explorer Version | Effect | Exception
 2022-05-10.alpha | Works! But it does use a very very outdated version of AAS... not great for inter-company exposition. | 
 2022-08-06 | Works also, and is slightly less outdated.
 2023-02-03.alpha | OH NOW THIS ONE WORKS TOO, *WHAT*
+
+> Note: apparently using `wget` to download an `.aasx` file from a GitHub repository corrupts it (or makes it otherwise unreadable), so much so that it cannot even be opened in Package Explorer. Using `git clone` to download the whole repository, then copying the `.aasx` file on local, does not have this issue. I don't know why. `.aasx` files just seem to have this charming property of irreversibly and inexplicably corrupting whenever you *breathe* at them in an offensive manner.
