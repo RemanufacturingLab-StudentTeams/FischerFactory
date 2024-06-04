@@ -3,6 +3,9 @@ type schema = {
 
         tracking: { //topic(s) used for tracking feature
             topic: "f/tracking"
+            //If the puck is rejected 'AtEnd' will not be published 
+            //Only one of the OnBlue,OnRed,OnWhite will be published
+            //Incase the oven is used 'OutsiteOven' will be published twice, once when entering and when exiting.
             payload: "Warehouse" | "BeforeCrane" | "OnCrane" | "OutsiteOven" | "InsideOven" | "OnBelt" | "OnSaw" | "OnSortBelt" | "Behindcolorsens" | "OnRed" | "OnBlue" | "OnWhite" | "AtEnd"
 
         }
