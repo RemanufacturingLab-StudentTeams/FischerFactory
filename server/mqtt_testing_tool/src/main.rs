@@ -35,7 +35,7 @@ fn main() -> io::Result<()> {
     let mut mqtt_options = MqttOptions::new(
         "testing_tool",
         server,
-        1883,
+        1884,
     );
     mqtt_options.set_credentials("test", "test123");
 

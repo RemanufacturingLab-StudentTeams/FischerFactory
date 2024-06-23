@@ -1,5 +1,15 @@
+/**
+ * This program assumes only one puck can be active in the FischerFactory at one time. It was originally created with the intention of 
+ * managing multiple pucks, providing the memory required to determine which puck was where based on the emissions from the puck tracking 
+ * sensors in the FischerFactory (which does not say which puck was detected, only that it was). 
+ * 
+ * For just one puck, the logic is much simpler; just remember which puck is currently active and send MQTT messages to the different components
+ * based on that.
+ */
+
 use std::env;
 use std::io;
+use std::string;
 
 use rumqttc::Packet;
 use rumqttc::{AsyncClient, MqttOptions, QoS};
@@ -10,6 +20,22 @@ enum Puck {
     WHITE,
     BLUE,
 }
+
+struct Component<'a> {
+    tracking_label: &'a str, // the string payload published on f/tracking corresponding to this component. E.g., "InsideOven" for MPO.
+    red_pucks_topic: &'a str,
+    white_pucks_topic: &'a str,
+    blue_pucks_topic: &'a str,
+}
+
+const COMPONENTS: [Component; 1] = [
+    Component {
+        tracking_label: "Warehouse",
+        red_pucks_topic: "aas/mpo/numRedPucks",
+        white_pucks_topic: "aas/mpo/numWhitePucks",
+        blue_pucks_topic: "aas/mpo/numBluePucks",
+    },
+];
 
 fn main() -> io::Result<()> {
     println!("===== Tracker started =====");
@@ -71,6 +97,7 @@ fn main() -> io::Result<()> {
                         rumqttc::Event::Incoming(Packet::Publish(p)) => {
                             let payload = std::str::from_utf8(&p.payload).expect("Valid UTF-8 string");
                             println!("Received: {} on topic {}", payload, p.topic);
+
                         }
                         _ => { println!("{:?}", event)}
                     }
@@ -80,4 +107,18 @@ fn main() -> io::Result<()> {
     });
 
     Ok(())
+}
+
+/**
+ * Relays the information from the tracking topic to the aas topics, such as aas/mpo/state.
+ */
+fn relay() {
+
+}
+
+/**
+ * Set the amount of pucks on a Submodel to 0 by publishing to, e.g., aas/mpo/(numRedPucks, numBluePucks, numWhitePucks). 
+ */
+fn reset() {
+
 }
