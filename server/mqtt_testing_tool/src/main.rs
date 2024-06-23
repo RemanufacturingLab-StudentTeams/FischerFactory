@@ -27,7 +27,7 @@ fn main() -> io::Result<()> {
     let test_cases = read_json()?;
     let rt = Runtime::new().unwrap();
 
-    let mut mqtt_options = MqttOptions::new("test", "localhost", 1884);
+    let mut mqtt_options = MqttOptions::new("test", "192.168.0.10", 1884);
     mqtt_options.set_credentials("test", "test123");
 
     let (client, mut event_loop) = AsyncClient::new(mqtt_options, 10);
