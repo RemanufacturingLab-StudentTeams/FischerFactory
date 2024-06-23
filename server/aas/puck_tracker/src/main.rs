@@ -9,59 +9,25 @@
 
 use std::env;
 use std::io;
-use std::string;
+use rumqttc::ClientError;
+use serde_json;
 
 use rumqttc::Packet;
 use rumqttc::{AsyncClient, MqttOptions, QoS};
 use tokio::runtime::Runtime;
 
-enum Puck {
-    RED,
-    WHITE,
-    BLUE,
-}
-
-struct Component<'a> {
-    tracking_label: &'a str, // the string payload published on f/tracking corresponding to this component. E.g., "InsideOven" for MPO.
-    red_pucks_topic: &'a str,
-    white_pucks_topic: &'a str,
-    blue_pucks_topic: &'a str,
-}
-
-const COMPONENTS: [Component; 1] = [
-    Component {
-        tracking_label: "Warehouse",
-        red_pucks_topic: "aas/mpo/numRedPucks",
-        white_pucks_topic: "aas/mpo/numWhitePucks",
-        blue_pucks_topic: "aas/mpo/numBluePucks",
-    },
-];
+use puck_tracker::*;
 
 fn main() -> io::Result<()> {
     println!("===== Tracker started =====");
 
     let rt = Runtime::new().unwrap();
 
-    let pucks: Vec<Puck> = vec![];
-    let locations: Vec<&str> = vec![
-        "Warehouse",
-        "BeforeCrane",
-        "OnCrane",
-        "OutsiteOven",
-        "InsideOven",
-        "OnBelt",
-        "OnSaw",
-        "OnSortBelt",
-        "BehindcolorSens",
-        "OnRed",
-        "OnBlue",
-        "OnWhite",
-        "AtEnd",
-    ];
+    let mut pucks: Vec<Puck> = vec![];
 
     // Connect to the broker
     let production_mode = env::args().any(|s| s.eq("prod")); // default in dev
-    if!production_mode { println!("Running in dev mode. Use \"-- prod\" to run in production mode."); }
+    if !production_mode { println!("Running in dev mode. Use \"-- prod\" to run in production mode."); }
     let server = if production_mode { "192.168.0.10" } else { "localhost" };
 
     let mut mqtt_options = MqttOptions::new(
@@ -74,19 +40,10 @@ fn main() -> io::Result<()> {
     println!("Connecting to {}...", server);
     let (client, mut event_loop) = AsyncClient::new(mqtt_options, 10);
 
-    // Subscribe to order and tracking topics
-    rt.spawn(async move {
-        client
-            .subscribe("f/o/order", QoS::AtMostOnce)
-            .await
-            .unwrap();
-        client
-            .subscribe("f/tracking", QoS::AtMostOnce)
-            .await
-            .unwrap();
-    });
-
     rt.block_on(async move {
+        client.subscribe("f/o/order", QoS::AtMostOnce).await.unwrap();
+        client.subscribe("f/tracking", QoS::AtMostOnce).await.unwrap();
+
         loop {
             let notif = event_loop.poll().await;
 
@@ -98,6 +55,13 @@ fn main() -> io::Result<()> {
                             let payload = std::str::from_utf8(&p.payload).expect("Valid UTF-8 string");
                             println!("Received: {} on topic {}", payload, p.topic);
 
+                            match update(&p.topic, payload, &mut pucks, &client).await {
+                                Ok(_) => {},
+                                Err(UpdateError::ClientError(e)) => eprint!("MQTT client error: {:#?}", e),
+                                Err(UpdateError::UnrecognizedPuckColour(e)) => eprint!("Unrecognised puck colour: {}", e),
+                                Err(UpdateError::UnrecognizedTrackingPayload(e)) => eprint!("Unrecognised tracking payload: {}", e),
+                                Err(UpdateError::SerdeError(e)) => eprint!("Could not deserialize JSON: {:#?}", e),
+                            }
                         }
                         _ => { println!("{:?}", event)}
                     }
@@ -109,16 +73,64 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
+async fn update(topic: &str, payload: &str, pucks: &mut Vec<Puck>, client: &AsyncClient) -> Result<(), UpdateError>{
+    if topic == "f/o/order" {
+        let puck_colour_msg: Order = serde_json::from_str(payload)?;
+
+        pucks[0].colour = match puck_colour_msg.r#type.as_str() { // only accessing the 0-th element here because of the one active puck assumption
+            "RED" => PuckColour::RED,
+            "WHITE" => PuckColour::WHITE,
+            "BLUE" => PuckColour::BLUE,
+            other => return Err(UpdateError::UnrecognizedPuckColour(other.to_string())),
+        }; 
+    } else { // we got a tracking message
+        let futures = COMPONENTS.iter().map(|c| {
+            let client = client.clone();
+            let tracking_label = c.tracking_label.clone();
+            let payload = payload.to_owned();
+            let colour = pucks[0].colour;
+
+            tokio::task::spawn(async move {
+                if tracking_label == payload {
+                    if let Err(e) = relay(c, colour, &client).await {
+                        return Err(UpdateError::ClientError(e));
+                    }
+                } else {
+                    if let Err(e) = reset(c, &client).await {
+                        return Err(UpdateError::ClientError(e));
+                    };
+                }
+                Ok(())
+            })
+        });
+
+        for f in futures { f.await.expect("Relay call could not be joined")?; }
+    }
+
+    Ok(())
+}
+
 /**
  * Relays the information from the tracking topic to the aas topics, such as aas/mpo/state.
  */
-fn relay() {
+async fn relay(component: &Component, p: PuckColour, client: &AsyncClient) -> Result<(), ClientError> {
+    client.publish(component.red_pucks_topic, QoS::AtLeastOnce, false, 
+        if p == PuckColour::RED {"{\"value\": 1}"} else {"{\"value\": 0}"}).await?;
+    client.publish(component.blue_pucks_topic, QoS::AtLeastOnce, false, 
+        if p == PuckColour::BLUE {"{\"value\": 1}"} else {"{\"value\": 0}"}).await?;
+    client.publish(component.white_pucks_topic, QoS::AtLeastOnce, false, 
+        if p == PuckColour::WHITE {"{\"value\": 1}"} else {"{\"value\": 0}"}).await?;
 
+    Ok(())
 }
 
 /**
  * Set the amount of pucks on a Submodel to 0 by publishing to, e.g., aas/mpo/(numRedPucks, numBluePucks, numWhitePucks). 
  */
-fn reset() {
+async fn reset(component: &Component, client: &AsyncClient) -> Result<(), ClientError> {
+    client.publish(component.red_pucks_topic, QoS::AtLeastOnce, false, "{\"value\": 0}").await?;
+    client.publish(component.white_pucks_topic, QoS::AtLeastOnce, false, "{\"value\": 0}").await?;
+    client.publish(component.blue_pucks_topic, QoS::AtLeastOnce, false, "{\"value\": 0}").await?;
 
+    Ok(())
 }
