@@ -1,1 +1,0 @@
-Due to the github addon for tia portal not properly working i have added the entire project in this folder. If i manage to get it working then i will remove it again but for now this ensures that the workin plc code is on the github. -Yves
