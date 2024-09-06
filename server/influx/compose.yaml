@@ -1,0 +1,32 @@
+services:
+  influxdb:
+    image: influxdb:2.0
+    container_name: influxdb
+    restart: always
+    ports:
+      - '8086:8086'
+    volumes:
+      - ./data:/var/lib/influxdb2
+      - ./config:/etc/influxdb2
+    networks:
+      - influxdb-telegraf-net
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  telegraf:
+    image: telegraf:latest
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    volumes:
+      # this should be changed to "telegraf.dev.conf" when devving
+      - ./telegraf/telegraf.prod.conf:/etc/telegraf/telegraf.conf
+    networks:
+      - influxdb-telegraf-net
+
+networks:
+  influxdb-telegraf-net:
+    driver: bridge

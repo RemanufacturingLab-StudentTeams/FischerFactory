@@ -1,0 +1,22 @@
+[
+	{
+		"uniqueId": "FischerFactoryAAS/Status",
+		"submodelEndpoint": "http://aas:4001/aasServer/shells/FischerFactoryAAS/aas/submodels/MultiProcessingOven/submodel",
+		"idShortPath": "Status"
+	},
+	{
+		"uniqueId": "FischerFactoryAAS/Puck0",
+		"submodelEndpoint": "http://aas:4001/aasServer/shells/FischerFactoryAAS/aas/submodels/MultiProcessingOven/submodel",
+		"idShortPath": "Puck0"
+	},
+	{
+		"uniqueId": "FischerFactoryAAS/Puck1",
+		"submodelEndpoint": "http://aas:4001/aasServer/shells/FischerFactoryAAS/aas/submodels/MultiProcessingOven/submodel",
+		"idShortPath": "Puck2"
+	},
+	{
+		"uniqueId": "FischerFactoryAAS/Puck2",
+		"submodelEndpoint": "http://aas:4001/aasServer/shells/FischerFactoryAAS/aas/submodels/MultiProcessingOven/submodel",
+		"idShortPath": "Puck3"
+	}
+]

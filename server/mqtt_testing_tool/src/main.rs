@@ -27,7 +27,9 @@ fn main() -> io::Result<()> {
     let test_cases = read_json()?;
     let rt = Runtime::new().unwrap();
 
-    let mqtt_options = MqttOptions::new("mqtt_testing_tool", "localhost", 1883);
+    let mut mqtt_options = MqttOptions::new("test", "192.168.0.10", 1884);
+    mqtt_options.set_credentials("test", "test123");
+
     let (client, mut event_loop) = AsyncClient::new(mqtt_options, 10);
 
     rt.spawn(async move {
@@ -65,7 +67,12 @@ fn main() -> io::Result<()> {
                     println!("Custom message sent to topic: {}", test_case.topic);
                 }
             } else {
-                eprintln!("No test value found for topic '{}'. Try again.", input);
+                eprintln!("No test value found for topic '{}'. Enter custom payload:", input);
+                let mut custom_payload = String::new();
+                io::stdin().read_line(&mut custom_payload).expect("Failed to read line");
+                let custom_payload = custom_payload.trim();
+                client.publish(input, QoS::AtLeastOnce, false, custom_payload.to_string()).await.unwrap();
+                println!("Custom message sent to topic: {}", input);
             }
         }
     });

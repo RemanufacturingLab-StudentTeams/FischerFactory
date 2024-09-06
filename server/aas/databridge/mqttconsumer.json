@@ -1,0 +1,26 @@
+[
+	{
+		"uniqueId": "mpoStatus",
+		"serverUrl": "host.docker.internal",
+		"serverPort": 1884,
+		"topic": "aas/mpo/status"
+	},
+	{
+		"uniqueId": "mpoPuck0",
+		"serverUrl": "host.docker.internal",
+		"serverPort": 1884,
+		"topic": "aas/mpo/puck0"
+	},
+	{
+		"uniqueId": "mpoPuck1",
+		"serverUrl": "host.docker.internal",
+		"serverPort": 1884,
+		"topic": "aas/mpo/puck1"
+	},
+	{
+		"uniqueId": "mpoPuck2",
+		"serverUrl": "host.docker.internal",
+		"serverPort": 1884,
+		"topic": "aas/mpo/puck2"
+	}
+]

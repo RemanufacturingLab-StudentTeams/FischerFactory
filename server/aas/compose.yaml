@@ -1,0 +1,60 @@
+# Docker compose file to run several of Basyx' off-the-shelf components.
+# Note: this setup requires the broker to be accessible and active (a local mosquitto broker in dev,
+# the TXT controller in prod).
+
+services:
+
+# Container with the registry, using Basyx' Docker image.
+  registry:
+    image: eclipsebasyx/aas-registry:1.4.0
+    ports:
+        - 4000:4000
+    environment:
+        - basyxregistry_registry_backend=InMemory
+        - basyxcontext_contextpath=/registry
+        - basyxcontext_contextport=4000
+        - basyxcontext_accesscontrolalloworigin=*
+    container_name: registry-fischerfactory
+
+# Container with the AAS server.
+  aas:
+    image: eclipsebasyx/aas-server:1.4.0
+    container_name: aas-server-fischerfactory
+    volumes:
+      - ./aasServer:/usr/share/config
+    ports:
+        - 4001:4001
+    environment:
+        - basyxaas_registry_path=http://registry:4000/registry/
+        - basyxaas_aas_backend=InMemory
+        - basyxcontext_contextpath=/aasServer
+        - basyxcontext_contextport=4001
+        - basyxaas_aas_source=/usr/share/config/Heater_AAS.aasx
+        - waiting_for=[{"host":"registry","port":"4000"}]
+        - basyxcontext_accesscontrolalloworigin=*
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider aas:4001/health || exit 1
+      interval: 5s
+      retries: 3
+      start_period: 1s
+      timeout: 10s
+
+# Container with Basyx' AAS GUI.        
+  gui: 
+    image: eclipsebasyx/aas-gui:v230703
+    container_name: aasGui-fischerfactory
+    ports:
+        - 3000:3000
+    environment:
+    -  VITE_REGISTRY_PATH="http://localhost:4000/registry"
+
+# Container with Basyx' Databridge.  
+  databridge:
+    image: eclipsebasyx/databridge:1.0.0-milestone-06
+    container_name: databridge-fischerfactory
+    volumes:
+      - ./databridge:/usr/share/config
+    depends_on:
+      aas:
+        condition: service_healthy
+        
