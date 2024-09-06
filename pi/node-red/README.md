@@ -30,12 +30,12 @@ The server should be running on port 1880. Opening `localhost:1880` in the brows
 ## Configuration
 
 In the top right of the Node-RED GUI, clicking on the gear icon opens the config tab. There is only two config nodes that should be changed between dev and prod:
-- A OPCUA-IIoT-Connector node with the name `SIEMENS PLC@192.168.0.1`, used to connect to the PLC
+- A OPCUA-IIoT-Connector node with the name `SIEMENS PLC@10.35.4.252`, used to connect to the PLC
 - and mqtt-broker node using MQTT V3.1.1
 
 ### Production
-- PLC endpoint: `opc.tcp://192.168.0.1:4840`
-- broker: `192.168.0.10:1883`
+- PLC endpoint: `opc.tcp://10.35.4.252:4840`
+- broker: `10.35.4.253:1883`
 
 ### Development
 

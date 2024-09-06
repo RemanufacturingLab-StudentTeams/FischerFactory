@@ -29,7 +29,7 @@ fn main() -> io::Result<()> {
     // Connect to the broker
     let production_mode = env::args().any(|s| s.eq("prod")); // default in dev
     if !production_mode { println!("Running in dev mode. Use \"-- prod\" to run in production mode."); }
-    let server = if production_mode { "192.168.0.10" } else { "localhost" };
+    let server = if production_mode { "10.35.4.253" } else { "localhost" };
     let port = 1883;
 
     let mut mqtt_options = MqttOptions::new(

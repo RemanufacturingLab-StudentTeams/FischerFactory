@@ -42,6 +42,20 @@ Documentation requirements are different depending on the subject:
 
 ...
 
+## Networking
+
+All components are connected to the `iotroam` network (10.35.4.0/24) via an Archer C60 router running WDS to the gateway router. The IP addresses are statically assigned. They are as follows:
+
+Device | IP Address
+-|-
+Archer C60 router | 10.35.4.250
+ReMan Server | 10.35.4.251
+PLC | 10.35.4.252
+TXT Controller (broker) | 10.35.4.253
+Raspberry Pi | 10.35.4.254
+
+IP Addresses below 250 are dynamically assigned using DHCP, so it is not advisable when scaling the amount of devices up, to statically assign more addresses, as it could lead to conflicts with dynamically assigned addresses.
+
 ## Old Documentation
 This project has been worked on for some years by many other people before, and they left reports and documentation on their work. They can be viewed in the Microsoft Teams Team for the ReMan Lab. 
 
