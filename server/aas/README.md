@@ -1,5 +1,9 @@
 # Basyx AAS
 
+> Note: the ReMan use case still uses Basyx AAS v1. This is expected to change when we can figure out how to upgrade to v2 or v3.
+
+The ReMan lab uses a number of OTS components from Eclipse Basyx to provide AAS functionality, as well as a proprietary program that acts as a supplement to the databridge. All of these can be started by simply running `docker compose build && docker compose run` (in this subdirectory).
+
 ## AAS Server
 
 The AAS Server can be pulled from Dockerhub and used as an Off-The-Shelf component - the only configuration it needs is an .aasx file. This file can be created and viewed using [AasxPackageExplorer](https://github.com/eclipse-aaspe/aaspe). 
@@ -76,4 +80,8 @@ Example `routes.json` file:
 
 ## AAS Registry
 
+The OTS component for the registry (the component that holds all the shells) is pulled off of Dockerhub and used as-is. 
+
 ## AAS GUI
+
+This is the OTS component that allows users to view the AAS' in a graphic way. It can be accessed at `localhost:3000`.

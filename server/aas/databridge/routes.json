@@ -1,8 +1,26 @@
 [
 	{
 		"datasource": "mpoStatus",
-		"transformers": ["temperatureTransformer"],
-		"datasinks": ["TemperatureSubmodel"],
+		"transformers": ["tempTransformer"],
+		"datasinks": ["FischerFactoryAAS/Status"],
+		"trigger": "event"
+	},
+	{
+		"datasource": "mpoNumRedPucks",
+		"transformers": ["tempTransformer"],
+		"datasinks": ["FischerFactoryAAS/NumRedPucks"],
+		"trigger": "event"
+	},
+	{
+		"datasource": "mpoNumBluePucks",
+		"transformers": ["tempTransformer"],
+		"datasinks": ["FischerFactoryAAS/NumBluePucks"],
+		"trigger": "event"
+	},
+	{
+		"datasource": "mpoNumWhitePucks",
+		"transformers": ["tempTransformer"],
+		"datasinks": ["FischerFactoryAAS/NumWhitePucks"],
 		"trigger": "event"
 	}
 ]

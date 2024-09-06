@@ -7,7 +7,9 @@ secret
 # Generated files
 pi/nodejs/dist
 server/mqtt_testing_tool/target
-server/mqtt_testing_tool/Cargo.lock
+**/Cargo.lock
+**/target/
+
 
 # Local development files
 todo.md

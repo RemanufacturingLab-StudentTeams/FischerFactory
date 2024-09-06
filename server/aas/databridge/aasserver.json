@@ -5,18 +5,18 @@
 		"idShortPath": "Status"
 	},
 	{
-		"uniqueId": "FischerFactoryAAS/Puck0",
+		"uniqueId": "FischerFactoryAAS/NumRedPucks",
 		"submodelEndpoint": "http://aas:4001/aasServer/shells/FischerFactoryAAS/aas/submodels/MultiProcessingOven/submodel",
-		"idShortPath": "Puck0"
+		"idShortPath": "NumRedPucks"
 	},
 	{
-		"uniqueId": "FischerFactoryAAS/Puck1",
+		"uniqueId": "FischerFactoryAAS/NumBluePucks",
 		"submodelEndpoint": "http://aas:4001/aasServer/shells/FischerFactoryAAS/aas/submodels/MultiProcessingOven/submodel",
-		"idShortPath": "Puck2"
+		"idShortPath": "NumBluePucks"
 	},
 	{
-		"uniqueId": "FischerFactoryAAS/Puck2",
+		"uniqueId": "FischerFactoryAAS/NumWhitePucks",
 		"submodelEndpoint": "http://aas:4001/aasServer/shells/FischerFactoryAAS/aas/submodels/MultiProcessingOven/submodel",
-		"idShortPath": "Puck3"
+		"idShortPath": "NumWhitePucks"
 	}
 ]

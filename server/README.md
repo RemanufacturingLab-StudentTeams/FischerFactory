@@ -11,3 +11,7 @@ This is the main database that, at the time of writing, persists data from the F
 ## GraphDB
 
 > Not implemented yet at the time of writing.
+
+## Basyx (AAS)
+
+The ReMan server maintains a number of AAS components and proprietary programs, bundled together using Docker Compose. See the [documentation for our use case of Basyx AAS](./aas/README.md) for more information.

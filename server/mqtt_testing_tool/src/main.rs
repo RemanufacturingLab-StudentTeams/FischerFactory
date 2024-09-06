@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::task;
+use std::env;
 use std::fs::File;
 use std::io::{self, BufReader};
 use rumqttc::{AsyncClient, MqttOptions, QoS};
@@ -27,9 +28,20 @@ fn main() -> io::Result<()> {
     let test_cases = read_json()?;
     let rt = Runtime::new().unwrap();
 
-    let mut mqtt_options = MqttOptions::new("test", "192.168.0.10", 1884);
+    let production_mode = env::args().any(|s| s.eq("prod")); // default in dev
+    if!production_mode { println!("Running in dev mode. Use \"-- prod\" to run in production mode."); }
+    let server = if production_mode { "192.168.0.10" } else { "localhost" };
+    let port = 1883;
+
+    let mut mqtt_options = MqttOptions::new(
+        "testing_tool",
+        server,
+        port,
+    );
+
     mqtt_options.set_credentials("test", "test123");
 
+    println!("Connecting to {}:{}...", server, port);
     let (client, mut event_loop) = AsyncClient::new(mqtt_options, 10);
 
     rt.spawn(async move {
