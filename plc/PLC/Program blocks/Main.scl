@@ -74,5 +74,12 @@ BEGIN
 	// communication 
 	"Copy_Simulation_Variables_DB"();
 	
+	//Energiepasspoort
+	"HBW_Tracking_DB"();
+	"MPO_Tracking_DB"();
+	"SLD_Tracking_DB"();
+	"DPS_Tracking_DB"();
+	"VGR_Tracking_DB"();
+	
 END_ORGANIZATION_BLOCK
 

@@ -1,0 +1,22 @@
+﻿FUNCTION_BLOCK "DPS_Tracking"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR 
+      Location : String;
+   END_VAR
+
+
+BEGIN
+	//Change value of string when lightbarier is active
+	IF NOT "IX_SSC_LightBarrierStorage_I3" THEN
+	    #Location := 'LightB_Storage';  //Object naar magazijn
+	    "gtyp_Interface_Dashboard".Subscribe.State_Track.track_puck := 'LightB_Storage';
+	END_IF;
+	
+	IF NOT "IX_SSC_LightBarrierOutsourcing_I4" THEN
+	    #Location := 'LightB_Outsourcing';  //Object klaar en goedgekeurd
+	    "gtyp_Interface_Dashboard".Subscribe.State_Track.track_puck := 'LightB_Outsourcing';
+	END_IF;
+	
+END_FUNCTION_BLOCK
+
