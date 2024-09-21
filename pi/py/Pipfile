@@ -1,0 +1,18 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+opcua = "*"
+python-dotenv = "*"
+dash = "*"
+dash-html-components = "*"
+dash-core-components = "*"
+plotly = "*"
+asyncua = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
