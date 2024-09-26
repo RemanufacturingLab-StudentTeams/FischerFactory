@@ -1,12 +1,7 @@
 # Startup guide Fisher Factory
  
 ## Join the network of the Fischertechnik Factory:
-Connect your Windows / Mac / Linux laptop to the WIFI network the Fischer Factory is connected to:
-1. Now: TP-Link_EF41 (password: '69397301')
-1.  In near future: iotroam
-
-Currently, this is the Wifi network of the TP-Link router, the black one with the antennas near the FischerFactory (SSID, login and password are on the backside of the router).
-
+Connect your Windows / Mac / Linux laptop to the WIFI network the Fischer Factory is connected to, `iotroam` (10.35.4.0/24).
  
 ## Startup procedure
 
@@ -20,8 +15,8 @@ Currently, this is the Wifi network of the TP-Link router, the black one with th
 1. If the TXT controller is ready with its boot procedure, touch the touch screen to run the program.
  
 Now you are ready to run the Factory with your internet browser. 
-1. Note the node-red dashboard is at `192.168.0.5:1880/ui`(enter this in the address field of your browser).
-1. If you want to monitor the node-red messages, the MQTT Explorer might be helpful. Connect to `192.168.0.5:1880`. No need to login with username / password.
+1. Note the node-red dashboard is at `10.35.4.254:1880/ui`(enter this in the address field of your browser).
+1. If you want to monitor the node-red messages, the MQTT Explorer might be helpful. Connect to `10.35.4.254:1880`. No need to login with username / password.
 
 
 ## Closing down procedure

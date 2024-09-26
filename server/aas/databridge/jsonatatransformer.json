@@ -1,0 +1,8 @@
+[
+	{
+		"uniqueId": "tempTransformer",
+		"queryPath": "tempTransformer.jsonata",
+		"inputType": "JsonString",
+		"outputType": "JsonString"
+	}
+]

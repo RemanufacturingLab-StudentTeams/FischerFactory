@@ -1,0 +1,569 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Document>
+  <Engineering version="V17" />
+  <DocumentInfo>
+    <Created>2024-09-15T12:30:18.9225043Z</Created>
+    <ExportSetting>WithDefaults</ExportSetting>
+    <InstalledProducts>
+      <Product>
+        <DisplayName>Totally Integrated Automation Portal</DisplayName>
+        <DisplayVersion>V17</DisplayVersion>
+      </Product>
+      <OptionPackage>
+        <DisplayName>TIA Portal Openness</DisplayName>
+        <DisplayVersion>V17</DisplayVersion>
+      </OptionPackage>
+      <OptionPackage>
+        <DisplayName>TIA Portal Version Control Interface</DisplayName>
+        <DisplayVersion>V17</DisplayVersion>
+      </OptionPackage>
+      <Product>
+        <DisplayName>STEP 7 Professional</DisplayName>
+        <DisplayVersion>V17</DisplayVersion>
+      </Product>
+      <OptionPackage>
+        <DisplayName>STEP 7 Safety</DisplayName>
+        <DisplayVersion>V17</DisplayVersion>
+      </OptionPackage>
+      <Product>
+        <DisplayName>WinCC Professional</DisplayName>
+        <DisplayVersion>V17</DisplayVersion>
+      </Product>
+    </InstalledProducts>
+  </DocumentInfo>
+  <SW.Tags.PlcTagTable ID="0">
+    <AttributeList>
+      <Name>HBW - Automated High-Bay Warehouse</Name>
+    </AttributeList>
+    <ObjectList>
+      <SW.Tags.PlcTag ID="1" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%I1.0</LogicalAddress>
+          <Name>IX_HBW_RefSwitchHorizontalAxis_I1</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="2" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="3" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - I1 = Reference switch horizontal axis</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="4" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%I1.1</LogicalAddress>
+          <Name>IX_HBW_LightBarrierInside_I2</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="5" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="6" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - I2 = Light barrier inside </Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="7" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%I1.2</LogicalAddress>
+          <Name>IX_HBW_LightBarrierOutside_I3</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="8" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="9" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - I3 = Light barrier outside</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="A" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%I1.3</LogicalAddress>
+          <Name>IX_HBW_RefSwitchVerticalAxis_I4</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="B" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="C" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - I4 = Reference switch vertical axis</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="D" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%I5.0</LogicalAddress>
+          <Name>IX_HBW_TrailSensor1Lower_A1</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="E" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="F" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - A1 = Trail sensor (signal 1, lower)</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="10" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%I5.4</LogicalAddress>
+          <Name>IX_HBW_TrailSensor2Upper_A2</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="11" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="12" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - A2 = Trail sensor (signal 2, upper)</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="13" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%I5.2</LogicalAddress>
+          <Name>IX_HBW_EncoderVerticalAxisImp1_B3</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="14" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="15" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - B3 = Encoder vertical axis imulse 1</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="16" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%I5.6</LogicalAddress>
+          <Name>IX_HBW_EncoderVerticalAxisImp2_B4</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="17" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="18" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - B4 = Encoder vertical axis imulse 2</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="19" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%I5.1</LogicalAddress>
+          <Name>IX_HBW_EncoderHorizontalAxisImp1_B1</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="1A" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="1B" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - B1 = Encoder horizontal axis imulse 1</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="1C" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%I5.5</LogicalAddress>
+          <Name>IX_HBW_EncoderHorizontalAxisImp2_B2</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="1D" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="1E" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - B2 = Encoder horizontal axis imulse 2</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="1F" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%I1.4</LogicalAddress>
+          <Name>IX_HBW_SwitchCantileverFront_I5</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="20" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="21" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - I5 = Reference switch cantilever front</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="22" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%I1.5</LogicalAddress>
+          <Name>IX_HBW_SwitchCantileverBack_I6</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="23" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="24" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - I6 = Reference switch cantilever back</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="25" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%Q1.0</LogicalAddress>
+          <Name>QX_HBW_M1_ConveyorBeltForward_Q1</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="26" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="27" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - Q1 = Motor M1 conveyor belt forward</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="28" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%Q1.1</LogicalAddress>
+          <Name>QX_HBW_M1_ConveyorBeltBackward_Q2</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="29" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="2A" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - Q2 = Motor M1 conveyor belt backward</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="2B" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%Q1.2</LogicalAddress>
+          <Name>QX_HBW_M2_HorizontalTowardsRack_Q3</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="2C" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="2D" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - Q3 = Motor M2 horizontal towards rack</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="2E" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%Q1.3</LogicalAddress>
+          <Name>QX_HBW_M2_HorizontalTowardsConveyorBelt_Q4</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="2F" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="30" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - Q4 = Motor M2 horizontal towards conveyor belt</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="31" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%Q1.4</LogicalAddress>
+          <Name>QX_HBW_M3_VerticalAxisDownward_Q5</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="32" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="33" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - Q5 = Motor M3 vertical axis downward</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="34" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%Q1.5</LogicalAddress>
+          <Name>QX_HBW_M3_VerticalAxisUpward_Q6</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="35" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="36" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - Q6 = Motor M3 vertical axis upward</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="37" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%Q1.6</LogicalAddress>
+          <Name>QX_HBW_M4_CantileverForward_Q7</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="38" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="39" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - Q7 = Motor M4 cantilever forward</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="3A" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Bool</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%Q1.7</LogicalAddress>
+          <Name>QX_HBW_M4_CantileverBackward_Q8</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="3B" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="3C" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW - Q8 = Motor M4 cantilever backward</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="3D" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Int</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%QW7</LogicalAddress>
+          <Name>QW_HBW_PWM_ConveyorBelt_M1</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="3E" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="3F" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW  = PWM Motor M1 conveyor belt</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="40" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Int</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%QW9</LogicalAddress>
+          <Name>QW_HBW_PWM_HorizontalAxis_M2</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="41" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="42" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW  = PWM Motor M2 horizontal axis</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="43" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Int</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%QW11</LogicalAddress>
+          <Name>QW_HBW_PWM_VerticalAxis_M3</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="44" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="45" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW  = PWM Motor M3 vertical axis</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+      <SW.Tags.PlcTag ID="46" CompositionName="Tags">
+        <AttributeList>
+          <DataTypeName>Int</DataTypeName>
+          <ExternalAccessible>false</ExternalAccessible>
+          <ExternalVisible>false</ExternalVisible>
+          <ExternalWritable>false</ExternalWritable>
+          <LogicalAddress>%QW13</LogicalAddress>
+          <Name>QW_HBW_PWM_Cantilever_M4</Name>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="47" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="48" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text>HBW  = PWM Motor M4 cantilever</Text>
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Tags.PlcTag>
+    </ObjectList>
+  </SW.Tags.PlcTagTable>
+</Document>

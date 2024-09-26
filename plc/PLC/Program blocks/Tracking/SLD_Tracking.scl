@@ -1,0 +1,38 @@
+﻿FUNCTION_BLOCK "SLD_Tracking"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR 
+      Location : String;
+   END_VAR
+
+
+BEGIN
+	//Change string value when lightbarier is active
+	IF NOT "IX_SLD_LightBarrierInlet_I2" THEN
+	    #Location := 'LightB_Inlet'; 
+	    "gtyp_Interface_Dashboard".Subscribe.State_Track.track_puck := 'LightB_Inlet'; 
+	END_IF;
+	
+	IF NOT "IX_SLD_LightBarrierBehindColorSensor_I3" THEN
+	    #Location := 'LightB_BehindColorSensor';
+	    "gtyp_Interface_Dashboard".Subscribe.State_Track.track_puck := 'LightB_BehindColorSensor';
+	END_IF;
+	
+	IF NOT "IX_SLD_LightBarrierWhite_I5" THEN
+	    #Location := 'Light_White';
+	    "gtyp_Interface_Dashboard".Subscribe.State_Track.track_puck := 'LightB_White';
+	END_IF;
+	
+	IF NOT "IX_SLD_LightBarrierRed_I6" THEN
+	    #Location := 'LightB_Red';
+	    "gtyp_Interface_Dashboard".Subscribe.State_Track.track_puck := 'LightB_Red';
+	END_IF;
+	
+	IF NOT "IX_SLD_LightBarrierBlue_I7" THEN
+	    #Location := 'LightB_Blue';
+	    "gtyp_Interface_Dashboard".Subscribe.State_Track.track_puck := 'LightB_Blue';
+	END_IF;
+	
+	    
+END_FUNCTION_BLOCK
+

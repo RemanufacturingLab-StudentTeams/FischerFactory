@@ -1,0 +1,26 @@
+[
+	{
+		"uniqueId": "mpoStatus",
+		"serverUrl": "host.docker.internal",
+		"serverPort": 1884,
+		"topic": "aas/mpo/status"
+	},
+	{
+		"uniqueId": "mpoNumRedPucks",
+		"serverUrl": "host.docker.internal",
+		"serverPort": 1884,
+		"topic": "aas/mpo/numRedPucks"
+	},
+	{
+		"uniqueId": "mpoNumBluePucks",
+		"serverUrl": "host.docker.internal",
+		"serverPort": 1884,
+		"topic": "aas/mpo/numBluePucks"
+	},
+	{
+		"uniqueId": "mpoNumWhitePucks",
+		"serverUrl": "host.docker.internal",
+		"serverPort": 1884,
+		"topic": "aas/mpo/numWhitePucks"
+	}
+]

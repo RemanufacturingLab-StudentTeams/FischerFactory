@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::task;
+use std::env;
 use std::fs::File;
 use std::io::{self, BufReader};
 use rumqttc::{AsyncClient, MqttOptions, QoS};
@@ -27,7 +28,20 @@ fn main() -> io::Result<()> {
     let test_cases = read_json()?;
     let rt = Runtime::new().unwrap();
 
-    let mqtt_options = MqttOptions::new("mqtt_testing_tool", "localhost", 1883);
+    let production_mode = env::args().any(|s| s.eq("prod")); // default in dev
+    if!production_mode { println!("Running in dev mode. Use \"-- prod\" to run in production mode."); }
+    let server = if production_mode { "10.35.4.253" } else { "localhost" };
+    let port = 1883;
+
+    let mut mqtt_options = MqttOptions::new(
+        "testing_tool",
+        server,
+        port,
+    );
+
+    mqtt_options.set_credentials("test", "test123");
+
+    println!("Connecting to {}:{}...", server, port);
     let (client, mut event_loop) = AsyncClient::new(mqtt_options, 10);
 
     rt.spawn(async move {
@@ -65,7 +79,12 @@ fn main() -> io::Result<()> {
                     println!("Custom message sent to topic: {}", test_case.topic);
                 }
             } else {
-                eprintln!("No test value found for topic '{}'. Try again.", input);
+                eprintln!("No test value found for topic '{}'. Enter custom payload:", input);
+                let mut custom_payload = String::new();
+                io::stdin().read_line(&mut custom_payload).expect("Failed to read line");
+                let custom_payload = custom_payload.trim();
+                client.publish(input, QoS::AtLeastOnce, false, custom_payload.to_string()).await.unwrap();
+                println!("Custom message sent to topic: {}", input);
             }
         }
     });

@@ -2,7 +2,7 @@
 <Document>
   <Engineering version="V17" />
   <DocumentInfo>
-    <Created>2024-03-30T11:15:00.9360034Z</Created>
+    <Created>2024-09-15T12:30:27.152583Z</Created>
     <ExportSetting>WithDefaults</ExportSetting>
     <InstalledProducts>
       <Product>
@@ -26,7 +26,7 @@
         <DisplayVersion>V17</DisplayVersion>
       </OptionPackage>
       <Product>
-        <DisplayName>WinCC Advanced</DisplayName>
+        <DisplayName>WinCC Professional</DisplayName>
         <DisplayVersion>V17</DisplayVersion>
       </Product>
     </InstalledProducts>
