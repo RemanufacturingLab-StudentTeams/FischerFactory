@@ -17,3 +17,10 @@ todo.md
 influxdata-archive_compat.key
 influxdata-archive_compat.key.1
 influxdb2_2.7.4-1_amd64.deb
+
+# Data
+server/influx/data/**
+
+# Production files
+
+server/**/telegraf.prod.conf
