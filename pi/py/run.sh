@@ -39,7 +39,7 @@ fi
 
 # Run the Python app in pipenv shell
 echo "Running the app..."
-pipenv run python run.py
+pipenv run python app/app.py
 
 # Check if the script ran successfully
 if [ $? -ne 0 ]; then

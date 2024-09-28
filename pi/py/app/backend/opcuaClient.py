@@ -1,6 +1,4 @@
 # Manages the OPC UA Client asynchronously. This OPC UA Client writes Dashboard commands to the PLC and awaits responses.
-
-from dotenv import load_dotenv
 import os
 import logging
 from asyncua import Client, ua
@@ -15,7 +13,7 @@ class OPCUAClient:
         return cls._instance        
     
     def __init__(self) -> None:
-        self.url = f"opc.tcp://{os.getenv('PLC_IP')}:{os.getenv('PLC_PORT')}" 
+        self.url = f"opc.tcp://{os.getenv('PLC_IP2')}:{os.getenv('PLC_PORT')}" 
         
     async def __aenter__(self):
         await self.connect()

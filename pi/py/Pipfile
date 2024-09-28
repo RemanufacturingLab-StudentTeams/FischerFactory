@@ -6,11 +6,11 @@ name = "pypi"
 [packages]
 opcua = "*"
 python-dotenv = "*"
-dash = "*"
-dash-html-components = "*"
-dash-core-components = "*"
-plotly = "*"
-asyncua = "*"
+dash = "==2.18.1"
+dash-html-components = "==2.0.0"
+dash-core-components = "==2.0.0"
+plotly = "==5.24.1"
+asyncua = "1.1.5"
 
 [dev-packages]
 

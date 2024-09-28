@@ -1,0 +1,74 @@
+/* General stylings that apply to all screens. */
+
+html {
+    height: 100%;
+
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    --accent-color: #0094CE;
+    --accent-color-text: rgb(0, 95, 133);
+    --bg-color-1: #e8e8e8;
+
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: .005em;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+body {
+    padding: 0px;
+    margin: 0px;
+
+    height: 100%;
+}
+
+.banner {
+    grid-area: banner;
+    
+    background-color: var(--accent-color);
+    color: white;
+    
+    align-items: center;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    margin: 0;
+    padding: 0 16px;
+    width: 100%;
+    height: 100%;
+}
+
+.wrapper {
+    display: grid;
+    grid-template-areas: 
+        "banner banner"
+        "side-panel page-content";
+    grid-template-columns: 15% auto;
+    grid-template-rows: 64px minmax(auto, 1fr);
+    overflow: hidden;
+
+    height: 100vh;
+}
+
+.side-panel {
+    grid-area: side-panel;
+    background-color: var(--bg-color-1);
+
+    color: var(--accent-color-text);
+}
+
+.side-panel-link {
+    font-size: calc(80%);
+    padding: 15px;
+}
+
+.side-panel-link:hover {
+    backdrop-filter: brightness(90%);
+}
+
+.page-content {
+    grid-area: page-content;
+}
