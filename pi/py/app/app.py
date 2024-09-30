@@ -38,7 +38,11 @@ app.layout = html.Div(
         html.Div(
             id='feedback-div'
         ),
-        dash.page_container,
+        html.Div([
+            dash.page_container,
+            ],
+            className='page-content'   
+        )
     ],
     className='wrapper'
 )

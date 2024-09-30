@@ -6,11 +6,28 @@ html {
     font-family: Verdana, Geneva, Tahoma, sans-serif;
     --accent-color: #0094CE;
     --accent-color-text: rgb(0, 95, 133);
+    --accent-color-text-2: #1bbfff;
     --bg-color-1: #e8e8e8;
 
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 400;
     letter-spacing: .005em;
+}
+
+h2 {
+    font-size: calc(125%);
+    text-decoration: none;
+    color: var(--accent-color-text-2);
+    font-weight: normal;
+    margin: 0px;
+    padding-bottom: 20px;
+}
+
+h3 {
+    font-size: calc(100%);
+    text-align: center;
+    text-decoration: none;
+    font-weight: normal;
 }
 
 a {
@@ -23,6 +40,10 @@ body {
     margin: 0px;
 
     height: 100%;
+}
+
+.title {
+    font-size: calc(125%);
 }
 
 .banner {
@@ -61,7 +82,6 @@ body {
 }
 
 .side-panel-link {
-    font-size: calc(80%);
     padding: 15px;
 }
 
@@ -71,4 +91,59 @@ body {
 
 .page-content {
     grid-area: page-content;
+    overflow-y: scroll;
+}
+
+button {
+    background-color: var(--accent-color);
+    box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.2);
+    color: white;
+    margin: 0px;
+    padding: 15px 5px;
+    outline: none;
+    border-radius: 5px;
+    border: none;
+    font-size: inherit;
+}
+
+button:hover {
+    filter: brightness(1.1);
+}
+
+button:active {
+    filter: brightness(1.2);
+}
+
+.table {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+}
+
+.table > span.label {
+    padding: 0px 12px;
+    justify-self: left;
+    align-self: center;
+    padding: 0px 10px;
+}
+
+.table> p.value {
+    font-weight: bold;
+}
+
+.table > * {
+    justify-self: right;
+}
+
+.dropdown {
+    border: none;
+    appearance: none;
+    outline: none;
+    border-bottom: 1px solid black;
+
+    min-width: 250px;
+}
+
+.dropdown > div {
+    border: none;
 }
