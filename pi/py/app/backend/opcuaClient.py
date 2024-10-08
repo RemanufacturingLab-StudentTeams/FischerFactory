@@ -13,14 +13,8 @@ class OPCUAClient:
         return cls._instance        
     
     def __init__(self) -> None:
-        self.url = f"opc.tcp://{os.getenv('PLC_IP2')}:{os.getenv('PLC_PORT')}" 
-        
-    async def __aenter__(self):
-        await self.connect()
-        return self
-    
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.disconnect()
+        self.url = f"opc.tcp://{os.getenv('PLC_IP')}:{os.getenv('PLC_PORT')}" 
+        self.connect()
         
     async def connect(self):
         if self.client is None:

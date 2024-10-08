@@ -2,8 +2,12 @@ from dash import dcc, html, Dash
 from dash.dependencies import Input, Output
 import dash
 import logger
+import logging
 from dotenv import load_dotenv
 import page_icons
+import os, argparse
+from backend import mqttClient
+import asyncio
 
 app = Dash(__name__, 
                 external_stylesheets=[
@@ -49,6 +53,24 @@ app.layout = html.Div(
 
 
 if __name__ == "__main__":
-    load_dotenv()
+    parser = argparse.ArgumentParser(description='Run the application.')
+    parser.add_argument('--dev', action='store_true', help='Run in development mode')
+    dev = parser.parse_args().dev
+    os.environ.clear()
+    
+    load_dotenv(dotenv_path=('.env-dev' if dev else '.env-prod'))
+    print(f"Running in {'development' if dev else 'production'} mode with environment variables: {os.environ}")
+    
     logger.setup()
-    app.run_server(debug=True)
+    
+    async def testClient():
+        # Initialize the MQTT client
+        client = mqttClient.MqttClient()
+
+        # Keep the event loop running
+        await asyncio.Future()  
+            
+    asyncio.run(testClient())
+    
+    app.run(dev_tools_hot_reload=bool(dev))
+    
