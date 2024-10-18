@@ -1,0 +1,14 @@
+{
+    "props": {
+        "children": "No data yet",
+        "id": {
+            "type": "synced",
+            "topic": "f/i/state/sld",
+            "field": "observedColor",
+            "index": 0
+        },
+        "className": "value"
+    },
+    "type": "P",
+    "namespace": "dash_html_components"
+}

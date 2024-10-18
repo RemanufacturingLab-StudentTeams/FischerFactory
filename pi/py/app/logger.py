@@ -1,4 +1,6 @@
 import logging
+from flask import Flask
+from werkzeug.serving import WSGIRequestHandler
 
 class ColorFormatter(logging.Formatter):
     # ANSI escape codes for colors
@@ -25,3 +27,7 @@ def setup():
     ))
     
     logging.basicConfig(level=logging.DEBUG, handlers=[handler])
+    
+    # Suppress HTTP requests logging
+    logging.getLogger('werkzeug').setLevel(logging.ERROR)
+    logging.getLogger('flask').setLevel(logging.ERROR)

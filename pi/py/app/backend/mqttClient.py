@@ -3,61 +3,62 @@ import os
 from logger import setup
 import logging
 from datetime import datetime
-import re 
-import json
+import re
+from copy import deepcopy
 import asyncio
+from typing import List, Dict, Coroutine
+from .page_topics import *
+import json
 
-setup()
+setup() # logger setup
 
-# Helper functions
-
-# Function to parse the MQTT schema and build the state_in variable from that
-def parse_mqtt_schema():
+# Function to parse the MQTT schema and build the state variable from the specified topics for one page
+def parse_mqtt_schema(topics: List[str] = []) -> Dict:
     path = f"{os.getenv('PROJECT_ROOT_PATH')}/schemas/mqtt/mqtt_schema.ts"
     
     res = {}
     
-    # Define a regex pattern to match the topic and payload
-    pattern = re.compile(
-        r'\s*(\w+):\s*{\s*topic:\s*[\'"]((f/i/)[^\'"]+)[\'"],\s*payload:\s*{([^}]*)}\s*},?',
-        re.DOTALL
-    )
-    
     # Define a function to generate default values
-    def generate_default_payload(payload_str):
+    def generate_default_payload(payload_str: str):
         defaults = {}
         # Split the payload into lines for processing
         for line in payload_str.strip().split(','):
             key_value = line.split(':')
             if len(key_value) == 2:
                 key = key_value[0].strip()
-                value_type = key_value[1].strip()
-                # Assign default values based on type
-                if 'number' in value_type:
-                    defaults[key] = 0
-                elif 'string' in value_type:
-                    defaults[key] = ""
-                elif 'Date' in value_type:
-                    defaults[key] = datetime.now().isoformat()  # Using ISO format for date
-                else:
-                    defaults[key] = None  # Default for unspecified types
+                defaults[key] = None
         return defaults
-
+    
     with open(path, 'r') as file:
-        content = file.read()
+        schema = file.read()
+        schema = re.sub(r'//.*', '', schema) # remove all the comments
         
-        # Find all matches in the content
-        for match in pattern.finditer(content):
-            # Extract topic and payload
-            topic_name = match.group(2)
-            payload_str = match.group(3)
-            default_payload = generate_default_payload(payload_str)
-            res[topic_name] = default_payload
+        for topic in topics:
+            pattern = re.compile(
+                # Regex pattern to match on the specified topic
+                fr'\s*(\w+):\s*{{\s*topic:\s*[\'"](({topic})[^\'"]+)[\'"],?\s*payload:[^\}}]*}},?',
+                re.DOTALL
+            )
+            
+            matches = pattern.findall(schema)
+            for match in matches:
+                topic_name = match[1]
+                payload_str = match[2]
+                default_payload = generate_default_payload(payload_str)
+                res[topic_name] = default_payload
+            
+            if len(matches) == 0:
+                logging.warning(f"Topic \"{topic}\" was specified in the page_topics file, but does not appear in the MQTT schema. This topic will not be subscribed to.")
+
     return res
+
 
 class MqttClient:
     
     _instance = None
+    state_data = {'dirty': False} # dirty bit to track if it was modified since it was last GET-ed
+    state_overview = {'dirty': False}
+    
     def __new__(cls, *args, **kwargs): # singleton pattern
         if not cls._instance:
             cls._instance = super().__new__(cls)
@@ -83,9 +84,6 @@ class MqttClient:
                 password=os.getenv('MQTT_PASSWORD')
             )
             
-            global state_in
-            state_in = parse_mqtt_schema()
-            
             self.initialized = True 
             self.reconnect_attempts = 0
             self.max_reconnect_attempts = 10
@@ -100,7 +98,7 @@ class MqttClient:
             await asyncio.to_thread(self.client.loop_start)
             self.reconnect_attempts = 0
             
-            await self.subscribe_to_state_in()
+            await self.init_state_variables()
         except Exception as e:
             logging.error(f"Failed to connect to MQTT broker: {e}")
             self.reconnect_attempts += 1
@@ -110,16 +108,6 @@ class MqttClient:
             else:
                 logging.error("Max reconnection attempts reached. Stopping MQTT client.")
                 
-    async def subscribe_to_state_in(self): # subscribes to f/i/ topics and updates the state_in global variable.
-        subscription_tasks = []
-        for key in state_in:
-            def cb(message, key=key):
-                state_in[key] = message
-                print(json.dumps(state_in, indent=4))
-            
-            subscription_tasks.append(self.subscribe(topic=key, callback=cb))
-        
-        await asyncio.gather(*subscription_tasks)
 
     async def attempt_reconnection(self):
         await asyncio.sleep(self.reconnect_interval)
@@ -160,3 +148,32 @@ class MqttClient:
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         logging.info(f"[MQTTCLIENT] Subscribed to topic, mid: {mid}, qos: {granted_qos}")
+        
+    # calls parse_mqtt_schema for each page to make a state variable for each of them
+    async def init_state_variables(self) -> None: 
+        # state variable for the "overview" page
+        self.state_overview.update(parse_mqtt_schema(OVERVIEW_TOPICS)) # raw topics as specified by the page_topics.py file
+        await self.subscribe_to_state(self.state_overview)
+        self.state_data.update(parse_mqtt_schema(DATA_TOPICS))
+        await self.subscribe_to_state(self.state_data)
+        
+    async def subscribe_to_state(self, state): # subscribes to f/i/ topics and updates the state_in global variable.
+        subscription_tasks = []
+        for key in state:
+            def cb(message, key=key): # callback to make sure the mqtt messages get stored in the state variable
+                state[key] = json.loads(message)
+                state['dirty'] = True
+            subscription_tasks.append(self.subscribe(topic=key, callback=cb))
+        
+        await asyncio.gather(*subscription_tasks)
+        
+    def get_state(self, page):
+        match page:
+            case 'overview':
+                res = deepcopy(self.state_overview)
+                self.state_overview['dirty'] = False
+                return res
+            case 'data':
+                res = deepcopy(self.state_data)
+                self.state_data['dirty'] = False
+                return res

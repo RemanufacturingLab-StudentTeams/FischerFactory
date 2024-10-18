@@ -1,3 +1,5 @@
+/* Styling for the "Factory Overview" page. */
+
 .overview {
     display: grid;
     grid-template-areas: 

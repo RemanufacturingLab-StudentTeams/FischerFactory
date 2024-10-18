@@ -1,13 +1,13 @@
-from dash import dcc, html, Dash
-from dash.dependencies import Input, Output
+import pprint
+from dash import dcc, html, Dash, Input, Output
 import dash
 import logger
-import logging
 from dotenv import load_dotenv
 import page_icons
 import os, argparse
 from backend import mqttClient
 import asyncio
+from threading import Thread
 
 app = Dash(__name__, 
                 external_stylesheets=[
@@ -51,6 +51,10 @@ app.layout = html.Div(
     className='wrapper'
 )
 
+layoutDebug = html.Div([
+    html.Button('debug', id='debug-button', n_clicks=0),
+    html.Div('no clicks', id='debug-div')
+])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run the application.')
@@ -59,18 +63,25 @@ if __name__ == "__main__":
     os.environ.clear()
     
     load_dotenv(dotenv_path=('.env-dev' if dev else '.env-prod'))
-    print(f"Running in {'development' if dev else 'production'} mode with environment variables: {os.environ}")
+    print(f"Running in \033[0;33m{'development' if dev else 'production'} mode\033[0m with environment variables:")
+    pprint.pprint(os.environ.copy())
     
     logger.setup()
     
-    async def testClient():
+    async def startClient():
         # Initialize the MQTT client
         client = mqttClient.MqttClient()
-
+        
         # Keep the event loop running
-        await asyncio.Future()  
-            
-    asyncio.run(testClient())
+        await asyncio.Future()
+        
+    def asyncWrapper():
+        asyncio.run(startClient()) 
     
-    app.run(dev_tools_hot_reload=bool(dev))
+    th = Thread(target=asyncWrapper)
+    th.start()
     
+    # Launch the Dash app
+    app.run(dev_tools_hot_reload=bool(dev), debug=False)
+    
+    th.join()

@@ -118,6 +118,7 @@ layout = html.Div(
                     html.Span('Version', className='label'),
                     html.P('0.0', className='value'),
                     html.Span('State Turtlebot', className='label'),
+                    html.P('Loading...', className='value'),
                     dcc.Dropdown(
                         id='turtlebot-state-dropdown',
                         options=[
@@ -132,7 +133,7 @@ layout = html.Div(
                     html.P('Offline', className='value'),
                 ], 
                 className='turtlebot-control-container table'
-            )], className='turtlebot-control'           
+            )], className='turtlebot-control'
         ),
         
         
