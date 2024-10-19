@@ -1,3 +1,17 @@
+/**
+ * This file contains a comprehensive, human-readable documentation of the MQTT schema used for communication between
+ * the Raspberry Pi and several other components, like the server, bme, Turtlebot, and various extensions. It is written in TypeScript for convenience, and is not supposed to be
+ * compiled to JavaScript.
+ */
+
+/**
+ * Timestamps are in ISO 8601 format. E.g.: "2022-09-27 18:00:00.000".
+ */
+
+/**
+ * Units and min..max values are in block brackets, e.g. [1..100][Celsius] means min. 1 degree Celsius, max 100 degrees Celsius
+ */
+
 type schema = {
     f: { // Fischer Factory
 
@@ -29,22 +43,20 @@ type schema = {
             state: {
                 // DSI state
                 dsi: {
-                    topic: 'f/i/state/dsi',
+                    topic: 'f/i/state/dsi'
                     payload: {
-                        ts: Date,
-                        station: "dsi",
-                        code: number,
-                        description: string
+                        ts: Date
+                        station: 'dsi'
+                        code: number // 0 available, 1 not available
                     }
                 },
                 // DSO state is sent over MQTT after 'gtyp_Interface_Dashboard"."Subscribe"."State_DSO' nodes are polled
                 dso: {
-                    topic: 'f/i/state/dso',
+                    topic: 'f/i/state/dso'
                     payload: {
-                        ts: Date,
-                        station: "dso",
-                        code: number,
-                        description: string
+                        ts: Date
+                        station: "dso"
+                        code: number // 0 available, 1 not available
                     }
                 },
 
@@ -52,13 +64,13 @@ type schema = {
                     topic: "f/i/state/mpo",
                     payload: {
                         ts: Date,
-                        station: "mpo",
-                        code: number,
+                        station: 'mpo',
+                        code: number // Bit code for lamps: Red=4 Yellow=2 Green=1
                         description: string,
                         active: 1,
                         error: number,
                         errorMessage: string,
-                        target: "mpo",
+                        target: 'mpo' // target node for process
                         inOven: false,
                         tsOven: Date,
                         atSaw: false,
@@ -75,12 +87,12 @@ type schema = {
                     payload: {
                         ts: Date,
                         station: "sld",
-                        code: number,
+                        code: number // Bit code for lamps: Red=4 Yellow=2 Green=1
                         description: string,
                         active: 1,
                         error: number,
                         errorMessage: string,
-                        target: "sld",
+                        target: "sld" // target node for process
                         tsColor: Date,
                         colorObserved: false,
                         observedColor: "String",
@@ -98,10 +110,10 @@ type schema = {
                     payload: {
                         ts: Date,
                         station: "vgr",
-                        code: number,
+                        code: number // Bit code for lamps: Red=4 Yellow=2 Green=1
                         description: string,
-                        active: 1,
-                        target: "vgr"
+                        active: number,
+                        target: 'vgr' // target node for process
                     }
 
                 },
@@ -112,7 +124,7 @@ type schema = {
                     payload: {
                         ts: Date,
                         station: "hbw",
-                        code: number,
+                        code: number // Bit code for lamps: Red=4 Yellow=2 Green=1
                         description: string,
                         active: 1,
                         target: "hbw",
@@ -128,19 +140,57 @@ type schema = {
                 payload: {
                     stockItems: FixedLengthArray<{
                         workpiece: {
-                            id: string,
-                            state: string,
+                            id: string
+                            state: 'RAW' | 'PROCESSED'
                             type: 'RED' | 'WHITE' | 'BLUE'
-                        }, location: string
+                        }
+                        location: 'A1' | 'A2' | 'A3' | 'B1' | 'B2' | 'B3' | 'C1' | 'C2' | 'C3'
                     }, 9>
                     ts: Date,
                 }
             }
+
+            order: {
+                topic: 'f/i/order'
+                payload: {
+                    ts: Date
+                    state: 'WAITING_FOR_ORDER' | 'ORDERED'| 'IN_PROCESS' | 'SHIPPED'
+                    type: 'RED' | 'WHITE' | 'BLUE'
+                }
+            }
+
+            nfc: {
+                ds: {
+                    topic: 'f/i/nfc/ds'
+                    payload: {
+                        ts: Date
+                        workpiece: {
+                            id: string
+                            state: 'RAW' | 'PROCESSED'
+                            type: 'RED' | 'WHITE' | 'BLUE'
+                        }
+                        history: FixedLengthArray<{
+                            ts: Date
+                            /**
+                             * 100 = 'Delivery of raw materials'
+                             * 200 = 'Quality control'
+                             * 300 = 'Storage'
+                             * 400 = 'Removal from storage'
+                             * 500 = 'Processing kiln'
+                             * 600 = 'Milling processing'
+                             * 700 = 'Sorting'
+                             * 800 = 'Dispatch of goods'
+                             */
+                            code: number
+                        }, 1000>
+                    }
+                }
+            }
         },
-        o: { // topics that the Dashboard publishes to
+        o: { // topics that the Dashboard publishes to as output
             state: {
                 // Dashboard Ack. Button from MQTT
-                ack: {
+                ack: { // Serves as a trigger to acknowledge the error status so production can continue
                     topic: 'f/o/state/ack',
                     payload: {
                         ts: Date
@@ -184,14 +234,25 @@ type schema = {
                 | "end_pan" // Dashboard icon: arrow_forward
                 | "start_tilt" // Dashboard icon: arrow_downward
                 | "end_tilt", // Dashboard icon: arrow_upwards
-                degree: 10 // for all the "relmove" commands
+                degree: 10 // for all the "relmove" commands [decimal]
                 | 1, // for everything else
                 ts: Date
             }
         }
+
+        broadcast: {
+            topic: 'o/broadcast'
+            payload: {
+                ts: Date
+                hardwareId: string
+                softwareName: string
+                softwareVersion: string
+                message: string
+            }
+        }
     },
 
-    fl: {
+    fl: { // no idea what this is, it may be a typo 
         i: {
             // NFC reader - deliver read values from MQTT to OPC UA
             nfc: {
@@ -262,12 +323,12 @@ type schema = {
     },
 
     // Inputs from MQTT publishers other than the Node-RED program.
-    // Note: the payloads might not be comprehensive, as the publishing client was too opaque at the time of writing. 
     i: {
-        ldr: {
+        ldr: { // Photoresistor
             topic: 'i/ldr',
             payload: {
-                br: number // brightness
+                br: number // brightness [0..100.0]
+                ldr: number // Resistance [0..15000] [Ohm]
                 ts: Date
             }
         },
@@ -277,17 +338,62 @@ type schema = {
             payload: {
                 ts: Date
             }
+            pos: {
+                topic: 'i/ptu/pos'
+                payload: {
+                    ts: Date
+                    pan: number // [-1.000...0.000...1.000]
+                    tilt: number // [-1.000...0.000...1.000]
+                }
+            }
         },
 
         bme680: {
             topic: 'i/bme680'
             payload: {
                 ts: Date
-                t: number // temperature
-                p: number // pressure
-                iaq: number // air quality index
-                aq: number // air quality score
-                h: number // humidity
+                t: number // temperature, adjusted [Celsius]
+                p: number // pressure [hPa]
+                iaq: number // air quality index (0-500 (0...50:Good, 51...100:Moderate, 101...150:Unhealthy for Sensitive Groups, 151...200:Unhealthy, 201...300:Very Unhealthy, 301...500:Hazardous))
+                aq: number // air quality score  0-3 (0:IAQ invalid, 1:Calibration necessary, 2:Calibration complete, 3:IAQ is calibrated)
+                h: number // humidity [%]
+            }
+        },
+
+        cam: {
+            topic: 'i/cam'
+            payload: {
+                ts: Date
+                data: string // URI: data:image/jpeg;base64
+            }
+        },
+
+        alert: {
+            topic: 'i/alert'
+            payload: {
+                ts: Date
+                id: 'bme680/t' | 'bme680/h' | 'bme680/p' | 'bme680/iaq' | 'ldr' | 'cam' // id of the component that triggered the alert
+                data: string
+                /**
+                * Alarm codes:
+                100 = 'Alarm: Motion detected!': Motion in the camera image
+                200 = 'Alarm: Danger of frost! (%1)': Temperature < 4.0°C
+                300 = 'Alarm: High humidity! (%1)': Humidity > 80%
+                 */
+                code: number
+            }
+        },
+
+        // Note: not used in the FischerFactory. 
+        broadcast: {
+            topic: 'i/broadcast'
+            payload: {
+                ts: Date,
+                hardwareId: string
+                hardwareModel: string
+                softwareName: string
+                softwareVersion: string
+                message: string
             }
         }
     },
@@ -343,14 +449,19 @@ type schema = {
         cam: { // Camera
             topic: 'c/cam',
             payload: { // If the camera is on
-                on: "true",
-                fps: "2",
+                on: "true"
+                fps: "2" // [2..15]
                 ts: Date
             }
         }
-        ldr: {
+        ldr: { // photoresistor
             topic: 'c/ldr'
             payload: {
+                /**
+                 * Sensor values per second
+                    2 corresponds to one sensor value every 2 seconds
+                    6 corresponds to one sensor value every six seconds
+                 */
                 period: 3,
                 ts: Date
             }
@@ -358,6 +469,12 @@ type schema = {
         bme680: {
             topic: 'c/bme680'
             payload: {
+                /**
+                 * Sensor values per second
+                    Minimum 3 or multiple of 3
+                    3 corresponds to one sensor value every three seconds
+                    6 corresponds to one sensor value every six seconds
+                 */
                 period: 3,
                 ts: Date
             }
