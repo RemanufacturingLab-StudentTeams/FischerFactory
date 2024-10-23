@@ -2,22 +2,33 @@ import logging
 from flask import Flask
 from werkzeug.serving import WSGIRequestHandler
 
+from colorama import Fore, Style
+
+def c(text, color, reset='white'):
+    colors = {
+        'white': Fore.WHITE,
+        'cyan': Fore.CYAN,
+        'yellow': Fore.YELLOW,
+        'red': Fore.RED,
+        'magenta': Fore.MAGENTA
+    }
+    return f"{colors.get(color, '')}{text}{colors.get(reset)}"
+
+
 class ColorFormatter(logging.Formatter):
     # ANSI escape codes for colors
     COLORS = {
-        'DEBUG': "\033[0;37m",    # White
-        'INFO': "\033[0;36m",     # Cyan
-        'WARNING': "\033[0;33m",  # Yellow
-        'ERROR': "\033[0;31m",    # Red
-        'CRITICAL': "\033[1;41m", # White on Red background
-        'RESET': "\033[0m"        # Reset color
+        'DEBUG': "white",
+        'INFO': "cyan",
+        'WARNING': "yellow",
+        'ERROR': "red",
+        'CRITICAL': "magenta"
     }
 
     def format(self, record):
         log_msg = super().format(record)
-        color = self.COLORS.get(record.levelname, self.COLORS['RESET'])
-        reset = self.COLORS['RESET']
-        return f'{color}{log_msg}{reset}'
+        color = self.COLORS.get(record.levelname, '')
+        return c(log_msg, color)
 
 def setup():
     handler = logging.StreamHandler()

@@ -1,6 +1,6 @@
 import paho.mqtt.client as paho_client
 import os
-from logger import setup
+from logger import setup, c
 import logging
 from datetime import datetime
 import re
@@ -48,8 +48,7 @@ def parse_mqtt_schema(topics: List[str] = []) -> Dict:
                 res[topic_name] = default_payload
             
             if len(matches) == 0:
-                logging.warning(f"Topic \"{topic}\" was specified in the page_topics file, but does not appear in the MQTT schema. This topic will not be subscribed to.")
-
+                logging.warning(f"Topic {c(topic, 'white', 'cyan')} was specified in the page_topics file, but does not appear in the MQTT schema. This topic will not be subscribed to.")
     return res
 
 
@@ -118,12 +117,15 @@ class MqttClient:
 
     async def publish(self, topic, payload, qos=1):
         result = self.client.publish(topic, payload, qos=qos)
-        logging.info(f"[MQTTCLIENT] Published message to topic {topic}: {payload} (Result: {result.rc})")
+        logging.info(f"[MQTTCLIENT] Published message to topic {c(topic, 'white', 'cyan')}: {c(payload, 'magenta', 'cyan')} (Result: {result.rc})")
 
     async def subscribe(self, topic, qos=1, callback=None):
-        logging.info(f"[MQTTCLIENT] Subscribing to topic {topic}")
+        logging.info(f"[MQTTCLIENT] Subscribing to topic {c(topic, 'white')}")
+        
+        @self.client.topic_callback(topic)
         def on_message_wrapper(client, userdata, msg):
             payload = msg.payload.decode()
+            logging.info(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(payload, 'magenta')}")
             if callback:
                 callback(payload)  
 
@@ -138,7 +140,7 @@ class MqttClient:
             logging.error(f"Failed to connect, return code {rc}")
 
     def on_message(self, client, userdata, msg):
-        logging.info(f"[MQTTCLIENT] Message received from {msg.topic}: {msg.payload.decode()}")
+        logging.info(f"[MQTTCLIENT] Message received from {c(msg.topic, 'white', 'cyan')}: {msg.payload.decode()}")
 
     def on_disconnect(self, client, userdata, rc):
         logging.info("[MQTTCLIENT] Disconnected from MQTT broker")
@@ -160,6 +162,7 @@ class MqttClient:
     async def subscribe_to_state(self, state): # subscribes to f/i/ topics and updates the state_in global variable.
         subscription_tasks = []
         for key in state:
+            if key == 'dirty': continue
             def cb(message, key=key): # callback to make sure the mqtt messages get stored in the state variable
                 state[key] = json.loads(message)
                 state['dirty'] = True

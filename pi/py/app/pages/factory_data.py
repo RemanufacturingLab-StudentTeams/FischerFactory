@@ -51,9 +51,7 @@ def update(n_intervals, el):
         patch = Patch() # patch object of the sld-table children.
         
         for i in range(len(el)):
-            logging.debug(el[i]['props'].get('id', {}).get('type', {}))
             if el[i]['props'].get('id', {}).get('type', {}) == 'synced':
-                logging.debug(state_data[el[i]['props']['id']['topic']])
                 topic = el[i]['props']['id']['topic']
                 field = el[i]['props']['id']['field']
                 patch[i]["props"]["children"] = state_data.get(topic, {}).get(field, "No data yet")
