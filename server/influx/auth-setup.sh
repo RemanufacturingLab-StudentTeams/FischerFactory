@@ -31,9 +31,9 @@ fi
 
 # Set the telegraf configuration file based on the environment
 if [ "$ENVIRONMENT" == "dev" ]; then
-  TELEGRAF_CONF="./telegraf.dev.conf"
+  TELEGRAF_CONF="telegraf/telegraf.dev.conf"
 elif [ "$ENVIRONMENT" == "prod" ]; then
-  TELEGRAF_CONF="./telegraf.prod.conf"
+  TELEGRAF_CONF="telegraf/telegraf.prod.conf"
 else
   echo "Invalid environment specified. Use 'prod' or 'dev'."
   exit 1
