@@ -1,16 +1,19 @@
 /* Styling for the "Factory Data" page. */
+@import './style.css';
 
 .device-data-table {
     overflow-x: scroll;
     width: 100%;
     border-collapse: collapse;
-}
 
-.device-data-table > tr > .value {
-    font-weight: bold;
+    padding: 20px;
 }
 
 .device-data-table > tr > * {
     align-self: center;
     margin: 20px;
+}
+
+.device-data-table > tr:nth-child(even) {
+    background-color: var(--bg-color-1);
 }

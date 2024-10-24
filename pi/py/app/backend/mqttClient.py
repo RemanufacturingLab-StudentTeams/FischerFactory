@@ -117,7 +117,7 @@ class MqttClient:
 
     async def publish(self, topic, payload, qos=1):
         result = self.client.publish(topic, payload, qos=qos)
-        logging.info(f"[MQTTCLIENT] Published message to topic {c(topic, 'white', 'cyan')}: {c(payload, 'magenta', 'cyan')} (Result: {result.rc})")
+        logging.info(f"[MQTTCLIENT] Published message to topic {c(topic, 'white', 'cyan')}: {c(payload, 'white', 'cyan')} (Result: {result.rc})")
 
     async def subscribe(self, topic, qos=1, callback=None):
         logging.info(f"[MQTTCLIENT] Subscribing to topic {c(topic, 'white')}")
@@ -125,7 +125,7 @@ class MqttClient:
         @self.client.topic_callback(topic)
         def on_message_wrapper(client, userdata, msg):
             payload = msg.payload.decode()
-            logging.info(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(payload, 'magenta')}")
+            logging.info(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(payload, 'white')}")
             if callback:
                 callback(payload)  
 
