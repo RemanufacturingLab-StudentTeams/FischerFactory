@@ -13,21 +13,25 @@ layout = html.Div(
         ], className='environment'),
         html.Div([
             html.H2('Sorting Line Data'),
-            html.Div([
-                html.Span('Active', className='label'),
-                html.P('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'active', 'index':0}), 
-                html.Span('Error', className='label'),
-                html.P('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'error', 'index':0}),
-                html.Span('Error message', className='label'),
-                html.P('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'errorMessage', 'index':0}),
-                html.Span('Workpiece ID', className='label'),
-                html.P('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'workpieceID', 'index':0}),
-                html.Span('Workpiece type', className='label'),
-                html.P('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'workpieceType', 'index':0}),
-                html.Span('On transport belt', className='label'),
-                html.P('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'onTransportBelt', 'index':0}),
-                html.Span('Color', className='label'),
-                html.P('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'observedColor', 'index':0})
+            html.Table([
+                html.Tr([
+                    html.Th('Active', className='label'),
+                    html.Th('Error', className='label'),
+                    html.Th('Error message', className='label'),
+                    html.Th('Workpiece ID', className='label'),
+                    html.Th('Workpiece type', className='label'),
+                    html.Th('On transport belt', className='label'),
+                    html.Th('Color', className='label'),
+                ]),
+                html.Tr([
+                    html.Td('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'active', 'index':0}), 
+                    html.Td('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'error', 'index':0}),
+                    html.Td('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'errorMessage', 'index':0}),
+                    html.Td('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'workpieceID', 'index':0}),
+                    html.Td('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'workpieceType', 'index':0}),
+                    html.Td('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'onTransportBelt', 'index':0}),
+                    html.Td('No data yet', className='value', id={'type':'synced', 'topic': 'f/i/state/sld', 'field': 'observedColor', 'index':0})
+                ])
             ], className='device-data-table', id='sld-table'),
         ], className='sld'),
         dcc.Interval(id='updater', n_intervals=0, interval=0.5 * 1000) # every 0.5 seconds,
@@ -40,21 +44,22 @@ layout = html.Div(
     Input('updater', 'n_intervals'),
     State('sld-table', 'children')
 )
-def update(n_intervals, el):    
+def update_sld(n_intervals, el):    
     client = mqttClient.MqttClient()
     state_data = mqttClient.MqttClient.get_state(client, 'data')
     
-    
-    if (n_intervals != 0) and (not state_data['dirty']): # "dirty" = nothing changed since last time it was called
+    if (n_intervals != 0) and (not state_data['dirty']): # not "dirty" = nothing changed since last time it was called
         raise PreventUpdate
     else:    
         patch = Patch() # patch object of the sld-table children.
         
-        for i in range(len(el)):
-            if el[i]['props'].get('id', {}).get('type', {}) == 'synced':
-                topic = el[i]['props']['id']['topic']
-                field = el[i]['props']['id']['field']
-                patch[i]["props"]["children"] = state_data.get(topic, {}).get(field, "No data yet")
+        lts = patch[1] # <tr> element for the lts data
+        
+        lts['children'] = [
+                html.Td(state_data['f/i/state/sld'].get(v, 'No data yet'), className='value') 
+                for v in ['active', 'error', 'errorMessage', 'workpieceID', 'workpieceType', 'onTransportBelt', 'observedColor']
+            ]
+
         return patch
 
 dash.register_page(__name__, path='/data', layout=layout)

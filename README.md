@@ -40,7 +40,9 @@ Documentation requirements are different depending on the subject:
 
 ## Deployment
 
-...
+*NOTE: the TXT  broker might not initially attain a network connection. Setting it to DHCP and back to static in the WLAN settings usually fixes the issue.*
+*!TODO: this might be a routing issue.*
+
 
 ## Networking
 

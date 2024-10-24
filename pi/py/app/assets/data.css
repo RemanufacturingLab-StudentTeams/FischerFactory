@@ -1,18 +1,16 @@
 /* Styling for the "Factory Data" page. */
 
 .device-data-table {
-    display: flex;
-    flex-flow: row nowrap;
-    justify-content: space-around;
-
     overflow-x: scroll;
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.device-data-table > .value {
+.device-data-table > tr > .value {
     font-weight: bold;
 }
 
-.device-data-table > * {
+.device-data-table > tr > * {
     align-self: center;
     margin: 20px;
 }
