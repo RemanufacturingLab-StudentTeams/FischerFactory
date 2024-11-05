@@ -9,7 +9,8 @@ pi/nodejs/dist
 server/mqtt_testing_tool/target
 **/Cargo.lock
 **/target/
-
+__pycache__/
+*.pyc
 
 # Local development files
 todo.md
