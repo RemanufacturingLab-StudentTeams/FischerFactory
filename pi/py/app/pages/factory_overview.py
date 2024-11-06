@@ -1,13 +1,16 @@
 import dash
 from dash import Dash, html, Input, Output, callback, dcc
-from backend import opcuaClient, mqttClient
+from backend import mqttClient, opcuaClient
 import asyncio
 import dash_daq as daq
+
+# Hydration: These values are filled in once, on page load
+
 
 layout = html.Div(
     [
         html.Link(href='../assets/overview.css', rel='stylesheet'),
-        html.Div([            
+        html.Div([
             html.Div([
                 html.H2('Camera'),
                 html.Img()
@@ -74,7 +77,7 @@ layout = html.Div(
                         html.Div(
                             [
                                 html.Span('Version Index PLC', className='label'),
-                                html.P('0.0', className='value'),
+                                html.P('1', className='value'),
                                 html.Span('Version Index HMI', className='label'),
                                 html.P('1.4', className='value')
                             ], className='factory-control-header table'

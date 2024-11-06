@@ -9,8 +9,12 @@
     padding: 20px;
 }
 
-.device-data-table > tr > * {
-    align-self: center;
+.device-data-table > tr:first-child {
+    background-color: var(--bg-color-2);
+}
+
+.device-data-table > tr > td,th {
+    text-align: center;
     margin: 20px;
 }
 

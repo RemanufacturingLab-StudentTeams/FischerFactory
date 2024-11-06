@@ -5,7 +5,7 @@ import logger
 from dotenv import load_dotenv
 import page_icons
 import os, argparse
-from backend import mqttClient
+from backend import mqttClient, opcuaClient
 import asyncio
 from threading import Thread
 
@@ -68,16 +68,18 @@ if __name__ == "__main__":
     
     logger.setup()
     
-    async def startClient():
+    async def startClients():
         # Initialize the MQTT client
-        client = mqttClient.MqttClient()
+        mqtt = mqttClient.MqttClient()
+        opcua = opcuaClient.OPCUAClient()
         
         # Keep the event loop running
         await asyncio.Future()
         
     def asyncWrapper():
-        asyncio.run(startClient()) 
+        asyncio.run(startClients()) 
     
+    # Start OPCUA and MQTT Clients (important: *before* starting the app!)
     th = Thread(target=asyncWrapper)
     th.start()
     

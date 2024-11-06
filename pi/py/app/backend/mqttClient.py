@@ -99,14 +99,14 @@ class MqttClient:
             
             await self.init_state_variables()
         except Exception as e:
-            logging.error(f"Failed to connect to MQTT broker: {e}")
+            logging.error(f"[MQTTCLIENT] Failed to connect to MQTT broker: {e}")
             self.reconnect_attempts += 1
             if self.reconnect_attempts <= self.max_reconnect_attempts:
-                logging.info(f"Attempting reconnection attempt {self.reconnect_attempts}/{self.max_reconnect_attempts}")
+                logging.info(f"[MQTTCLIENT] Attempting reconnection attempt {self.reconnect_attempts}/{self.max_reconnect_attempts}")
                 await asyncio.create_task(self.attempt_reconnection())
             else:
-                logging.error("Max reconnection attempts reached. Stopping MQTT client.")
-                
+                logging.error("[MQTTCLIENT] Max reconnection attempts reached. Stopping MQTT client.")
+                raise ConnectionRefusedError()
 
     async def attempt_reconnection(self):
         await asyncio.sleep(self.reconnect_interval)

@@ -27,6 +27,15 @@ class ColorFormatter(logging.Formatter):
 
     def format(self, record):
         log_msg = super().format(record)
+        
+        # Truncate debug log message if longer than 200 characters
+        max_length = 200
+        if len(log_msg) > max_length and record.levelname == 'DEBUG':
+            start = log_msg[:170]
+            end = log_msg[-30:]
+            omitted_count = len(log_msg) - (len(start) + len(end))
+            log_msg = f"{start} {c('... ' + str(omitted_count) + ' characters omitted...', 'yellow')} {end}"
+            
         color = self.COLORS.get(record.levelname, '')
         return c(log_msg, color)
 
@@ -42,3 +51,6 @@ def setup():
     # Suppress HTTP requests logging
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
     logging.getLogger('flask').setLevel(logging.ERROR)
+    
+    # Suppress OPCUA
+    logging.getLogger('asyncua').setLevel(logging.WARNING)
