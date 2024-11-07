@@ -10,8 +10,6 @@ from typing import List, Dict, Coroutine
 from .page_topics import *
 import json
 
-setup() # logger setup
-
 # Function to parse the MQTT schema and build the state variable from the specified topics for one page
 def parse_mqtt_schema(topics: List[str] = []) -> Dict:
     path = f"{os.getenv('PROJECT_ROOT_PATH')}/schemas/mqtt/mqtt_schema.ts"
@@ -125,7 +123,8 @@ class MqttClient:
         @self.client.topic_callback(topic)
         def on_message_wrapper(client, userdata, msg):
             payload = msg.payload.decode()
-            logging.info(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(payload, 'white')}")
+            if topic == 'f/i/state/sld':
+                logging.info(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(payload, 'white')}")
             if callback:
                 callback(payload)  
 
@@ -164,7 +163,11 @@ class MqttClient:
         for key in state:
             if key == 'dirty': continue
             def cb(message, key=key): # callback to make sure the mqtt messages get stored in the state variable
-                state[key] = json.loads(message)
+                p = json.loads(message)
+                for k in p:
+                    v = p[k]
+                    if (v is not None) and (v != '\"\"') and (v != ''): # if the value exists in the JSON and isn't an empty string
+                        state[key][k] = v
                 state['dirty'] = True
             subscription_tasks.append(self.subscribe(topic=key, callback=cb))
         

@@ -11,7 +11,6 @@ server/mqtt_testing_tool/target
 **/target/
 **/__pycache__/
 *.pyc
-**/*.pyc
 **/package-lock.json
 
 # Local development files

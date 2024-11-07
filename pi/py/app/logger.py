@@ -1,6 +1,7 @@
 import logging
 from flask import Flask
 from werkzeug.serving import WSGIRequestHandler
+import os
 
 from colorama import Fore, Style
 
@@ -46,7 +47,9 @@ def setup():
         datefmt='%Y-%m-%d %H:%M:%S'
     ))
     
-    logging.basicConfig(level=logging.DEBUG, handlers=[handler])
+    level = str(os.getenv('LOG_LEVEL'))
+    
+    logging.basicConfig(level=level, handlers=[handler])
     
     # Suppress HTTP requests logging
     logging.getLogger('werkzeug').setLevel(logging.ERROR)

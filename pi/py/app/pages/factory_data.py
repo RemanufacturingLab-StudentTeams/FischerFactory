@@ -55,7 +55,7 @@ def update_sld(n_intervals, el):
         patch[1] = html.Tr([
                 html.Td('Latest')
             ] + [ # patch[1] is the first <tr> element, the 0th is the headers
-                html.Td(state_data['f/i/state/sld'].get(v, 'No data yet'), className='value') 
+                html.Td(str(state_data['f/i/state/sld'].get(v, 'No data yet')), className='value') 
                 for v in ['active', 'error', 'errorMessage', 'workpieceID', 'workpieceType', 'onTransportBelt', 'observedColor']
             ])
 
