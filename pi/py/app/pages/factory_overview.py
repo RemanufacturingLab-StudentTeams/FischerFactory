@@ -2,14 +2,31 @@ import dash
 from dash import Dash, html, Input, Output, callback, dcc
 from backend import mqttClient, opcuaClient
 import asyncio
+import logging
 import dash_daq as daq
 
-# Hydration: These values are filled in once, on page load
+# Hydration: These values are filled in once, on page load    
+@callback(
+    Output('store', 'data'), 
+    Input('dummy', 'children'))
+async def hydrate(children):
+    logging.error("CALL")
+    print('CALL')
+    opcua = opcuaClient.OPCUAClient()
+    
+    return await opcua.read('ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"')
 
+@callback(Output('plc-version', 'children'), Input('store', 'data'))
+def display_plc_version(plc_version):
+    logging.error("CALL")
+    print(plc_version)
+    return plc_version or "Loading..."
 
 layout = html.Div(
     [
         html.Link(href='../assets/overview.css', rel='stylesheet'),
+        dcc.Store(id='store'),
+        html.Div(id='dummy'),
         html.Div([
             html.Div([
                 html.H2('Camera'),
@@ -77,7 +94,7 @@ layout = html.Div(
                         html.Div(
                             [
                                 html.Span('Version Index PLC', className='label'),
-                                html.P('1', className='value'),
+                                html.P(className='value', id='plc-version'),
                                 html.Span('Version Index HMI', className='label'),
                                 html.P('1.4', className='value')
                             ], className='factory-control-header table'

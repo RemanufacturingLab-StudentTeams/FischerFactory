@@ -4,35 +4,30 @@ import logging
 from logger import c
 import asyncio
 from asyncua import Client, ua
+from common import singleton_decorator as s
 
+@s.singleton
 class OPCUAClient:
     
-    _instance = None
-    
-    def __new__(cls, *args, **kwargs): # singleton pattern
-        if not cls._instance:
-            cls._instance = super().__new__(cls)
-            cls._instance.client = None
-        return cls._instance        
-    
     def __init__(self) -> None:
-        self.reconnect_attempts = 0
-        self.max_reconnect_attempts = 10
-        self.reconnect_interval = 5
-        
-        self.url = f"opc.tcp://{os.getenv('PLC_IP')}:{os.getenv('PLC_PORT')}" 
-        if self.client is None:
+        if not hasattr(self, 'initialized'):  # Prevent reinitialization
+            self.reconnect_attempts = 0
+            self.max_reconnect_attempts = 10
+            self.reconnect_interval = 5
+            
+            self.url = f"opc.tcp://{os.getenv('PLC_IP')}:{os.getenv('PLC_PORT')}" 
             self.client = Client(self.url, 30)
-        
-        self.client.session_timeout = 30000
-        self.client._watchdog_intervall
-        asyncio.create_task(self.connect())
+            
+            self.client.session_timeout = 30000
+            self.initialized = True 
+            
+            asyncio.create_task(self.connect())
         
     async def connect(self):
         try:
-            logging.info(f"Attempting to connect to PLC at {self.url}.")
+            logging.info(f"[OPCUACLient] Attempting to connect to PLC at {self.url}.")
             await self.client.connect()
-            logging.info(f"Connected to PLC at {self.url}.")
+            logging.info(f"[OPCUACLient] Connected to PLC at {self.url}.")
             self.reconnect_attempts = 0
             
         except Exception as e:
@@ -44,8 +39,6 @@ class OPCUAClient:
             else:
                 logging.error("[OPCUACLient] Max reconnection attempts reached. Stopping OPCUA client.")
                 raise ConnectionRefusedError()
-            
-        await self.read('ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"')
             
     async def attempt_reconnection(self):
         await asyncio.sleep(self.reconnect_interval)
@@ -65,7 +58,15 @@ class OPCUAClient:
         except Exception as e:
             logging.error(f"[OPCUAClient] Failed to write value {value} to node {c(node_id, 'white')}: {e}")
             
-    async def read(self, node_id: str):
+    async def read(self, node_id: str): 
+        """Reads the value of a node specified by the Node ID.
+
+        Args:
+            node_id (str): Example format: `ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"`.
+
+        Returns:
+            Any, Any, Any | None: The value of the requested Node or `None`.
+        """
         node = self.client.get_node(node_id)
         logging.info(f"[OPCUAClient] Trying to read value of node {c(node_id, 'white')}")
         

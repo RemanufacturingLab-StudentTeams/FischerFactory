@@ -8,6 +8,7 @@ import os, argparse
 from backend import mqttClient, opcuaClient
 import asyncio
 from threading import Thread
+from common import runtime_manager
 
 app = Dash(__name__, 
                 external_stylesheets=[
@@ -72,16 +73,10 @@ if __name__ == "__main__":
         # Initialize the MQTT client
         mqtt = mqttClient.MqttClient()
         opcua = opcuaClient.OPCUAClient()
-        
-        # Keep the event loop running
-        await asyncio.Future()
-        
-    def asyncWrapper():
-        asyncio.run(startClients()) 
     
     # Start OPCUA and MQTT Clients (important: *before* starting the app!)
-    th = Thread(target=asyncWrapper)
-    th.start()
+    rtm = runtime_manager.RuntimeManager()
+    rtm.add_task(startClients())
     
     # Launch the Dash app
     app.run(dev_tools_hot_reload=bool(dev), debug=False)

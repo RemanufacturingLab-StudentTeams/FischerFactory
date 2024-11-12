@@ -9,6 +9,7 @@ import asyncio
 from typing import List, Dict, Coroutine
 from .page_topics import *
 import json
+from common import singleton_decorator as s
 
 # Function to parse the MQTT schema and build the state variable from the specified topics for one page
 def parse_mqtt_schema(topics: List[str] = []) -> Dict:
@@ -49,18 +50,10 @@ def parse_mqtt_schema(topics: List[str] = []) -> Dict:
                 logging.warning(f"Topic {c(topic, 'white', 'cyan')} was specified in the page_topics file, but does not appear in the MQTT schema. This topic will not be subscribed to.")
     return res
 
-
+@s.singleton
 class MqttClient:
-    
-    _instance = None
     state_data = {'dirty': False} # dirty bit to track if it was modified since it was last GET-ed
     state_overview = {'dirty': False}
-    
-    def __new__(cls, *args, **kwargs): # singleton pattern
-        if not cls._instance:
-            cls._instance = super().__new__(cls)
-            cls._instance.client = None
-        return cls._instance
     
     def __init__(self) -> None:
         if not hasattr(self, 'initialized'):  # Prevent reinitialization
@@ -123,8 +116,7 @@ class MqttClient:
         @self.client.topic_callback(topic)
         def on_message_wrapper(client, userdata, msg):
             payload = msg.payload.decode()
-            if topic == 'f/i/state/sld':
-                logging.info(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(payload, 'white')}")
+            # logging.info(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(payload, 'white')}")
             if callback:
                 callback(payload)  
 
