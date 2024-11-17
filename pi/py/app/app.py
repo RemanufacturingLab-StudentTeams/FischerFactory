@@ -8,20 +8,18 @@ import os, argparse
 from backend import mqttClient, opcuaClient
 import asyncio
 from threading import Thread
-from common import runtime_manager
-
-app = Dash(__name__, 
-                external_stylesheets=[
-                    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-                    ],
-                use_pages=True
-                )
+from common import runtime_manager, server
 
 # Global layout for the app
-app.layout = html.Div(
+server.app.layout = html.Div(
     [
-        html.Div(
-            'FischerFactory Dash Dashboard',
+        html.Div([
+                    html.Div('FischerFactory Dash Dashboard'),
+                    html.Div([
+                        html.Div([], id='mqtt-broker-status', className='connection-status'),
+                        html.Div([], id='opcua-plc-status', className='connection-status')
+                    ], className='status-container')
+                ],
             id='banner-title',
             className='banner title'
             ),
@@ -47,15 +45,59 @@ app.layout = html.Div(
             dash.page_container,
             ],
             className='page-content'   
-        )
+        ),
+        dcc.Interval(id='updater', n_intervals=0, interval=0.5 * 1000) 
     ],
     className='wrapper'
 )
 
 layoutDebug = html.Div([
     html.Button('debug', id='debug-button', n_clicks=0),
-    html.Div('no clicks', id='debug-div')
+    html.Div(children='no clicks', id='debug-div')
 ])
+
+@server.app.callback(
+    [Output('mqtt-broker-status', 'children'), Output('mqtt-broker-status', 'style')],
+    Input('updater', 'n_intervals')
+)
+def update_status_mqtt(n_intervals):
+    client = mqttClient.MqttClient()
+    status_text = f"MQTT Broker at {os.getenv('MQTT_BROKER_IP')}: "
+    
+    if client.get_status():
+        status_text += 'OK'
+        style = {'backgroundColor': 'green', 'color': 'white', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
+    elif client.get_reconnection_attempts() < 10:
+        status_text += f"Reconnecting... {client.get_reconnection_attempts()}/10 attempts"
+        style = {'backgroundColor': 'yellow', 'color': 'black', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
+    else:
+        status_text += 'Disconnected'
+        style = {'backgroundColor': 'red', 'color': 'white', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
+    
+    return status_text, style
+
+@server.app.callback(
+    [Output('opcua-plc-status', 'children'), Output('opcua-plc-status', 'style')],
+    Input('updater', 'n_intervals')
+)
+def update_status_opcua(n_intervals):
+    # client = opcuaClient.OPCUAClient()
+    status_text = f"PLC at {os.getenv('PLC_IP')}: "
+    
+    # if client.get_status():
+    #     status_text += 'OK'
+    #     style = {'backgroundColor': 'green', 'color': 'white', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
+    # elif client.get_reconnection_attempts() < 10:
+    #     status_text += f"Reconnecting... {client.get_reconnection_attempts()}/10 attempts"
+    #     style = {'backgroundColor': 'yellow', 'color': 'black', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
+    # else:
+    #     status_text += 'Disconnected'
+    #     style = {'backgroundColor': 'red', 'color': 'white', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
+    
+    status_text += 'OK'
+    style = {'backgroundColor': 'green', 'color': 'white', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
+    
+    return status_text, style
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run the application.')
@@ -72,13 +114,12 @@ if __name__ == "__main__":
     async def startClients():
         # Initialize the MQTT client
         mqtt = mqttClient.MqttClient()
-        opcua = opcuaClient.OPCUAClient()
+        # opcua = opcuaClient.OPCUAClient()
     
     # Start OPCUA and MQTT Clients (important: *before* starting the app!)
     rtm = runtime_manager.RuntimeManager()
     rtm.add_task(startClients())
     
-    # Launch the Dash app
-    app.run(dev_tools_hot_reload=bool(dev), debug=False)
+    # Launch the Dash app (by running SocketIO, automatically starting Dash as well)
+    server.socketio.run(server.server, host='127.0.0.1', port=os.getenv('PORT'))
     
-    th.join()

@@ -54,6 +54,7 @@ def parse_mqtt_schema(topics: List[str] = []) -> Dict:
 class MqttClient:
     state_data = {'dirty': False} # dirty bit to track if it was modified since it was last GET-ed
     state_overview = {'dirty': False}
+    connection_status = False
     
     def __init__(self) -> None:
         if not hasattr(self, 'initialized'):  # Prevent reinitialization
@@ -86,11 +87,13 @@ class MqttClient:
             logging.info(f"[MQTTCLIENT] Connecting to MQTT broker at {self.broker_ip}:{self.broker_port}")
             await asyncio.to_thread(self.client.connect, self.broker_ip, self.broker_port)
             await asyncio.to_thread(self.client.loop_start)
+            self.connection_status = True
             self.reconnect_attempts = 0
             
             await self.init_state_variables()
         except Exception as e:
             logging.error(f"[MQTTCLIENT] Failed to connect to MQTT broker: {e}")
+            self.connection_status = False
             self.reconnect_attempts += 1
             if self.reconnect_attempts <= self.max_reconnect_attempts:
                 logging.info(f"[MQTTCLIENT] Attempting reconnection attempt {self.reconnect_attempts}/{self.max_reconnect_attempts}")
@@ -105,6 +108,7 @@ class MqttClient:
 
     def disconnect(self):
         logging.info("[MQTTCLIENT] Disconnected from MQTT broker")
+        self.connection_status = False
 
     async def publish(self, topic, payload, qos=1):
         result = self.client.publish(topic, payload, qos=qos)
@@ -135,6 +139,7 @@ class MqttClient:
 
     def on_disconnect(self, client, userdata, rc):
         logging.info("[MQTTCLIENT] Disconnected from MQTT broker")
+        self.connection_status = False
 
     def on_publish(self, client, userdata, mid):
         logging.info(f"[MQTTCLIENT] Message {mid} published successfully")
@@ -175,3 +180,9 @@ class MqttClient:
                 res = deepcopy(self.state_data)
                 self.state_data['dirty'] = False
                 return res
+            
+    def get_status(self) -> bool:
+        return self.connection_status
+    
+    def get_reconnection_attempts(self) -> int:
+        return self.reconnect_attempts
