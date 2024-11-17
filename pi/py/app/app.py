@@ -9,16 +9,12 @@ from backend import mqttClient, opcuaClient
 import asyncio
 from threading import Thread
 from common import runtime_manager
-
-app = Dash(__name__, 
-                external_stylesheets=[
-                    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-                    ],
-                use_pages=True
-                )
+from flask_socketio import SocketIO
+from flask import Flask
+from common import start as r
 
 # Global layout for the app
-app.layout = html.Div(
+r.app.layout = html.Div(
     [
         html.Div(
             'FischerFactory Dash Dashboard',
@@ -72,13 +68,12 @@ if __name__ == "__main__":
     async def startClients():
         # Initialize the MQTT client
         mqtt = mqttClient.MqttClient()
-        opcua = opcuaClient.OPCUAClient()
+        # opcua = opcuaClient.OPCUAClient()
     
     # Start OPCUA and MQTT Clients (important: *before* starting the app!)
     rtm = runtime_manager.RuntimeManager()
     rtm.add_task(startClients())
     
-    # Launch the Dash app
-    app.run(dev_tools_hot_reload=bool(dev), debug=False)
+    # Launch the Dash app (via SocketIO, this automatically runs the Dash app as well since they are on the same Flask server)
+    r.socketio.run(r.server, host='127.0.0.1', port=os.getenv('PORT'))
     
-    th.join()

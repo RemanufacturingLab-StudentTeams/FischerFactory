@@ -1,9 +1,14 @@
 import asyncio, threading
 from common import singleton_decorator as s
-from typing import Callable
+from typing import Callable, Coroutine
+from flask_socketio import emit
+from common import start
+import logging
 
 @s.singleton
 class RuntimeManager:
+    """Class to manage async runtime so that async functions can be called from a sync context (like a Dash callback). Is a singleton, so the same runtime is used for all async operations.
+    """
     
     def __init__(self):
         if not hasattr(self, 'initialized'):
@@ -17,12 +22,36 @@ class RuntimeManager:
     def _start_loop(self):
         asyncio.set_event_loop(self.loop)
         self.loop.run_forever()
+
+    def add_task(self, coro: Coroutine, cb: Callable=None, ws_endpoint=None):
+        """Adds an asynchronous task to the runtime manager with a possible callback for when it finishes. 
+
+        Args:
+            coro (Coroutine): Return value of the async function to execute.
+            cb (Callable, optional): Callback that will be called when the task completes. If there is a return value, it will be passed into the callback. Defaults to None.
+            ws_endpoint (string, optional): If provided an endpoint, the result will be emitted over websocket on this endpoint. Defaults to None.
+
+        Raises:
+            e (Exception): If the task fails.
+        """        
+        def task_done_callback(fut: asyncio.Future):
+            try:
+                result = fut.result() 
                 
-    def add_task(self, coro: asyncio.coroutine, cb: Callable=None):
-        if cb:
-            asyncio.run_coroutine_threadsafe(coro, self.loop).add_done_callback(cb)
-        else:
-            asyncio.run_coroutine_threadsafe(coro, self.loop)
+                if ws_endpoint:
+                    logging.debug('res: ' + str(result))
+                    start.socketio.emit('Async task complete', {'result': result}, namespace=ws_endpoint)
+                    
+                if cb:
+                    cb(result)
+            except Exception as e:
+                if cb:
+                    cb(e)
+                else:
+                    raise e
+
+        future = asyncio.run_coroutine_threadsafe(coro, self.loop)
+        future.add_done_callback(task_done_callback)
         
     def __del__(self):
         if self.loop.is_running():

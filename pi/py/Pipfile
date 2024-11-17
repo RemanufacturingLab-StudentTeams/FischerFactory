@@ -15,6 +15,9 @@ dash-daq = "*"
 paho-mqtt = "*"
 colorama = "*"
 async-dash = "*"
+dash-extensions = "*"
+flask-socketio = "*"
+quart = "*"
 
 [dev-packages]
 

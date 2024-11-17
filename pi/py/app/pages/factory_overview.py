@@ -1,26 +1,13 @@
 import dash
 from dash import Dash, html, Input, Output, callback, dcc
+from dash.exceptions import PreventUpdate
+from dash_extensions import WebSocket
 from backend import mqttClient, opcuaClient
+from common import runtime_manager
 import asyncio
 import logging
 import dash_daq as daq
-
-# Hydration: These values are filled in once, on page load    
-@callback(
-    Output('store', 'data'), 
-    Input('dummy', 'children'))
-async def hydrate(children):
-    logging.error("CALL")
-    print('CALL')
-    opcua = opcuaClient.OPCUAClient()
-    
-    return await opcua.read('ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"')
-
-@callback(Output('plc-version', 'children'), Input('store', 'data'))
-def display_plc_version(plc_version):
-    logging.error("CALL")
-    print(plc_version)
-    return plc_version or "Loading..."
+import os
 
 layout = html.Div(
     [
@@ -94,7 +81,7 @@ layout = html.Div(
                         html.Div(
                             [
                                 html.Span('Version Index PLC', className='label'),
-                                html.P(className='value', id='plc-version'),
+                                html.P('Loading...', className='value', id='plc-version'),
                                 html.Span('Version Index HMI', className='label'),
                                 html.P('1.4', className='value')
                             ], className='factory-control-header table'
@@ -173,9 +160,43 @@ layout = html.Div(
                     html.P('down', className='value')
                 ], className='extension-control-container, table')
             ], 
-            className='extension-control')
+            className='extension-control'),
+        html.Div(id='websocket-container'),
     ],
-    className='overview'
+    className='overview',
 )
 
 dash.register_page(__name__, path='/', redirect_from=['/overview'], layout=layout)
+
+# Websocket idea: hydration function outputs Websocket components with endpoints to the layout, pass an emitter function to the callback in rtm, and then another callback inputs from ws and outputs to the layout
+
+# Hydration: These values are filled in once, on page load    
+@callback(
+    Output('websocket-container', 'children'), 
+    Input('dummy', 'children'))
+def hydrate(children):
+    # opcua = opcuaClient.OPCUAClient()
+    # opcua.read('ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"')
+    
+    async def mock_plc_version(value) -> float:
+        await asyncio.sleep(1)
+        return 1.1
+    
+    rtm = runtime_manager.RuntimeManager()
+    logging.debug('hydrate!')
+    rtm.add_task(
+        mock_plc_version(''),
+        ws_endpoint='plc-version'
+    )
+    
+    return [WebSocket(id='ws', url=f'ws://127.0.0.1:{os.getenv("PORT")}/{endpoint}') for endpoint in ['plc-version']]
+
+@callback(Output('plc-version', 'children'), Input("ws", "message"))
+def display_plc_version(message):
+    logging.debug(message)
+    
+    if message is None:
+        raise PreventUpdate
+    else:
+        logging.debug("called with some")
+        return 'heh2'
