@@ -1,8 +1,6 @@
 import asyncio, threading
 from common import singleton_decorator as s
 from typing import Callable, Coroutine
-from flask_socketio import emit
-from common import start
 import logging
 
 @s.singleton
@@ -37,11 +35,7 @@ class RuntimeManager:
         def task_done_callback(fut: asyncio.Future):
             try:
                 result = fut.result() 
-                
-                if ws_endpoint:
-                    logging.debug('res: ' + str(result))
-                    start.socketio.emit('Async task complete', {'result': result}, namespace=ws_endpoint)
-                    
+                            
                 if cb:
                     cb(result)
             except Exception as e:

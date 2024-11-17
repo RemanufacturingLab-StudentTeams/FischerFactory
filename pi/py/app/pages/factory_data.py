@@ -42,7 +42,7 @@ layout = html.Div(
 )
 def update_sld(n_intervals, el):    
     client = mqttClient.MqttClient()
-    state_data = mqttClient.MqttClient.get_state(client, 'data')
+    state_data = client.get_state(client, 'data')
     
     # n_intervals > 1 to make sure it runs at least once, and intervals for some reason is 1-indexed
     if (n_intervals > 1) and (not state_data['dirty']): # not "dirty" = nothing changed since last time it was called

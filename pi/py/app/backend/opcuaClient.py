@@ -8,6 +8,7 @@ from common import singleton_decorator as s
 
 @s.singleton
 class OPCUAClient:
+    connection_status = False
     
     def __init__(self) -> None:
         if not hasattr(self, 'initialized'):  # Prevent reinitialization
@@ -29,6 +30,7 @@ class OPCUAClient:
             await self.client.connect()
             logging.info(f"[OPCUACLient] Connected to PLC at {self.url}.")
             self.reconnect_attempts = 0
+            self.connection_status = True
             
         except Exception as e:
             logging.error(f"[OPCUACLient] Failed to connect to PLC at {self.url}.")
@@ -41,6 +43,7 @@ class OPCUAClient:
                 raise ConnectionRefusedError()
             
     async def attempt_reconnection(self):
+        self.connection_status = False
         await asyncio.sleep(self.reconnect_interval)
         await self.connect()
             
@@ -49,6 +52,7 @@ class OPCUAClient:
             await self.client.disconnect()
             self.client = None
             logging.info("[OPCUAClient] Disconnected from PLC.")
+            self.connection_status = False
         
     async def write(self, node_id: str, value):
         node = self.client.get_node(node_id)
@@ -58,7 +62,7 @@ class OPCUAClient:
         except Exception as e:
             logging.error(f"[OPCUAClient] Failed to write value {value} to node {c(node_id, 'white')}: {e}")
             
-    async def read(self, node_id: str): 
+    async def read(self, node_id: str):
         """Reads the value of a node specified by the Node ID.
 
         Args:
@@ -77,3 +81,9 @@ class OPCUAClient:
         except Exception as e:
             logging.error(f"[OPCUAClient] Failed to read value of node {c(node_id, 'white')}: {e}")
             return None
+        
+    def get_status(self):
+        return self.connection_status
+    
+    def get_reconnection_attempts(self):
+        return self.reconnect_attempts

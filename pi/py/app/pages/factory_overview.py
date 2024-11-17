@@ -1,5 +1,5 @@
 import dash
-from dash import Dash, html, Input, Output, callback, dcc
+from dash import Dash, html, Input, Output, State, callback, dcc, no_update
 from dash.exceptions import PreventUpdate
 from dash_extensions import WebSocket
 from backend import mqttClient, opcuaClient
@@ -8,11 +8,13 @@ import asyncio
 import logging
 import dash_daq as daq
 import os
+from common import runtime_manager
+from asyncio import sleep
 
 layout = html.Div(
     [
         html.Link(href='../assets/overview.css', rel='stylesheet'),
-        dcc.Store(id='store'),
+        dcc.Store(id={'type': 'store'}, storage_type='local'),
         html.Div(id='dummy'),
         html.Div([
             html.Div([
@@ -160,11 +162,43 @@ layout = html.Div(
                     html.P('down', className='value')
                 ], className='extension-control-container, table')
             ], 
-            className='extension-control'),
-        html.Div(id='websocket-container'),
+            className='extension-control')
     ],
     className='overview',
 )
+
+# Hydration: These values are filled in once, on page load    
+@callback(Output('websocket-container', 'children'), Input('dummy', 'children'))
+def hydrate(children):
+    # opcua = opcuaClient.OPCUAClient()
+    rtm = runtime_manager.RuntimeManager()
+        
+    async def mock_plc_call() -> float:
+        logging.debug('hi?')
+        await sleep(1.0)
+        return 1.1
+    
+    # rtm.add_task(
+    #     opcua.read('ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"'), 
+    #     ws_endpoint='plc-version'
+    # )
+    
+    rtm.add_task(
+        mock_plc_call(),
+        ws_endpoint='plc-version'
+    )
+    
+    return [WebSocket(id='ws', url=f"ws://127.0.0.1:{os.getenv('PORT')}/plc-version")]
+
+@callback(Output('plc-version', 'children'), Input('ws', 'message'))
+def display_plc_version(data):
+    logging.debug('Display called')
+    if not data:
+        print("display called with None")
+        raise PreventUpdate
+    else:
+        print("updating layout with version: " + str(data))
+        return str(data)
 
 dash.register_page(__name__, path='/', redirect_from=['/overview'], layout=layout)
 
@@ -172,8 +206,8 @@ dash.register_page(__name__, path='/', redirect_from=['/overview'], layout=layou
 
 # Hydration: These values are filled in once, on page load    
 @callback(
-    Output('websocket-container', 'children'), 
-    Input('dummy', 'children'))
+    Output('store', 'data'), 
+    Input('updater', 'n_intervals'))
 def hydrate(children):
     # opcua = opcuaClient.OPCUAClient()
     # opcua.read('ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"')
@@ -189,9 +223,9 @@ def hydrate(children):
         ws_endpoint='plc-version'
     )
     
-    return [WebSocket(id='ws', url=f'ws://127.0.0.1:{os.getenv("PORT")}/{endpoint}') for endpoint in ['plc-version']]
+    return ''
 
-@callback(Output('plc-version', 'children'), Input("ws", "message"))
+@callback(Output('plc-version', 'children'), Input("updater", "n_intervals"))
 def display_plc_version(message):
     logging.debug(message)
     
