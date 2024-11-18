@@ -128,7 +128,7 @@ class MqttClient:
         @self.client.topic_callback(topic)
         def on_message_wrapper(client, userdata, msg):
             payload = msg.payload.decode()
-            # logging.info(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(payload, 'white')}")
+            logging.debug(f"[MQTTCLIENT] Received message on topic {c(topic, 'cyan', 'white')}: {c(payload, 'cyan')}")
             if callback:
                 callback(payload)  
 
