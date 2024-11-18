@@ -52,6 +52,14 @@ def parse_mqtt_schema(topics: List[str] = []) -> Dict:
 
 @s.singleton
 class MqttClient:
+    """Wrapper class for an asynchronous MQTT client, provided with paho. Provides reconnection logic, connection status getters, and async pub/sub. Is a singleton.
+
+    Raises:
+        ConnectionRefusedError: If the MQTT broker is not reachable. In dev mode, make sure a broker (like `mosquitto`) is running on localhost:1883.
+
+    Returns:
+        MqttClient: A new instance if none exists, or the existing instance.
+    """    
     state_data = {'dirty': False} # dirty bit to track if it was modified since it was last GET-ed
     state_overview = {'dirty': False}
     connection_status = False

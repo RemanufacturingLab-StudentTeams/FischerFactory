@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 opcua = "*"
 python-dotenv = "*"
-dash = "==2.18.1"
+dash = "*"
 dash-html-components = "==2.0.0"
 dash-core-components = "==2.0.0"
 plotly = "==5.24.1"
@@ -19,4 +19,4 @@ dash-extensions = "*"
 [dev-packages]
 
 [requires]
-python_version = "3.10"
+python_version = "3.12"

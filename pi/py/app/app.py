@@ -3,15 +3,20 @@ from dash import dcc, html, Dash, Input, Output
 import dash
 import logger
 from dotenv import load_dotenv
-import page_icons
 import os, argparse
 from backend import mqttClient, opcuaClient
 import asyncio
 from threading import Thread
-from common import runtime_manager, server
+from common import runtime_manager, start
 
+page_icons = {
+    'Factory overview': 'fas fa-home',
+    'Factory data': 'fas fa-bar-chart',
+    'Dashboard customer': 'fas fa-solid fa-cart-shopping',
+    'Debug': 'fa fa-bug'
+}
 # Global layout for the app
-server.app.layout = html.Div(
+start.app.layout = html.Div(
     [
         html.Div([
                     html.Div('FischerFactory Dash Dashboard'),
@@ -26,7 +31,7 @@ server.app.layout = html.Div(
         html.Div(
             [
                 html.Div([
-                    html.I(className=page_icons.i[page['name']], style={"margin": "5px"}),
+                    html.I(className=page_icons[page['name']], style={"margin": "5px"}),
                     dcc.Link(
                         f"{page['name']}", href=(page["relative_path"])
                     )
@@ -56,7 +61,7 @@ layoutDebug = html.Div([
     html.Div(children='no clicks', id='debug-div')
 ])
 
-@server.app.callback(
+@start.app.callback(
     [Output('mqtt-broker-status', 'children'), Output('mqtt-broker-status', 'style')],
     Input('updater', 'n_intervals')
 )
@@ -76,7 +81,7 @@ def update_status_mqtt(n_intervals):
     
     return status_text, style
 
-@server.app.callback(
+@start.app.callback(
     [Output('opcua-plc-status', 'children'), Output('opcua-plc-status', 'style')],
     Input('updater', 'n_intervals')
 )
@@ -105,7 +110,7 @@ if __name__ == "__main__":
     dev = parser.parse_args().dev
     os.environ.clear()
     
-    load_dotenv(dotenv_path=('.env-dev' if dev else '.env-prod'))
+    load_dotenv(dotenv_path=('.env.dev' if dev else '.env.prod'))
     print(f"Running in \033[0;33m{'development' if dev else 'production'} mode\033[0m with environment variables:")
     pprint.pprint(os.environ.copy())
     
@@ -120,6 +125,6 @@ if __name__ == "__main__":
     rtm = runtime_manager.RuntimeManager()
     rtm.add_task(startClients())
     
-    # Launch the Dash app (by running SocketIO, automatically starting Dash as well)
-    server.socketio.run(server.server, host='127.0.0.1', port=os.getenv('PORT'))
+    # Launch the Dash app
+    start.app.run(host='127.0.0.1', port=os.getenv('PORT'))
     
