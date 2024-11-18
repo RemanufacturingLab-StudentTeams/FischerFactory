@@ -69,7 +69,7 @@ class OPCUAClient:
             node_id (str): Example format: `ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"`.
 
         Returns:
-            Any, Any, Any | None: The value of the requested Node or `None`.
+            (Any | None): The value of the requested Node or `None`.
         """
         node = self.client.get_node(node_id)
         logging.info(f"[OPCUAClient] Trying to read value of node {c(node_id, 'white')}")

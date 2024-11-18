@@ -119,10 +119,14 @@ class MqttClient:
         self.connection_status = False
 
     async def publish(self, topic, payload, qos=1):
-        result = self.client.publish(topic, payload, qos=qos)
-        logging.info(f"[MQTTCLIENT] Published message to topic {c(topic, 'white', 'cyan')}: {c(payload, 'white', 'cyan')} (Result: {result.rc})")
+        try:
+            result = self.client.publish(topic, payload, qos=qos)
+            result.wait_for_publish()
+            logging.info(f"[MQTTCLIENT] Published message to topic {c(topic, 'white', 'cyan')}: {c(payload, 'white', 'cyan')} (Result: {result.rc})")
+        except Exception as e:
+            logging.error(f"[MQTTCLIENT] Publish to topic {c(topic, 'white', 'cyan')} failed: {e}")
 
-    async def subscribe(self, topic, qos=1, callback=None):
+    async def subscribe(self, topic: str, qos=1, callback=None):
         logging.info(f"[MQTTCLIENT] Subscribing to topic {c(topic, 'white')}")
         
         @self.client.topic_callback(topic)
@@ -134,6 +138,9 @@ class MqttClient:
 
         self.client.message_callback_add(topic, on_message_wrapper)
         self.client.subscribe(topic, qos=qos)
+        
+    async def unsubscribe(self, topic: str):
+        self.client.unsubscribe(topic)
 
     # Callback functions
     def on_connect(self, client, userdata, flags, rc):
