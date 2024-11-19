@@ -7,8 +7,9 @@ from dotenv import load_dotenv
 import os, argparse
 from backend import mqttClient, opcuaClient
 from threading import Thread
-from common import runtime_manager, start
+from common import runtime_manager
 from page_state_manager import PageStateManager
+from pi.py.app.common import config
 
 page_icons = {
     "Factory overview": "fas fa-home",
@@ -17,7 +18,7 @@ page_icons = {
     "Debug": "fa fa-bug",
 }
 # Global layout for the app
-start.app.layout = html.Div(
+config.app.layout = html.Div(
     [
         dcc.Location('location'),
         html.Div(
@@ -75,7 +76,7 @@ layoutDebug = html.Div(
 )
 
 
-@start.app.callback(
+@config.app.callback(
     [Output("mqtt-broker-status", "children"), Output("mqtt-broker-status", "style")],
     Input("updater", "n_intervals"),
 )
@@ -106,7 +107,7 @@ def update_status_mqtt(n_intervals):
 
     return status_text, style
 
-@start.app.callback([Output("dummy", "children")], Input("location", "pathname"))
+@config.app.callback([Output("dummy", "children")], Input("location", "pathname"))
 def switch_page(pathname: str):
     import logging # bit weird to not put this import at the top of the page but the logger setup really needs to run first so ¯\_(ツ)_/¯
     page_name = pathname.lstrip('/') or 'factory-overview'
@@ -121,7 +122,7 @@ def switch_page(pathname: str):
     
     return ['']
 
-@start.app.callback(
+@config.app.callback(
     [Output("opcua-plc-status", "children"), Output("opcua-plc-status", "style")],
     Input("updater", "n_intervals"),
 )
@@ -145,12 +146,12 @@ def update_status_opcua(n_intervals):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the application.")
     parser.add_argument("--dev", action="store_true", help="Run in development mode")
-    dev = parser.parse_args().dev
+    config.mode = 'dev' if parser.parse_args().dev else 'prod'
     os.environ.clear()
 
-    load_dotenv(dotenv_path=(".env.dev" if dev else ".env.prod"))
+    load_dotenv(dotenv_path=f".env.{config.mode}")
     print(
-        f"Running in \033[0;33m{'development' if dev else 'production'} mode\033[0m with environment variables:"
+        f"Running in \033[0;33m{config.mode} mode\033[0m with environment variables:"
     )
     pprint.pprint(os.environ.copy())
 
@@ -166,4 +167,4 @@ if __name__ == "__main__":
     rtm.add_task(startClients())
 
     # Launch the Dash app
-    start.app.run(dev_tools_hot_reload=bool(dev), debug=False, port=os.getenv("PORT"))
+    config.app.run(dev_tools_hot_reload=(config.mode == 'dev'), debug=False, port=os.getenv("PORT"))

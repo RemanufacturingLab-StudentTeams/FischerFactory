@@ -1,4 +1,3 @@
-# Manages the OPC UA Client asynchronously. This OPC UA Client writes Dashboard commands to the PLC and awaits responses.
 import os
 import logging
 from logger import c
@@ -6,9 +5,18 @@ import asyncio
 from asyncua import Client, ua
 from common import singleton_decorator as s
 from typing import Any
+from common import config
 
 @s.singleton
 class OPCUAClient:
+    """Wrapper class around the `asyncua` client. Provides reconnection logic, logging, error handling and connection status monitoring. Is a singleton.
+
+    Raises:
+        ConnectionRefusedError: If the PLC cannot connect. The connection parameters are in `.env.dev` or `.env.prod`, depending on what mode the program runs in.
+
+    Returns:
+        (OPCUAClient): A new instance if none exists, or the existing instance.
+    """    
     connection_status = False
     
     def __init__(self) -> None:
