@@ -9,6 +9,7 @@ pi/nodejs/dist
 server/mqtt_testing_tool/target
 **/Cargo.lock
 **/target/
+server/influx/data/influxd.bolt
 
 
 # Local development files
