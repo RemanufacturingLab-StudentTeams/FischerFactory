@@ -1,7 +1,8 @@
 from common import singleton_decorator as s
 from backend import mqttClient, opcuaClient
-from typing import Any, Task
+from typing import Any
 import asyncio
+from asyncio import Task
 
 @s.singleton
 class PageStateManager:
@@ -24,7 +25,7 @@ class PageStateManager:
             self.topic = topic
     
     data = {
-            'factory_overview': {
+            'factory-overview': { # yes, using a hyphen as a delimiter, not an underscore, because it has to correspond with the page URLs. 
                 'hydrate': {
                     'plc_version': OPCUASource('ns=3;s="gtyp_Setup"."r_Version_SPS"')
                 },
@@ -36,7 +37,7 @@ class PageStateManager:
                     'clean_rack': OPCUASource('ns=3;s="gtyp_Setup"."x_Clean_Rack_HBW"')
                 }
             },
-            'factory_data': {
+            'factory-data': {
                 'hydrate': {
                     
                 },
@@ -50,7 +51,7 @@ class PageStateManager:
         }
     
     def __init__(self):
-        if not self.initialized:
+        if not hasattr(self, 'initialized'):
             self.mqttClient = mqttClient.MqttClient()
             self.opcuaClient = opcuaClient.OPCUAClient()
             self.monitor_tasks: dict[str, Task[Any]] = {}
@@ -102,7 +103,7 @@ class PageStateManager:
             del self.monitor_tasks[page]  # Remove the page from the tracking dictionary
 
     async def monitor_page(self, page: str):
-        """Called on page load. For OPCUA, it continually monitors the monitoring data for the requested page with a polling period of 0.5s. For MQTT, it subscribes to all the monitoring topics. Sets the dirty bit.
+        """Called on page load. Stops all previous monitoring tasks and starts monitoring data for the requested page. For OPCUA, it continually monitors the monitoring data for the requested page with a polling period of 0.5s. For MQTT, it subscribes to all the monitoring topics. Sets the dirty bit.
 
         Args:
             page (str): Which page to poll/subscribe to monitoring data for.

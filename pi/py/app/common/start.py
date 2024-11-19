@@ -1,3 +1,6 @@
+"""Hey, modularity! This module is here so that starting resources are accessible anywhere in the program, and to fix circular dependencies that happened when this was in `app/app.py`. 
+"""
+
 from dash import Dash
 
 app = Dash(__name__, 

@@ -200,7 +200,7 @@ def display_plc_version(data):
         print("updating layout with version: " + str(data))
         return str(data)
 
-dash.register_page(__name__, path='/', redirect_from=['/overview'], layout=layout)
+dash.register_page(__name__, path='/', redirect_from=['/factory-overview'], layout=layout)
 
 # Websocket idea: hydration function outputs Websocket components with endpoints to the layout, pass an emitter function to the callback in rtm, and then another callback inputs from ws and outputs to the layout
 
@@ -225,12 +225,3 @@ def hydrate(children):
     
     return ''
 
-@callback(Output('plc-version', 'children'), Input("updater", "n_intervals"))
-def display_plc_version(message):
-    logging.debug(message)
-    
-    if message is None:
-        raise PreventUpdate
-    else:
-        logging.debug("called with some")
-        return 'heh2'

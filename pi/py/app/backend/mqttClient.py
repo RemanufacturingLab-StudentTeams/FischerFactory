@@ -52,14 +52,6 @@ def parse_mqtt_schema(topics: List[str] = []) -> Dict:
 
 @s.singleton
 class MqttClient:
-    """Wrapper class for an asynchronous MQTT client, provided with paho. Provides reconnection logic, connection status getters, and async pub/sub. Is a singleton.
-
-    Raises:
-        ConnectionRefusedError: If the MQTT broker is not reachable. In dev mode, make sure a broker (like `mosquitto`) is running on localhost:1883.
-
-    Returns:
-        MqttClient: A new instance if none exists, or the existing instance.
-    """    
     state_data = {'dirty': False} # dirty bit to track if it was modified since it was last GET-ed
     state_overview = {'dirty': False}
     connection_status = False
@@ -119,28 +111,21 @@ class MqttClient:
         self.connection_status = False
 
     async def publish(self, topic, payload, qos=1):
-        try:
-            result = self.client.publish(topic, payload, qos=qos)
-            result.wait_for_publish()
-            logging.info(f"[MQTTCLIENT] Published message to topic {c(topic, 'white', 'cyan')}: {c(payload, 'white', 'cyan')} (Result: {result.rc})")
-        except Exception as e:
-            logging.error(f"[MQTTCLIENT] Publish to topic {c(topic, 'white', 'cyan')} failed: {e}")
+        result = self.client.publish(topic, payload, qos=qos)
+        logging.info(f"[MQTTCLIENT] Published message to topic {c(topic, 'white', 'cyan')}: {c(payload, 'white', 'cyan')} (Result: {result.rc})")
 
-    async def subscribe(self, topic: str, qos=1, callback=None):
+    async def subscribe(self, topic, qos=1, callback=None):
         logging.info(f"[MQTTCLIENT] Subscribing to topic {c(topic, 'white')}")
         
         @self.client.topic_callback(topic)
         def on_message_wrapper(client, userdata, msg):
             payload = msg.payload.decode()
-            logging.debug(f"[MQTTCLIENT] Received message on topic {c(topic, 'cyan', 'white')}: {c(payload, 'cyan')}")
+            # logging.info(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(payload, 'white')}")
             if callback:
                 callback(payload)  
 
         self.client.message_callback_add(topic, on_message_wrapper)
         self.client.subscribe(topic, qos=qos)
-        
-    async def unsubscribe(self, topic: str):
-        self.client.unsubscribe(topic)
 
     # Callback functions
     def on_connect(self, client, userdata, flags, rc):

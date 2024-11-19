@@ -1,130 +1,177 @@
 import pprint
 from dash import dcc, html, Dash, Input, Output
 import dash
+from dash import dcc
 import logger
 from dotenv import load_dotenv
 import os, argparse
 from backend import mqttClient, opcuaClient
-import asyncio
 from threading import Thread
 from common import runtime_manager, start
+from page_state_manager import PageStateManager
 
 page_icons = {
-    'Factory overview': 'fas fa-home',
-    'Factory data': 'fas fa-bar-chart',
-    'Dashboard customer': 'fas fa-solid fa-cart-shopping',
-    'Debug': 'fa fa-bug'
+    "Factory overview": "fas fa-home",
+    "Factory data": "fas fa-bar-chart",
+    "Dashboard customer": "fas fa-solid fa-cart-shopping",
+    "Debug": "fa fa-bug",
 }
 # Global layout for the app
 start.app.layout = html.Div(
     [
-        html.Div([
-                    html.Div('FischerFactory Dash Dashboard'),
-                    html.Div([
-                        html.Div([], id='mqtt-broker-status', className='connection-status'),
-                        html.Div([], id='opcua-plc-status', className='connection-status')
-                    ], className='status-container')
-                ],
-            id='banner-title',
-            className='banner title'
-            ),
+        dcc.Location('location'),
         html.Div(
             [
-                html.Div([
-                    html.I(className=page_icons[page['name']], style={"margin": "5px"}),
-                    dcc.Link(
-                        f"{page['name']}", href=(page["relative_path"])
-                    )
+                html.Div("FischerFactory Dash Dashboard"),
+                html.Div(
+                    [
+                        html.Div(
+                            [], id="mqtt-broker-status", className="connection-status"
+                        ),
+                        html.Div(
+                            [], id="opcua-plc-status", className="connection-status"
+                        ),
                     ],
-                    className='side-panel-link'
+                    className="status-container",
+                ),
+            ],
+            id="banner-title",
+            className="banner title",
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.I(
+                            className=page_icons[page["name"]], style={"margin": "5px"}
+                        ),
+                        dcc.Link(f"{page['name']}", href=(page["relative_path"])),
+                    ],
+                    className="side-panel-link",
                 )
                 for page in dash.page_registry.values()
                 if page["module"] != "pages.not_found_404"
             ],
-            className='side-panel',
+            className="side-panel",
         ),
+        html.Div(id="feedback-div"),
+        html.Div([], id="dummy"),
         html.Div(
-            id='feedback-div'
-        ),
-        html.Div([
-            dash.page_container,
+            [
+                dash.page_container,
             ],
-            className='page-content'   
+            className="page-content",
         ),
-        dcc.Interval(id='updater', n_intervals=0, interval=0.5 * 1000) 
+        dcc.Interval(id="updater", n_intervals=0, interval=0.5 * 1000),
     ],
-    className='wrapper'
+    className="wrapper",
 )
 
-layoutDebug = html.Div([
-    html.Button('debug', id='debug-button', n_clicks=0),
-    html.Div(children='no clicks', id='debug-div')
-])
+layoutDebug = html.Div(
+    [
+        html.Button("debug", id="debug-button", n_clicks=0),
+        html.Div(children="no clicks", id="debug-div"),
+    ]
+)
+
 
 @start.app.callback(
-    [Output('mqtt-broker-status', 'children'), Output('mqtt-broker-status', 'style')],
-    Input('updater', 'n_intervals')
+    [Output("mqtt-broker-status", "children"), Output("mqtt-broker-status", "style")],
+    Input("updater", "n_intervals"),
 )
 def update_status_mqtt(n_intervals):
     client = mqttClient.MqttClient()
     status_text = f"MQTT Broker at {os.getenv('MQTT_BROKER_IP')}: "
-    
+
     if client.get_status():
-        status_text += 'OK'
-        style = {'backgroundColor': 'green', 'color': 'white', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
+        status_text += "OK"
+        style = {
+            "backgroundColor": "green",
+            "color": "white",
+        }
     elif client.get_reconnection_attempts() < 10:
-        status_text += f"Reconnecting... {client.get_reconnection_attempts()}/10 attempts"
-        style = {'backgroundColor': 'yellow', 'color': 'black', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
+        status_text += (
+            f"Reconnecting... {client.get_reconnection_attempts()}/10 attempts"
+        )
+        style = {
+            "backgroundColor": "yellow",
+            "color": "black",
+        }
     else:
-        status_text += 'Disconnected'
-        style = {'backgroundColor': 'red', 'color': 'white', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
-    
+        status_text += "Disconnected"
+        style = {
+            "backgroundColor": "red",
+            "color": "white",
+        }
+
     return status_text, style
+
+
+@start.app.callback([Output("dummy", "children")], Input("location", "pathname"))
+def switch_page(pathname: str):
+    import logging # bit weird to not put this import at the top of the page but the logger setup really needs to run first so ¯\_(ツ)_/¯
+    page_name = pathname.lstrip('/') or 'factory-overview'
+    
+    logging.debug(f"Switched to page: {page_name}")
+    
+    psm = PageStateManager()
+    rtm  = runtime_manager.RuntimeManager()
+    
+    rtm.add_task(psm.hydrate_page(page_name))
+    rtm.add_task(psm.monitor_page(page_name))
+    
+    return ['']
+
 
 @start.app.callback(
-    [Output('opcua-plc-status', 'children'), Output('opcua-plc-status', 'style')],
-    Input('updater', 'n_intervals')
+    [Output("opcua-plc-status", "children"), Output("opcua-plc-status", "style")],
+    Input("updater", "n_intervals"),
 )
 def update_status_opcua(n_intervals):
-    # client = opcuaClient.OPCUAClient()
+    client = opcuaClient.OPCUAClient()
     status_text = f"PLC at {os.getenv('PLC_IP')}: "
-    
-    # if client.get_status():
-    #     status_text += 'OK'
-    #     style = {'backgroundColor': 'green', 'color': 'white', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
-    # elif client.get_reconnection_attempts() < 10:
-    #     status_text += f"Reconnecting... {client.get_reconnection_attempts()}/10 attempts"
-    #     style = {'backgroundColor': 'yellow', 'color': 'black', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
-    # else:
-    #     status_text += 'Disconnected'
-    #     style = {'backgroundColor': 'red', 'color': 'white', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
-    
-    status_text += 'OK'
-    style = {'backgroundColor': 'green', 'color': 'white', 'padding': '10px', 'borderRadius': '5px', 'margin': '5px', 'fontSize': '60%'}
-    
+
+    if client.get_status():
+        status_text += 'OK'
+        style = {'backgroundColor': 'green', 'color': 'white'}
+    elif client.get_reconnection_attempts() < 10:
+        status_text += f"Reconnecting... {client.get_reconnection_attempts()}/10 attempts"
+        style = {'backgroundColor': 'yellow', 'color': 'black'}
+    else:
+        status_text += 'Disconnected'
+        style = {'backgroundColor': 'red', 'color': 'white'}
+
+    status_text += "OK"
+    style = {
+        "backgroundColor": "green",
+        "color": "white"
+    }
+
     return status_text, style
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Run the application.')
-    parser.add_argument('--dev', action='store_true', help='Run in development mode')
+    parser = argparse.ArgumentParser(description="Run the application.")
+    parser.add_argument("--dev", action="store_true", help="Run in development mode")
     dev = parser.parse_args().dev
     os.environ.clear()
-    
-    load_dotenv(dotenv_path=('.env.dev' if dev else '.env.prod'))
-    print(f"Running in \033[0;33m{'development' if dev else 'production'} mode\033[0m with environment variables:")
+
+    load_dotenv(dotenv_path=(".env.dev" if dev else ".env.prod"))
+    print(
+        f"Running in \033[0;33m{'development' if dev else 'production'} mode\033[0m with environment variables:"
+    )
     pprint.pprint(os.environ.copy())
-    
+
     logger.setup()
-    
+
     async def startClients():
         # Initialize the MQTT client
         mqtt = mqttClient.MqttClient()
-        # opcua = opcuaClient.OPCUAClient()
-    
+        opcua = opcuaClient.OPCUAClient()
+
     # Start OPCUA and MQTT Clients (important: *before* starting the app!)
     rtm = runtime_manager.RuntimeManager()
     rtm.add_task(startClients())
-    
+
     # Launch the Dash app
-    start.app.run(host='127.0.0.1', port=os.getenv('PORT'))
-    
+    start.app.run(dev_tools_hot_reload=bool(dev), debug=False, port=os.getenv("PORT"))

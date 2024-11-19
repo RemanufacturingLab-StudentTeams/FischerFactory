@@ -21,13 +21,12 @@ class RuntimeManager:
         asyncio.set_event_loop(self.loop)
         self.loop.run_forever()
 
-    def add_task(self, coro: Coroutine, cb: Callable=None, ws_endpoint=None):
+    def add_task(self, coro: Coroutine, cb: Callable=None):
         """Adds an asynchronous task to the runtime manager with a possible callback for when it finishes. 
 
         Args:
             coro (Coroutine): Return value of the async function to execute.
             cb (Callable, optional): Callback that will be called when the task completes. If there is a return value, it will be passed into the callback. Defaults to None.
-            ws_endpoint (string, optional): If provided an endpoint, the result will be emitted over websocket on this endpoint. Defaults to None.
 
         Raises:
             e (Exception): If the task fails.

@@ -33,8 +33,6 @@ layout = html.Div(
     className='factory-data'
 )
 
-
-
 @callback(
     Output('sld-table', 'children'),
     Input('updater', 'n_intervals'),
@@ -42,7 +40,7 @@ layout = html.Div(
 )
 def update_sld(n_intervals, el):    
     client = mqttClient.MqttClient()
-    state_data = client.get_state(client, 'data')
+    state_data = client.get_state('data')
     
     # n_intervals > 1 to make sure it runs at least once, and intervals for some reason is 1-indexed
     if (n_intervals > 1) and (not state_data['dirty']): # not "dirty" = nothing changed since last time it was called
@@ -61,4 +59,4 @@ def update_sld(n_intervals, el):
 
         return patch
 
-dash.register_page(__name__, path='/data', layout=layout)
+dash.register_page(__name__, path='/factory-data', layout=layout)
