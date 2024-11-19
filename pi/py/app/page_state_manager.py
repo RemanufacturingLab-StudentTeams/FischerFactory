@@ -5,33 +5,42 @@ import asyncio
 import logging
 from asyncio import Task
 
+class OPCUASource:   
+    def __init__(self, node_id: str):
+        self.value: Any = None
+        self.dirty: bool = False # Whether it has changed since the last time it was accessed. 
+        self.node_id = node_id
+        self.monitor_tasks = {}
+    
+    def set_value(self, v: Any):
+        if v is None:
+            return
+        if v != self.value:
+            self.dirty = True
+            self.value = v
+        
+class MQTTSource:
+    def __init__(self, topic: str):
+        self.value: Any = None
+        self.dirty: bool = False # Whether it has changed since the last time it was accessed. 
+        self.topic = topic
+        
+    def set_value(self, v: Any):
+        if v is not None and v != self.value:
+            self.dirty = True
+            self.value = v if self.value is None else self.value | v # dict union operator, so existing values are not reset
+                
 @s.singleton
 class PageStateManager:
-    '''Manages and fetches state from external sources (MQTT or OPCUA). It is more or less a buffer, so that the results of async calls can be made accessible to Dash callbacks.
+    '''Manages and fetches state from external sources (MQTT or OPCUA). It is more or less a buffer, so that the results of async calls can be made accessible to Dash callbacks. It is a singleton.
     '''
-    
-    class OPCUASource:   
-        value: Any = None
-        dirty: bool = False # Whether it has changed since the last time it was accessed. 
-
-        def __init__(self, node_id: str):
-            self.node_id = node_id
-            self.monitor_tasks = {}
-            
-    class MQTTSource:
-        value: Any = None
-        dirty: bool = False # Whether it has changed since the last time it was accessed. 
-
-        def __init__(self, topic: str):
-            self.topic = topic
-    
+        
     data = {
             'factory-overview': { # yes, using a hyphen as a delimiter, not an underscore, because it has to correspond with the page URLs. 
                 'hydrate': {
                     'plc_version': OPCUASource('ns=3;s="gtyp_Setup"."r_Version_SPS"')
                 },
                 'monitor': {
-                    'rack_workpieces': OPCUASource('ns=3;s="gtyp_HBW"."Rack_Workpiece"'),
                     'turtlebot_current_state': MQTTSource('Turtlebot/CurrentState')
                 },
                 'user': {
@@ -47,6 +56,25 @@ class PageStateManager:
                 },
                 'user': {
                     
+                }
+            },
+            'dashboard-customer': {
+                'hydrate': {
+                    
+                },
+                'monitor': {
+                    f'rack_workpiece_[{x},{y}]_{e}': OPCUASource(f'ns=3;s="gtyp_HBW"."Rack_Workpiece"[{x},{y}]."{e}"')
+                    for x in range(3) 
+                    for y in range(3) 
+                    for e in ['s_id', 's_state', 's_type']
+                },
+                'user': {
+                    's_type': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"."s_type"'),
+                    'order_oven_time': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"."Workpiece_Parameters"."OvenTime"'),
+                    'order_do_oven': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"."Workpiece_Parameters"."DoOven"'),
+                    'order_saw_time': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"."Workpiece_Parameters"."SawTime"'),
+                    'order_do_saw': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"."Workpiece_Parameters"."DoSaw"'),
+                    'order_ldt_ts': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"."ldt_ts"'),
                 }
             }
         }
@@ -68,22 +96,21 @@ class PageStateManager:
         hydration_tasks = []   
         
         for key, source in self.data.get(page, {}).get('hydrate', {}).items():
-            if isinstance(source, self.OPCUASource):
+            if isinstance(source, OPCUASource):
                 async def task():
                     while source.value is None: # poll while no value was retrieved
-                        source.value = await self.opcuaClient.read(source.node_id)
-                        if source.value is not None:
-                            source.dirty = True
+                        v = await self.opcuaClient.read(source.node_id)
+                        if v is not None:
+                            source.set_value(v)
                             break
                         await asyncio.sleep(0.5)
                         
                 hydration_tasks.append(asyncio.create_task(task()))
 
-            elif isinstance(source, self.MQTTSource):
+            elif isinstance(source, MQTTSource):
                 async def task():
                     def callback(message):
-                        source.value = message
-                        source.dirty = True
+                        source.set_value(message)
                         self.mqttClient.unsubscribe(source.topic) # unsubscribe when a message is received
 
                     await self.mqttClient.subscribe(source.topic, callback=callback)
@@ -94,12 +121,14 @@ class PageStateManager:
     
     async def stop_monitoring(self):
         """Stop all monitoring tasks."""
+        logging.debug(f'[PSM] Stopping all monitoring tasks')
+        
         for task in self.monitor_tasks:
-            task.cancel()
             try:
+                task.cancel()
                 await task  # Ensure the task is properly canceled
-            except asyncio.CancelledError as e:
-                logging.error(f"Failed to cancel task: {e}")
+            except asyncio.CancelledError as e: # this is actually fine, it should give a CancelledError because it was cancelled
+                pass
         self.monitor_tasks = []
 
     async def monitor_page(self, page: str):
@@ -108,25 +137,26 @@ class PageStateManager:
         Args:
             page (str): Which page to poll/subscribe to monitoring data for.
         """
+        logging.debug(f'[PSM] Monitoring page: {page}')
         
         # Cancel any existing monitoring tasks
         await self.stop_monitoring()
 
         # Create monitoring tasks for OPCUA and MQTT sources
         for key, source in self.data.get(page, {}).get('monitor', {}).items():
-            if isinstance(source, self.OPCUASource):
+            
+            if isinstance(source, OPCUASource):
                 async def poll_opcua_source(source):
                     while True:
-                        source.value = await self.opcuaClient.read(source.node_id)
-                        source.dirty = True
+                        v = await self.opcuaClient.read(source.node_id)
+                        source.set_value(v)
                         await asyncio.sleep(0.5)
 
                 self.monitor_tasks.append(asyncio.create_task(poll_opcua_source(source)))
 
-            elif isinstance(source, self.MQTTSource):
+            elif isinstance(source, MQTTSource):
                 def callback(message):
-                    source.value = message
-                    source.dirty = True
+                    source.set_value(message)
 
                 self.monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(source.topic, qos=1, callback=callback)))
 
@@ -145,9 +175,9 @@ class PageStateManager:
             for category in self.data[page].values():
                 if key in category:
                     source = category[key]
-                    if isinstance(source, self.OPCUASource):
+                    if isinstance(source, OPCUASource):
                         await self.opcuaClient.write(source.node_id, data)
-                    elif isinstance(source, self.MQTTSource):
+                    elif isinstance(source, MQTTSource):
                         await self.mqttClient.publish(source.topic, data)
     
     def get_data(self, page: str, key: str) -> Any:
@@ -156,6 +186,9 @@ class PageStateManager:
         Args:
             page (str): Which page to get data for. Format is pathname without leading '/', so with hyphen delimiter. Example: `factory-overview`.
             key (str): The key this data is under. For example: `plc_version`.
+            
+        Returns:
+            (Any): Returns `None` if the value is clean. Please raise `PreventUpdate` in the callbacks in case it returns None.
         """        
     
         if page in self.data:

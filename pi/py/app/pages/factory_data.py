@@ -5,6 +5,8 @@ from backend import opcuaClient, mqttClient
 import asyncio
 import dash_daq as daq
 import logging
+from common import runtime_manager
+from page_state_manager import PageStateManager
 
 layout = html.Div(
     [
@@ -27,8 +29,7 @@ layout = html.Div(
                 html.Tr()
             ], className='device-data-table', id='sld-table'),
         ], className='sld'),
-        dcc.Store(id='sld-history'),
-        dcc.Interval(id='updater', n_intervals=0, interval=0.5 * 1000) # every 0.5 seconds,
+        dcc.Store(id='sld-history')
     ],
     className='factory-data'
 )
@@ -39,24 +40,23 @@ layout = html.Div(
     State('sld-table', 'children')
 )
 def update_sld(n_intervals, el):    
-    client = mqttClient.MqttClient()
-    state_data = client.get_state('data')
+    psm = PageStateManager()
+    data = psm.get_data('factory-data', 'state_sld')
     
-    # n_intervals > 1 to make sure it runs at least once, and intervals for some reason is 1-indexed
-    if (n_intervals > 1) and (not state_data['dirty']): # not "dirty" = nothing changed since last time it was called
-        logging.debug('prevent update!')
+    if not data:
+        print('update called with none')
         raise PreventUpdate
-    else:    
-        logging.debug('doing update!')
-        patch = Patch() # patch object of the sld-table children.
-        
-        patch[1] = html.Tr([
-                html.Td('Latest')
-            ] + [ # patch[1] is the first <tr> element, the 0th is the headers
-                html.Td(str(state_data['f/i/state/sld'].get(v, 'No data yet')), className='value') 
-                for v in ['active', 'error', 'errorMessage', 'workpieceID', 'workpieceType', 'onTransportBelt', 'observedColor']
-            ])
+    
+    print('doing update!')
+    patch = Patch() # patch object of the sld-table children.
+    
+    patch[1] = html.Tr([
+            html.Td('Latest')
+        ] + [ # patch[1] is the first <tr> element, the 0th is the headers
+            html.Td(str(data.get(v, 'No data yet')), className='value') 
+            for v in ['active', 'error', 'errorMessage', 'workpieceID', 'workpieceType', 'onTransportBelt', 'observedColor']
+        ])
 
-        return patch
+    return patch
 
 dash.register_page(__name__, path='/factory-data', layout=layout)

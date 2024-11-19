@@ -154,7 +154,7 @@ layout = html.Div(
                     html.Span('State', className='label'),
                     daq.ToggleSwitch(value=False),
                     html.Span('Speed', className='label'),
-                    dcc.Input(type='number', value=0),
+                    dcc.Input(type='number', value=0, debounce=True,),
                     html.Span('Slagboom', className='label'),
                     daq.ToggleSwitch(value=False),
                     html.Span('Slatus container place 1', className='label'),

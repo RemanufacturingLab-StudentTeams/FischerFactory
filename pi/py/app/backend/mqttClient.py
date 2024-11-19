@@ -11,49 +11,8 @@ from .page_topics import *
 import json
 from common import singleton_decorator as s
 
-# Function to parse the MQTT schema and build the state variable from the specified topics for one page
-def parse_mqtt_schema(topics: List[str] = []) -> Dict:
-    path = f"{os.getenv('PROJECT_ROOT_PATH')}/schemas/mqtt/mqtt_schema.ts"
-    
-    res = {}
-    
-    # Define a function to generate default values
-    def generate_default_payload(payload_str: str):
-        defaults = {}
-        # Split the payload into lines for processing
-        for line in payload_str.strip().split(','):
-            key_value = line.split(':')
-            if len(key_value) == 2:
-                key = key_value[0].strip()
-                defaults[key] = None
-        return defaults
-    
-    with open(path, 'r') as file:
-        schema = file.read()
-        schema = re.sub(r'//.*', '', schema) # remove all the comments
-        
-        for topic in topics:
-            pattern = re.compile(
-                # Regex pattern to match on the specified topic
-                fr'\s*(\w+):\s*{{\s*topic:\s*[\'"](({topic})[^\'"]+)[\'"],?\s*payload:[^\}}]*}},?',
-                re.DOTALL
-            )
-            
-            matches = pattern.findall(schema)
-            for match in matches:
-                topic_name = match[1]
-                payload_str = match[2]
-                default_payload = generate_default_payload(payload_str)
-                res[topic_name] = default_payload
-            
-            if len(matches) == 0:
-                logging.warning(f"Topic {c(topic, 'white', 'cyan')} was specified in the page_topics file, but does not appear in the MQTT schema. This topic will not be subscribed to.")
-    return res
-
 @s.singleton
 class MqttClient:
-    state_data = {'dirty': False} # dirty bit to track if it was modified since it was last GET-ed
-    state_overview = {'dirty': False}
     connection_status = False
     
     def __init__(self) -> None:
@@ -89,8 +48,6 @@ class MqttClient:
             await asyncio.to_thread(self.client.loop_start)
             self.connection_status = True
             self.reconnect_attempts = 0
-            
-            await self.init_state_variables()
         except Exception as e:
             logging.error(f"[MQTTCLIENT] Failed to connect to MQTT broker: {e}")
             self.connection_status = False
@@ -120,9 +77,15 @@ class MqttClient:
         @self.client.topic_callback(topic)
         def on_message_wrapper(client, userdata, msg):
             payload = msg.payload.decode()
-            # logging.info(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(payload, 'white')}")
+            res = ''
+            try:
+                res = json.loads(payload)
+            except Exception as e:
+                logging.error(f"[MQTTCLIENT] Payload is not valid JSON: {payload}")
+            if os.getenv('LOG_MESSAGES') == 'TRUE':
+                logging.debug(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(res, 'white')}")
             if callback:
-                callback(payload)  
+                callback(res)
 
         self.client.message_callback_add(topic, on_message_wrapper)
         self.client.subscribe(topic, qos=qos)
@@ -146,40 +109,6 @@ class MqttClient:
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         logging.info(f"[MQTTCLIENT] Subscribed to topic, mid: {mid}, qos: {granted_qos}")
-        
-    # calls parse_mqtt_schema for each page to make a state variable for each of them
-    async def init_state_variables(self) -> None: 
-        # state variable for the "overview" page
-        self.state_overview.update(parse_mqtt_schema(OVERVIEW_TOPICS)) # raw topics as specified by the page_topics.py file
-        await self.subscribe_to_state(self.state_overview)
-        self.state_data.update(parse_mqtt_schema(DATA_TOPICS))
-        await self.subscribe_to_state(self.state_data)
-        
-    async def subscribe_to_state(self, state): # subscribes to f/i/ topics and updates the state_in global variable.
-        subscription_tasks = []
-        for key in state:
-            if key == 'dirty': continue
-            def cb(message, key=key): # callback to make sure the mqtt messages get stored in the state variable
-                p = json.loads(message)
-                for k in p:
-                    v = p[k]
-                    if (v is not None) and (v != '\"\"') and (v != ''): # if the value exists in the JSON and isn't an empty string
-                        state[key][k] = v
-                state['dirty'] = True
-            subscription_tasks.append(self.subscribe(topic=key, callback=cb))
-        
-        await asyncio.gather(*subscription_tasks)
-        
-    def get_state(self, page):
-        match page:
-            case 'overview':
-                res = deepcopy(self.state_overview)
-                self.state_overview['dirty'] = False
-                return res
-            case 'data':
-                res = deepcopy(self.state_data)
-                self.state_data['dirty'] = False
-                return res
             
     def get_status(self) -> bool:
         return self.connection_status

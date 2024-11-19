@@ -34,17 +34,14 @@ class RuntimeManager:
         def task_done_callback(fut: asyncio.Future):
             try:
                 result = fut.result() 
-                            
-                if cb:
-                    cb(result)
+                cb(result)
             except Exception as e:
-                if cb:
-                    cb(e)
-                else:
-                    raise e
+                logging.error(f"[RTM] Callback for {fut} failed with {e.__class__} error: {e}")
+                raise e
 
         future = asyncio.run_coroutine_threadsafe(coro, self.loop)
-        future.add_done_callback(task_done_callback)
+        if cb:
+            future.add_done_callback(task_done_callback)
         
     def __del__(self):
         if self.loop.is_running():
