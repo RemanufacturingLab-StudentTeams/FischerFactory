@@ -2,6 +2,7 @@ from common import singleton_decorator as s
 from backend import mqttClient, opcuaClient
 from typing import Any
 import asyncio
+import logging
 from asyncio import Task
 
 @s.singleton
@@ -11,7 +12,7 @@ class PageStateManager:
     
     class OPCUASource:   
         value: Any = None
-        dirty = False # Whether it has changed since the last time it was accessed. 
+        dirty: bool = False # Whether it has changed since the last time it was accessed. 
 
         def __init__(self, node_id: str):
             self.node_id = node_id
@@ -19,7 +20,7 @@ class PageStateManager:
             
     class MQTTSource:
         value: Any = None
-        dirty = False # Whether it has changed since the last time it was accessed. 
+        dirty: bool = False # Whether it has changed since the last time it was accessed. 
 
         def __init__(self, topic: str):
             self.topic = topic
@@ -54,7 +55,7 @@ class PageStateManager:
         if not hasattr(self, 'initialized'):
             self.mqttClient = mqttClient.MqttClient()
             self.opcuaClient = opcuaClient.OPCUAClient()
-            self.monitor_tasks: dict[str, Task[Any]] = {}
+            self.monitor_tasks: list[Task[Any]] = []
             self.initialized = True
     
     async def hydrate_page(self, page: str):
@@ -91,16 +92,15 @@ class PageStateManager:
                 
         await asyncio.gather(*hydration_tasks)
     
-    async def stop_monitoring(self, page: str):
-        """Stop all monitoring tasks for the specified page."""
-        if page in self.monitor_tasks:
-            for task in self.monitor_tasks[page]:
-                task.cancel()
-                try:
-                    await task  # Ensure the task is properly canceled
-                except asyncio.CancelledError:
-                    pass
-            del self.monitor_tasks[page]  # Remove the page from the tracking dictionary
+    async def stop_monitoring(self):
+        """Stop all monitoring tasks."""
+        for task in self.monitor_tasks:
+            task.cancel()
+            try:
+                await task  # Ensure the task is properly canceled
+            except asyncio.CancelledError as e:
+                logging.error(f"Failed to cancel task: {e}")
+        self.monitor_tasks = []
 
     async def monitor_page(self, page: str):
         """Called on page load. Stops all previous monitoring tasks and starts monitoring data for the requested page. For OPCUA, it continually monitors the monitoring data for the requested page with a polling period of 0.5s. For MQTT, it subscribes to all the monitoring topics. Sets the dirty bit.
@@ -110,10 +110,7 @@ class PageStateManager:
         """
         
         # Cancel any existing monitoring tasks
-        if page in self.monitor_tasks:
-            await self.stop_monitoring(page)
-            
-        self.monitor_tasks[page] = []
+        await self.stop_monitoring()
 
         # Create monitoring tasks for OPCUA and MQTT sources
         for key, source in self.data.get(page, {}).get('monitor', {}).items():
@@ -157,7 +154,7 @@ class PageStateManager:
         """Accesses data for a specific page, based on a key. Resets the dirty bit.
 
         Args:
-            page (str): Which page to get data for.
+            page (str): Which page to get data for. Format is pathname without leading '/', so with hyphen delimiter. Example: `factory-overview`.
             key (str): The key this data is under. For example: `plc_version`.
         """        
     
@@ -165,6 +162,9 @@ class PageStateManager:
             for category in self.data[page].values():
                 if key in category:
                     source = category[key]
-                    source.dirty = False
-                    return source.value
+                    if source.dirty: # return None if value is clean
+                        source.dirty = False
+                        return source.value
+                    else:
+                        break
         return None

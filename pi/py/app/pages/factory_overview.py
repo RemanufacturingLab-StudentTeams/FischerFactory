@@ -4,6 +4,7 @@ from dash.exceptions import PreventUpdate
 from dash_extensions import WebSocket
 from backend import mqttClient, opcuaClient
 from common import runtime_manager
+from page_state_manager import PageStateManager
 import asyncio
 import logging
 import dash_daq as daq
@@ -167,61 +168,17 @@ layout = html.Div(
     className='overview',
 )
 
-# Hydration: These values are filled in once, on page load    
-@callback(Output('websocket-container', 'children'), Input('dummy', 'children'))
-def hydrate(children):
-    # opcua = opcuaClient.OPCUAClient()
-    rtm = runtime_manager.RuntimeManager()
-        
-    async def mock_plc_call() -> float:
-        logging.debug('hi?')
-        await sleep(1.0)
-        return 1.1
+@callback(Output('plc-version', 'children'), Input('updater', 'n_intervals'))
+def display_plc_version(n_intervals):
+    psm = PageStateManager()
+    data = psm.get_data('factory-overview', 'plc_version')
     
-    # rtm.add_task(
-    #     opcua.read('ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"'), 
-    #     ws_endpoint='plc-version'
-    # )
-    
-    rtm.add_task(
-        mock_plc_call(),
-        ws_endpoint='plc-version'
-    )
-    
-    return [WebSocket(id='ws', url=f"ws://127.0.0.1:{os.getenv('PORT')}/plc-version")]
-
-@callback(Output('plc-version', 'children'), Input('ws', 'message'))
-def display_plc_version(data):
-    logging.debug('Display called')
     if not data:
         print("display called with None")
         raise PreventUpdate
     else:
         print("updating layout with version: " + str(data))
         return str(data)
+    
 
 dash.register_page(__name__, path='/', redirect_from=['/factory-overview'], layout=layout)
-
-# Websocket idea: hydration function outputs Websocket components with endpoints to the layout, pass an emitter function to the callback in rtm, and then another callback inputs from ws and outputs to the layout
-
-# Hydration: These values are filled in once, on page load    
-@callback(
-    Output('store', 'data'), 
-    Input('updater', 'n_intervals'))
-def hydrate(children):
-    # opcua = opcuaClient.OPCUAClient()
-    # opcua.read('ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"')
-    
-    async def mock_plc_version(value) -> float:
-        await asyncio.sleep(1)
-        return 1.1
-    
-    rtm = runtime_manager.RuntimeManager()
-    logging.debug('hydrate!')
-    rtm.add_task(
-        mock_plc_version(''),
-        ws_endpoint='plc-version'
-    )
-    
-    return ''
-

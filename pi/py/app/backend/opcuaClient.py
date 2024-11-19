@@ -5,6 +5,7 @@ from logger import c
 import asyncio
 from asyncua import Client, ua
 from common import singleton_decorator as s
+from typing import Any
 
 @s.singleton
 class OPCUAClient:
@@ -54,7 +55,18 @@ class OPCUAClient:
             logging.info("[OPCUAClient] Disconnected from PLC.")
             self.connection_status = False
         
-    async def write(self, node_id: str, value):
+    async def write(self, node_id: str, value: Any) -> None:
+        """Writes a value to the node specified by the Node ID.
+
+        Args:
+            node_id (str): Example format: `ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"`.
+            value (Any): The value to write.
+        """        
+        
+        if not self.connection_status:
+            logging.warning(f"[OPCUAClient] Trying to write node, but connection status is False.")
+            return
+        
         node = self.client.get_node(node_id)
         try:
             await node.write_value(value)
@@ -71,12 +83,16 @@ class OPCUAClient:
         Returns:
             (Any | None): The value of the requested Node or `None`.
         """
+        if not self.connection_status:
+            logging.warning(f"[OPCUAClient] Trying to read node, but connection status is False.")
+            return None
+        
         node = self.client.get_node(node_id)
-        logging.info(f"[OPCUAClient] Trying to read value of node {c(node_id, 'white')}")
+        logging.debug(f"[OPCUAClient] Trying to read value of node {c(node_id, 'cyan')}")
         
         try:
             res = await node.read_value()
-            logging.info(f"[OPCUAClient] Read value of node {c(node_id, 'white', 'cyan')}: {c(res, 'white')}")
+            logging.debug(f"[OPCUAClient] Read value of node {c(node_id, 'cyan', 'white')}: {c(res, 'cyan')}")
             return res
         except Exception as e:
             logging.error(f"[OPCUAClient] Failed to read value of node {c(node_id, 'white')}: {e}")

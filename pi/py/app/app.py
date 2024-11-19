@@ -106,7 +106,6 @@ def update_status_mqtt(n_intervals):
 
     return status_text, style
 
-
 @start.app.callback([Output("dummy", "children")], Input("location", "pathname"))
 def switch_page(pathname: str):
     import logging # bit weird to not put this import at the top of the page but the logger setup really needs to run first so ¯\_(ツ)_/¯
@@ -121,7 +120,6 @@ def switch_page(pathname: str):
     rtm.add_task(psm.monitor_page(page_name))
     
     return ['']
-
 
 @start.app.callback(
     [Output("opcua-plc-status", "children"), Output("opcua-plc-status", "style")],
@@ -140,12 +138,6 @@ def update_status_opcua(n_intervals):
     else:
         status_text += 'Disconnected'
         style = {'backgroundColor': 'red', 'color': 'white'}
-
-    status_text += "OK"
-    style = {
-        "backgroundColor": "green",
-        "color": "white"
-    }
 
     return status_text, style
 
