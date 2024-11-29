@@ -6,6 +6,7 @@ from asyncua import Client, ua
 from common import singleton_decorator as s
 from typing import Any
 from common import config
+from backend import mockOpcuaClient
 
 @s.singleton
 class OPCUAClient:
@@ -16,8 +17,18 @@ class OPCUAClient:
 
     Returns:
         (OPCUAClient): A new instance if none exists, or the existing instance.
-    """    
+    """
     connection_status = False
+    
+    def __new__(cls, *args, **kwargs):
+        if config.mode == 'dev':
+            instance = mockOpcuaClient.MockOPCUAClient(*args, **kwargs)
+            logging.info("[OPCUAClient] Running in development mode. Using MockOPCUAClient.")
+            return instance
+        else:
+            instance = super().__new__(cls)
+            logging.info("[OPCUAClient] Running in production mode. Using real OPCUAClient.")
+            return instance
     
     def __init__(self) -> None:
         if not hasattr(self, 'initialized'):  # Prevent reinitialization

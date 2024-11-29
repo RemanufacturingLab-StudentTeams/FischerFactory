@@ -4,7 +4,7 @@ from dash.exceptions import PreventUpdate
 from dash_extensions import WebSocket
 from backend import mqttClient, opcuaClient
 from common import runtime_manager
-from page_state_manager import PageStateManager
+from state import page_state_manager as p
 import asyncio
 import logging
 import dash_daq as daq
@@ -170,7 +170,7 @@ layout = html.Div(
 
 @callback(Output('plc-version', 'children'), Input('updater', 'n_intervals'))
 def display_plc_version(n_intervals):
-    psm = PageStateManager()
+    psm = p.PageStateManager()
     data = psm.get_data('factory-overview', 'plc_version')
     
     if not data:

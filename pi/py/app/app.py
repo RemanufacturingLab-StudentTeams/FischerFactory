@@ -8,8 +8,8 @@ import os, argparse
 from backend import mqttClient, opcuaClient
 from threading import Thread
 from common import runtime_manager
-from page_state_manager import PageStateManager
-from pi.py.app.common import config
+from state import page_state_manager as p
+from common import config
 
 page_icons = {
     "Factory overview": "fas fa-home",
@@ -114,7 +114,7 @@ def switch_page(pathname: str):
     
     logging.debug(f"Switched to page: {page_name}")
     
-    psm = PageStateManager()
+    psm = p.PageStateManager()
     rtm  = runtime_manager.RuntimeManager()
     
     rtm.add_task(psm.hydrate_page(page_name))
@@ -128,7 +128,7 @@ def switch_page(pathname: str):
 )
 def update_status_opcua(n_intervals):
     client = opcuaClient.OPCUAClient()
-    status_text = f"PLC at {os.getenv('PLC_IP')}: "
+    status_text = f"PLC at {os.getenv('PLC_IP')}: " if config.mode == 'prod' else 'Mock PLC: '
 
     if client.get_status():
         status_text += 'OK'

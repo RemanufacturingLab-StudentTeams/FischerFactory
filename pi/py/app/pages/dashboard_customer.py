@@ -36,7 +36,7 @@ layout = html.Div([
         html.Table([
             html.Tr([
                 html.Th('Nr.'),
-                html.Th('Colour'), # bo'el o' wo'er
+                html.Th('Colour'), # bo'el o' wo'uh
                 html.Th('Oven'),
                 html.Th('Milling')
             ])

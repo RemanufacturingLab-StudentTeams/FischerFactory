@@ -5,8 +5,8 @@ from typing import Any
 import asyncio
 import logging
 from asyncio import Task
-from state_data_sources import OPCUASource, MQTTSource
-from state_data_schema import _data
+from state import state_data_sources as src
+from state import state_data_schema
                 
 @s.singleton
 class PageStateManager:
@@ -18,7 +18,7 @@ class PageStateManager:
             self.mqttClient = mqttClient.MqttClient()
             self.opcuaClient = opcuaClient.OPCUAClient() if config.mode == 'prod' else mockOpcuaClient.MockOPCUAClient()
             self.monitor_tasks: list[Task[Any]] = []
-            self.data = _data
+            self.data = state_data_schema._data
             self.initialized = True
     
     async def hydrate_page(self, page: str):
@@ -31,7 +31,7 @@ class PageStateManager:
         hydration_tasks = []   
         
         for key, source in self.data.get(page, {}).get('hydrate', {}).items():
-            if isinstance(source, OPCUASource):
+            if isinstance(source, src.OPCUASource):
                 async def task():
                     while source.value is None: # poll while no value was retrieved
                         v = await self.opcuaClient.read(source.node_id)
@@ -42,7 +42,7 @@ class PageStateManager:
                         
                 hydration_tasks.append(asyncio.create_task(task()))
 
-            elif isinstance(source, MQTTSource):
+            elif isinstance(source, src.MQTTSource):
                 async def task():
                     def callback(message):
                         source.set_value(message)
@@ -80,7 +80,7 @@ class PageStateManager:
         # Create monitoring tasks for OPCUA and MQTT sources
         for key, source in self.data.get(page, {}).get('monitor', {}).items():
             
-            if isinstance(source, OPCUASource):
+            if isinstance(source, src.OPCUASource):
                 async def poll_opcua_source(source):
                     while True:
                         v = await self.opcuaClient.read(source.node_id)
@@ -89,7 +89,7 @@ class PageStateManager:
 
                 self.monitor_tasks.append(asyncio.create_task(poll_opcua_source(source)))
 
-            elif isinstance(source, MQTTSource):
+            elif isinstance(source, src.MQTTSource):
                 def callback(message):
                     source.set_value(message)
 
@@ -110,9 +110,9 @@ class PageStateManager:
             for category in self.data[page].values():
                 if key in category:
                     source = category[key]
-                    if isinstance(source, OPCUASource):
+                    if isinstance(source, src.OPCUASource):
                         await self.opcuaClient.write(source.node_id, data)
-                    elif isinstance(source, MQTTSource):
+                    elif isinstance(source, src.MQTTSource):
                         await self.mqttClient.publish(source.topic, data)
     
     def get_data(self, page: str, key: str) -> Any:
