@@ -6,7 +6,7 @@ import asyncio
 import dash_daq as daq
 import logging
 from common import runtime_manager
-from page_state_manager import PageStateManager
+from state.page_state_manager import PageStateManager
 
 layout = html.Div(
     [

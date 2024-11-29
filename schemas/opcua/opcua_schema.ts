@@ -29,20 +29,20 @@ type gtyp_Interface_Dashboard = {
         {
             test: DataType.Boolean
             ldt_ts: DataType.DateTime
-            r_t: DataType.Float
-            r_rt: DataType.Float
-            r_h: DataType.Float
-            r_rh: DataType.Float
-            r_p: DataType.Float
-            i_iaq: DataType.Int16
-            i_aq: DataType.Int16
-            di_gr: DataType.Int32
+            r_t: DataType.Float // e.g., 19.8
+            r_rt: DataType.Float // e.g., 22.95
+            r_h: DataType.Float // e.g., 51.9
+            r_rh: DataType.Float // e.g., 42.64
+            r_p: DataType.Float // e.g., 1018.1
+            i_iaq: DataType.Int16 // e.g., 59
+            i_aq: DataType.Int16 // e.g., 3
+            di_gr: DataType.Int32 // e.g., 919245
         }
         BrightnessSensor:
         {
             ldt_ts: DataType.DateTime
-            r_br: DataType.Float
-            i_ldr: DataType.Int16
+            r_br: DataType.Float // e.g., 88.0
+            i_ldr: DataType.Int16 // e.g., 1804
         }
         CameraPicture:
         {
@@ -88,8 +88,8 @@ type gtyp_Interface_Dashboard = {
         State_Order:
         {
             ldt_ts: DataType.DateTime
-            s_state: DataType.String
-            s_type: DataType.String
+            s_state: DataType.String // 'WAITING_FOR_ORDER' | 'ORDERED' | 'SHIPPED' | 'IN_PROCESS'
+            s_type: DataType.String // 'RED' | 'BLUE' | 'WHITE'
         }
         State_NFC_Device:
         {
@@ -368,7 +368,7 @@ type gtyp_Setup = {
 type typ_Workpiece = {
 
     // Unique id of Workpiece
-    s_id: DataType.String,
+    s_id: DataType.String, // e.g., '04f8a942ef6c80' or '0425a942ef6c80'
 
     // Type of workpiece ("RED"/"WHITE"/"BLUE")
     s_type: DataType.String,

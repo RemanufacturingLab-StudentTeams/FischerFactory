@@ -23,7 +23,7 @@ has the following properties:
 - The `s_` prefix in the field name is for the built-in datatype:
   - `x_`: Boolean
   - `s_`: String
-  - `w_`: Word
+  - `w_`: Word (2 bytes)
   - `ldt_`: DateTime
   - `i_`: Int16
   - `di_`: Int32 (di = double integer)

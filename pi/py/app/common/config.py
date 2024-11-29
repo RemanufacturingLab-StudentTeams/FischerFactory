@@ -12,7 +12,8 @@ app = Dash(__name__,
                 assets_folder='../assets',
                 )
 
-mode = None # Specifies what mode the program is running in. Either 'dev', 'prod', or 'test'. Set in `app/app.py`.
+mode = None
+"""Specifies what mode the program is running in. Either 'dev', 'prod', or 'test'. Set in `app/app.py`."""
 
 # Exports
 __all__ =["app", "mode"]
