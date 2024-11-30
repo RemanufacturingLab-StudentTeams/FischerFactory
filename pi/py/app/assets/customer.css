@@ -1,10 +1,16 @@
 .dashboard-customer {
     display: grid;
     grid-template-areas: 
-    "order-config order-queue hbw-view"
+    "order-config order-queue"
+    "hbw-view order-queue"
     ;
-    grid-template-columns: 1fr 1.5fr 1fr;
+    grid-template-columns: 1fr 2fr;
+    grid-template-rows: 1fr 1fr;
     background-color: var(--bg-color-1);
+}
+
+.order-queue {
+    grid-row: span 2;
 }
 
 .dashboard-customer > div {

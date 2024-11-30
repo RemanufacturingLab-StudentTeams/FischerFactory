@@ -149,10 +149,8 @@ def display_plc_version(n_intervals):
     data = psm.get_data('factory-overview', 'plc_version')
     
     if not data:
-        print("display called with None")
         raise PreventUpdate
     else:
-        print("updating layout with version: " + str(data))
         return str(data)
     
 
