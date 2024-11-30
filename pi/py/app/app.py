@@ -107,7 +107,10 @@ def update_status_mqtt(n_intervals):
 
     return status_text, style
 
-@config.app.callback([Output("dummy", "children")], Input("location", "pathname"))
+@config.app.callback(
+    [Output("dummy", "children", allow_duplicate=True)], 
+    Input("location", "pathname")
+)
 def switch_page(pathname: str):
     import logging # bit weird to not put this import at the top of the page but the logger setup really needs to run first so ¯\_(ツ)_/¯
     page_name = pathname.lstrip('/') or 'factory-overview'
@@ -167,4 +170,7 @@ if __name__ == "__main__":
     rtm.add_task(startClients())
 
     # Launch the Dash app
-    config.app.run(dev_tools_hot_reload=(config.mode == 'dev'), debug=False, port=os.getenv("PORT"))
+    config.app.run(
+        dev_tools_hot_reload=(config.mode == 'dev'), 
+        debug=False, port=os.getenv("PORT")
+    )

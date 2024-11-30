@@ -7,6 +7,7 @@ from common import singleton_decorator as s
 from typing import Any
 from common import config
 from backend import mockOpcuaClient
+from datetime import datetime
 
 @s.singleton
 class OPCUAClient:
@@ -79,19 +80,59 @@ class OPCUAClient:
 
         Args:
             node_id (str): Example format: `ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"`.
-            value (Any): The value to write.
-        """        
+            value (Any): The value to write. See `schemas/opcua/opcua_schema.ts>DataType` for which values the server accepts.
+        """
         
         if not self.connection_status:
             logging.warning(f"[OPCUAClient] Trying to write node, but connection status is False.")
             return
         
-        node = self.client.get_node(node_id)
+        data_type = self._get_data_type_from_node_id(node_id)
         try:
-            await node.write_value(value)
+            converted_value = self._convert_to_correct_type(value, data_type)
+            node = self.client.get_node(node_id)
+            await node.write_value(converted_value)
             logging.info(f"[OPCUAClient] Wrote value {value} to node {c(node_id, 'white')}")
         except Exception as e:
             logging.error(f"[OPCUAClient] Failed to write value {value} to node {c(node_id, 'white')}: {e}")
+            
+    def _get_data_type_from_node_id(self, node_id: str) -> str:
+        """Determine the data type from the node ID prefix."""
+        prefixes = {
+            'x': 'Boolean',
+            's': 'String',
+            'w': 'Word',  # 16 bits
+            'ldt': 'DateTime',
+            'i': 'Int16',
+            'di': 'Int32',
+            'r': 'Float'
+        }
+        for prefix, data_type in prefixes.items():
+            if node_id.split('.')[-1].strip('\"').split('_')[0] == prefix:
+                return data_type
+        raise ValueError(f"Unknown node ID prefix: {node_id[:2]}")
+
+    def _convert_to_correct_type(self, value: Any, data_type: str) -> object:
+        """Convert the input value to the correct type."""
+        if data_type == 'Boolean':
+            return bool(value)
+        elif data_type == 'Int16':
+            return int(value)
+        elif data_type == 'Int32':
+            return int(value)
+        elif data_type == 'Float':
+            return float(value)
+        elif data_type == 'DateTime':
+            if isinstance(value, datetime):
+                return value.isoformat()
+            else:
+                raise ValueError(f"Invalid datetime format for {data_type}")
+        elif data_type == 'String':
+            return str(value)
+        elif data_type == 'Word':  # 16 bits
+            return int(value) & 0xFFFF
+        else:
+            raise ValueError(f"Unsupported data type: {data_type}")
             
     async def read(self, node_id: str):
         """Reads the value of a node specified by the Node ID.

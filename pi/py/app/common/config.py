@@ -10,6 +10,7 @@ app = Dash(__name__,
                 use_pages=True,
                 pages_folder='../pages',
                 assets_folder='../assets',
+                prevent_initial_callbacks=True
                 )
 
 mode = None

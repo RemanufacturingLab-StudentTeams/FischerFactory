@@ -136,6 +136,46 @@ button:active {
     filter: brightness(1.2);
 }
 
+button:disabled {
+    background-color: grey; 
+    cursor: not-allowed; 
+    filter: none; 
+    opacity: 0.6; 
+}
+
+button:disabled:hover {
+    filter: none; 
+}
+
+button.pending {
+    position: relative;
+    overflow: hidden;
+}
+
+button.pending::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.1));
+    animation: glint 1.5s infinite;
+}
+
+/* Glint animation */
+@keyframes glint {
+    0% {
+        left: -100%;
+    }
+    50% {
+        left: 100%;
+    }
+    100% {
+        left: -100%;
+    }
+}
+
 .table {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

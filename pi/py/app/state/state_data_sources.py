@@ -9,6 +9,7 @@ class OPCUASource:
     def __init__(self, node_id: str):
         self.value: Any = None
         self.dirty: bool = False # Whether it has changed since the last time it was accessed. This could be because of an external event, such as in the case of monitoring and hydration data, or because of a user-initiated mutation.
+        self.node_id = node_id
     
     def set_value(self, v: Any):
         if v is None:

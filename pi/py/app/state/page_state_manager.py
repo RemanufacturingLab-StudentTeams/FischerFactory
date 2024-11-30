@@ -5,7 +5,7 @@ from typing import Any
 import asyncio
 import logging
 from asyncio import Task
-from state import state_data_sources as src
+from state.state_data_sources import OPCUASource, MQTTSource
 from state import state_data_schema
                 
 @s.singleton
@@ -16,7 +16,7 @@ class PageStateManager:
     def __init__(self):
         if not hasattr(self, 'initialized'):
             self.mqttClient = mqttClient.MqttClient()
-            self.opcuaClient = opcuaClient.OPCUAClient() if config.mode == 'prod' else mockOpcuaClient.MockOPCUAClient()
+            self.opcuaClient = opcuaClient.OPCUAClient() 
             self.monitor_tasks: list[Task[Any]] = []
             self.data = state_data_schema._data
             self.initialized = True
@@ -31,7 +31,7 @@ class PageStateManager:
         hydration_tasks = []   
         
         for key, source in self.data.get(page, {}).get('hydrate', {}).items():
-            if isinstance(source, src.OPCUASource):
+            if isinstance(source, OPCUASource):
                 async def task():
                     while source.value is None: # poll while no value was retrieved
                         v = await self.opcuaClient.read(source.node_id)
@@ -42,7 +42,7 @@ class PageStateManager:
                         
                 hydration_tasks.append(asyncio.create_task(task()))
 
-            elif isinstance(source, src.MQTTSource):
+            elif isinstance(source, MQTTSource):
                 async def task():
                     def callback(message):
                         source.set_value(message)
@@ -80,7 +80,7 @@ class PageStateManager:
         # Create monitoring tasks for OPCUA and MQTT sources
         for key, source in self.data.get(page, {}).get('monitor', {}).items():
             
-            if isinstance(source, src.OPCUASource):
+            if isinstance(source, OPCUASource):
                 async def poll_opcua_source(source):
                     while True:
                         v = await self.opcuaClient.read(source.node_id)
@@ -89,7 +89,7 @@ class PageStateManager:
 
                 self.monitor_tasks.append(asyncio.create_task(poll_opcua_source(source)))
 
-            elif isinstance(source, src.MQTTSource):
+            elif isinstance(source, MQTTSource):
                 def callback(message):
                     source.set_value(message)
 
@@ -97,23 +97,35 @@ class PageStateManager:
 
         await asyncio.gather(*self.monitor_tasks)  # Await all tasks
     
-    async def send_data(self, page: str, key: str, data: Any):
-        """Write, or publish data to a source. When the call completes, the result will be available for polling under the given key. Sets the dirty bit.
+    async def send_data(self, page: str, keys_and_data: dict):
+        """Write or publish multiple data items to a source. When the call completes, the results will be 
+        available for polling under the given keys. Sets the dirty bit for each source.
 
         Args:
-            page (str): Page to store the result for.
-            key (str): Key to store the result under.
-            data (Any): Data to send.
-        """        
+            page (str): Page to store the results for. Use a hyphen as a delimiter. Example: `factory-data`.
+            keys_and_data (dict): A dictionary where keys are the data keys and values are the data to send. Example: {'order_do_oven': True, 'order_bake_time': 4000}.
+        """
+        if page not in self.data:
+            return
         
-        if page in self.data:
-            for category in self.data[page].values():
+        logging.debug(f'[PSM] Sending user data: {keys_and_data}')
+        tasks = []  # List to hold async tasks for concurrent execution
+        
+        async def task(key, data, source):
+            if isinstance(source, OPCUASource):
+                await self.opcuaClient.write(source.node_id, data)
+            elif isinstance(source, MQTTSource):
+                await self.mqttClient.publish(source.topic, data)
+            source.value = data
+            source.dirty = True
+        
+        for category in self.data[page].values():
+            for key, data in keys_and_data.items():
                 if key in category:
                     source = category[key]
-                    if isinstance(source, src.OPCUASource):
-                        await self.opcuaClient.write(source.node_id, data)
-                    elif isinstance(source, src.MQTTSource):
-                        await self.mqttClient.publish(source.topic, data)
+                    tasks.append(task(key, data, source))
+        
+        await asyncio.gather(*tasks)
     
     def get_data(self, page: str, key: str) -> Any:
         """Accesses data for a specific page, based on a key. Resets the dirty bit.
@@ -130,9 +142,10 @@ class PageStateManager:
             for category in self.data[page].values():
                 if key in category:
                     source = category[key]
-                    if source.dirty: # return None if value is clean
+                    
+                    if source.dirty: 
                         source.dirty = False
                         return source.value
-                    else:
+                    else: # return None if value is clean
                         break
         return None

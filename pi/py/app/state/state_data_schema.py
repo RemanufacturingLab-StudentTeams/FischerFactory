@@ -35,7 +35,7 @@ _data = {
             
         },
         'monitor': {
-            'state_sld': MQTTSource('f/i/state/sld')
+        'state_sld': MQTTSource('f/i/state/sld')
         },
         'user': {
             

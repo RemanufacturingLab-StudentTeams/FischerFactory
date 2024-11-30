@@ -41,7 +41,7 @@ class MockOPCUAClient:
             logging.info("[MockOPCUAClient] Simulated disconnection completed.")
 
     async def write(self, node_id: str, value: Any) -> None:
-        """Simulate writing a value to a node."""
+        """Simulate writing a value to a node."""        
         if not self.connection_status:
             logging.warning("[MockOPCUAClient] Trying to write node, but connection status is False.")
             return False

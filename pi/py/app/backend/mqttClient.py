@@ -68,6 +68,9 @@ class MqttClient:
         self.connection_status = False
 
     async def publish(self, topic, payload, qos=1):
+        # convert payload to JSON
+        payload = json.dumps(payload)
+        
         result = self.client.publish(topic, payload, qos=qos)
         logging.info(f"[MQTTCLIENT] Published message to topic {c(topic, 'white', 'cyan')}: {c(payload, 'white', 'cyan')} (Result: {result.rc})")
 

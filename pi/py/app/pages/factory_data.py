@@ -44,7 +44,6 @@ def update_sld(n_intervals, el):
     data = psm.get_data('factory-data', 'state_sld')
     
     if not data:
-        print('update called with none')
         raise PreventUpdate
     
     print('doing update!')
