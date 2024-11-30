@@ -3,10 +3,12 @@ from dash import Dash, html, Input, Output, State, callback, dcc, ALL, Patch
 import dash_daq as daq
 from backend import opcuaClient, mqttClient
 import logging
+from pages.components import hbw_view 
 
 layout = html.Div([
     html.Div([
-        html.H2('ORder Configuration'),
+        html.Link(href='../assets/customer.css', rel='stylesheet'),
+        html.H2('Order Configuration'),
         html.Div([
             html.Label('Colour picker'), # Bri'ish colour
             dcc.Dropdown(options=['Red','White','Blue'])
@@ -30,9 +32,7 @@ layout = html.Div([
         html.Button('ORDER')
     ], className='order-config'),
     html.Div([
-        
-    ], id='order-queue'),
-    html.Div([
+        html.H2('Order Queue'),
         html.Table([
             html.Tr([
                 html.Th('Nr.'),
@@ -40,8 +40,9 @@ layout = html.Div([
                 html.Th('Oven'),
                 html.Th('Milling')
             ])
-        ])
-    ], id='dashboard-customer-hbw')
+        ], id='order-queue-table', className='data-table')
+    ], className='order-queue'),
+    hbw_view,
 ], className='dashboard-customer')
 
 dash.register_page(__name__, path='/dashboard-customer', layout=layout)

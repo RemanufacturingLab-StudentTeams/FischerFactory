@@ -169,3 +169,24 @@ button:active {
 .dropdown > div {
     border: none;
 }
+
+.data-table {
+    overflow-x: scroll;
+    width: 100%;
+    border-collapse: collapse;
+
+    padding: 20px;
+}
+
+.data-table > tr:first-child {
+    background-color: var(--bg-color-2);
+}
+
+.data-table > tr > td,th {
+    text-align: center;
+    margin: 20px;
+}
+
+.data-table > tr:nth-child(even) {
+    background-color: var(--bg-color-1);
+}

@@ -1,0 +1,34 @@
+.dashboard-customer {
+    display: grid;
+    grid-template-areas: 
+    "order-config order-queue hbw-view"
+    ;
+    grid-template-columns: 1fr 1.5fr 1fr;
+    background-color: var(--bg-color-1);
+}
+
+.dashboard-customer > div {
+    margin: 5px;
+    padding: 15px;
+    background-color: white;
+}
+
+.order-config {
+    display: flex;
+    flex-flow: column nowrap;
+    padding: 5px;
+}
+
+.order-config > div {
+    padding: 10px 0px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.order-config > button:last-child {
+    margin-top: 20px;
+}
+
+.order-config .dash-dropdown {
+    width: 100%;
+}

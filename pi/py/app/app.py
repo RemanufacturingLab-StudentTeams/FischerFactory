@@ -8,7 +8,7 @@ import os, argparse
 from backend import mqttClient, opcuaClient
 from threading import Thread
 from common import runtime_manager
-from state import page_state_manager as p
+from state import PageStateManager
 from common import config
 
 page_icons = {
@@ -114,7 +114,7 @@ def switch_page(pathname: str):
     
     logging.debug(f"Switched to page: {page_name}")
     
-    psm = p.PageStateManager()
+    psm = PageStateManager()
     rtm  = runtime_manager.RuntimeManager()
     
     rtm.add_task(psm.hydrate_page(page_name))

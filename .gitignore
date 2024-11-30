@@ -15,6 +15,7 @@ server/mqtt_testing_tool/target
 
 # Local development files
 todo.md
+.vscode
 
 # Production files
 server/influx/config/*
