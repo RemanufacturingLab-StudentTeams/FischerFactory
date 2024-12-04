@@ -150,3 +150,34 @@ def display_queue(n_intervals):
         ])
         for i, v in queue.value.value.value.enumerate()
     ]
+    
+@callback(
+    Output('hbw-view-container', 'children'),
+    Input('updater', 'n_intervals')
+)
+def display_hbw():
+    psm = PageStateManager()
+    
+    buttons = [
+        html.Button(
+            classname='puck-' + psm.get_data(
+                'dashboard-customer', 
+                'rack_workpiece_[{x},{y}]_s_type'
+            ).lower() or 'empty' # class names will become 'puck-red', 'puck-blue', 'puck-white' or 'empty'
+        )
+            for x in range(3) 
+            for y in range(3)
+    ]
+    
+    return [
+            html.Div(),
+            html.Span('1', className='label'),
+            html.Span('2', className='label'),
+            html.Span('3', className='label'),
+            html.Span('A', className='label'),
+            *buttons[0:3], # button 0 to 3 exclusive, so the first 3
+            html.Span('B', className='label'),
+            *buttons[3:6],
+            html.Span('C', className='label'),
+            *buttons[6:9]
+    ]
