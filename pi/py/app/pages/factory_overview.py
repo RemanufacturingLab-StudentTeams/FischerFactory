@@ -143,16 +143,17 @@ layout = html.Div(
     className='overview',
 )
 
-@callback(Output('plc-version', 'children'), Input('updater', 'n_intervals'))
+@callback(
+    Output('plc-version', 'children'),
+    Input('updater', 'n_intervals')
+)
 def display_plc_version(n_intervals):
     psm = PageStateManager()
     data = psm.get_data('factory-overview', 'plc_version')
     
     if not data:
-        print("display called with None")
         raise PreventUpdate
     else:
-        print("updating layout with version: " + str(data))
         return str(data)
     
 

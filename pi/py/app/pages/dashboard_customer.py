@@ -51,9 +51,13 @@ dash.register_page(__name__, path='/dashboard-customer', layout=layout)
     Output('place-order', 'title'),
     Input('order-color', 'value')
 )
-def toggle_order_button(color_value):
+def validate_order_button(color_value):
     if color_value is None:
         return True, "Disabled: please select a color."
+    psm = PageStateManager()
+    queue_full: bool | None = psm.get_data('customer-dashboard', 'queue_full')
+    if queue_full:
+        return True, "Disabled: Queue is full."
     return False, 'Click to place your order.'
 
 @callback(
@@ -122,9 +126,13 @@ def reset_buttons(n_intervals):
     Output('order-queue-table', 'children'),
     Input('updater', 'n_intervals')
 )
-def display_queue():
+def display_queue(n_intervals):
     psm = PageStateManager()
-    queue = psm.get_data('ns=3;s="Queue"."Queue"')
+    queue = psm.get_data('dashboard-customer', 'queue')
+    
+    if queue is None:
+        raise PreventUpdate
+    
     return [
         html.Tr([
                 html.Th('Nr.'),
