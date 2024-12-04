@@ -38,12 +38,7 @@ layout = html.Div([
     html.Div([
         html.H2('Order Queue'),
         html.Table([
-            html.Tr([
-                html.Th('Nr.'),
-                html.Th('Colour'), # bo'el o' wo'uh
-                html.Th('Oven'),
-                html.Th('Milling')
-            ])
+# dynamically generated
         ], id='order-queue-table', className='data-table')
     ], className='order-queue'),
     hbw_view,
@@ -99,7 +94,6 @@ def place_order(n_clicks, color_picker_value, baking, baking_time, milling, mill
                 'order_saw_time': milling_time if milling else 0,
                 'order_ldt_ts': datetime.now()
             }
-            
         )
     )
     
@@ -123,3 +117,28 @@ def reset_buttons(n_intervals):
         return '', False, 'Click to place your order.' # reset the button
     else:
         raise PreventUpdate
+    
+@callback(
+    Output('order-queue-table', 'children'),
+    Input('updater', 'n_intervals')
+)
+def display_queue():
+    psm = PageStateManager()
+    queue = psm.get_data('ns=3;s="Queue"."Queue"')
+    return [
+        html.Tr([
+                html.Th('Nr.'),
+                html.Th('Colour'), # bo'el o' wo'uh
+                html.Th('Oven'),
+                html.Th('Milling')
+            ])
+        
+    ] + [
+        html.Tr([
+            html.Td(i),
+            html.Td(v.s_type),
+            html.Td(v.workpiece_parameters.ovenTime if v.workpiece_parameters.doOven else 'No'),
+            html.Td(v.sawTime if v.doSaw else 'No')
+        ])
+        for i, v in queue.value.value.value.enumerate()
+    ]

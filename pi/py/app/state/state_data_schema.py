@@ -1,6 +1,6 @@
 from .state_data_sources import MQTTSource, OPCUASource
 
-_data = {
+_data: dict[str, dict[str, dict[str, MQTTSource | OPCUASource]]] = {
 """Data that will be fetched per page by the PageStateManager.
 
     Format:
@@ -50,6 +50,9 @@ _data = {
             for x in range(3) 
             for y in range(3) 
             for e in ['s_id', 's_state', 's_type']
+        } | {
+            'queue_full': OPCUASource('ns=3;s="Queue"."x_Queue_Full"'),
+            'queue': OPCUASource('ns=3;s="Queue"."Queue"')
         },
         'user': {
             's_type': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"."s_type"'),
@@ -61,3 +64,4 @@ _data = {
         }
     }
 }
+
