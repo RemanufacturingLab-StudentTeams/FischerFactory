@@ -29,8 +29,8 @@ class ColorFormatter(logging.Formatter):
     def format(self, record):
         log_msg = super().format(record)
         
-        # Truncate debug log message if longer than 200 characters
-        max_length = 200
+        # Truncate debug log message if longer than 300 characters
+        max_length = 300
         if len(log_msg) > max_length and record.levelname == 'DEBUG':
             start = log_msg[:170]
             end = log_msg[-30:]

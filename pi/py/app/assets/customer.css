@@ -2,8 +2,10 @@
     display: grid;
     grid-template-areas: 
     "order-config order-queue hbw-view"
+    "order-state-container .  ."
     ;
     grid-template-columns: 1fr 1.5fr 1fr;
+    grid-template-rows: 1fr 1fr;
     background-color: var(--bg-color-1);
 }
 

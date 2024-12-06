@@ -39,12 +39,23 @@ layout = html.Div([
         html.H2('Order Queue'),
         html.Table([
 # dynamically generated
-        ], id='order-queue-table', className='data-table')
+    ], id='order-queue-table', className='data-table')
     ], className='order-queue'),
     hbw_view,
+    html.Div([
+        html.H2('Order State'),
+        html.Div([
+            html.Span('Ordered at', className='label'),
+            html.P('Loading...', className='value'),
+            html.Span('State', className='label'),
+            html.P('Loading...', className='value'),
+            html.Span('Colour', className='label'),
+            html.P('Loading...', className='value')
+        ], className='state-order table', id='state-order-table')
+    ], className='state-order-container'),
+    html.Div(id='h')
 ], className='dashboard-customer')
 
-dash.register_page(__name__, path='/dashboard-customer', layout=layout)
 
 @callback(
     Output('place-order', 'disabled'),
@@ -121,7 +132,31 @@ def reset_buttons(n_intervals):
         return '', False, 'Click to place your order.' # reset the button
     else:
         raise PreventUpdate
+  
+@callback(
+    Output('state-order-table', 'children'), 
+    Input('updater', 'n_intervals'),
+    State('state-order-table', 'children')
+)
+def a(n_intervals, old):
+    psm = PageStateManager()
+    ts = psm.get(page='dashboard-customer', key='state_order_ldt_ts', return_none_if_clean=False)
+    state = psm.get(page='dashboard-customer', key='state_order_s_state', return_none_if_clean=False)
+    color = psm.get(page='dashboard-customer', key='state_order_s_type', return_none_if_clean=False)
+
+    if (ts is None) and (state is None) and (color is None):
+        raise PreventUpdate
     
+    patch = Patch()
+    if ts:
+        patch[1]['props']['children'] = ts.strftime("%m/%d/%Y, %H:%M:%S")
+    if state:
+        patch[3]['props']['children'] = state
+    if color:
+        patch[5]['props']['children'] = color
+    
+    return patch
+
 @callback(
     Output('order-queue-table', 'children'),
     Input('updater', 'n_intervals')
@@ -152,5 +187,8 @@ def display_queue(n_intervals):
     ] + ([
         html.Tr('QUEUE FULL', className='queue-full-banner')
     ] if queue_full else [])
+
     
+dash.register_page(__name__, path='/dashboard-customer', layout=layout)
+
 display_hbw # callback function defined in `pages/components/hbw_view.py`.

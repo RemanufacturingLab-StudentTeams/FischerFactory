@@ -61,7 +61,8 @@ class PageStateManager:
         
         for task in self.monitor_tasks:
             try:
-                task.cancel()
+                if not task.done:
+                    task.cancel()
                 await task  # Ensure the task is properly canceled
             except asyncio.CancelledError as e: # this is actually fine, it should give a CancelledError because it was cancelled
                 pass
@@ -74,7 +75,8 @@ class PageStateManager:
             page (str): Which page to poll/subscribe to monitoring data for.
         """
         # Cancel any existing monitoring tasks
-        await self.stop_monitoring()
+        if page != 'global':
+            await self.stop_monitoring()
         
         logging.debug(f'[PSM] Monitoring page: {page} with data: {[k for k, s in self.data.get(page, {}).get("monitor", {}).items()]}')
 
