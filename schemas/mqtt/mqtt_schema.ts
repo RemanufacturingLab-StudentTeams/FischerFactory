@@ -511,7 +511,7 @@ type schema = {
 
 }
 
-type FixedLengthArray<T, L extends number> = L extends 0 ? never[] : [T, ...Array<T>];
+export type FixedLengthArray<T, L extends number> = L extends 0 ? never[] : [T, ...Array<T>];
 type TurtleBotPosition = {
     X: {
         topicSuffix: '/X'

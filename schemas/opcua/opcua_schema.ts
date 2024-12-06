@@ -17,6 +17,8 @@ enum DataType {
     Word // Is a bit string of 16 bits: W#16#0 to W#16#FFFF.
 }
 
+import { FixedLengthArray } from "../mqtt/mqtt_schema"
+
 type gtyp_Interface_Dashboard = {
     // Nodes that the PLC publishes to, and that the Raspberry Pi consumes.
     Subscribe: {
@@ -169,7 +171,7 @@ type gtyp_VGR = {
     rotate_Axis: typ_Axis
     Workpiece: typ_Workpiece
     Worpiece_Parameters: typ_Workpiece_Parameters
-    History: typ_History[]
+    History: FixedLengthArray<typ_History, 20>
     di_Pos_DSI_horizontal: DataType.Int32
     di_Pos_DSI_Collect_vertical: DataType.Int32
     di_Pos_DSI_Discard_vertical: DataType.Int32
@@ -228,7 +230,7 @@ type gtyp_MPO = {
     i_PWM_Vacuum: DataType.Int16
     Workpiece: typ_Workpiece
     Workpiece_Parameters: typ_Workpiece_Parameters
-    History: typ_History[]
+    History: FixedLengthArray<typ_History, 20>
 }
 
 type gtyp_SSC = {
@@ -246,7 +248,7 @@ type gtyp_SSC = {
     Horizontal_Axis: typ_Axis
     Vertical_Axis: typ_Axis
     Workpiece: typ_Workpiece
-    History: typ_History[]
+    History: FixedLengthArray<typ_History, 20>
 }
 
 type gtyp_HBW = {
@@ -273,7 +275,7 @@ type gtyp_HBW = {
     i_PWM_ConveyorBelt: DataType.Int16
     i_PWM_Cantilever: DataType.Int16
     Workpiece: typ_Workpiece
-    History: typ_History[] // [1..20]
+    History: FixedLengthArray<typ_History, 20> // [1..20]
     Rack_Pos: {
         di_PosRack_Horizontal: DataType.Int32
         di_PosRack_Vertical: DataType.Int32
@@ -298,7 +300,7 @@ type gtyp_SLD = {
     w_Threshold_White_Red: DataType.Word
     w_Threshold_Red_Blue: DataType.Word
     Workpiece: typ_Workpiece
-    History: typ_History[] // [1..20]
+    History: FixedLengthArray<typ_History[], 20> // [1..20]
 }
 
 type gtyp_Interface_TXT_Controler = {
@@ -306,7 +308,7 @@ type gtyp_Interface_TXT_Controler = {
         State_NFC_Device: {
             ldt_ts: DataType.DateTime,
             Workpiece: typ_Workpiece,
-            History: typ_History[] // [1..20]
+            History: FixedLengthArray<typ_History[], 20> // [1..20]
         }
     },
 
@@ -315,9 +317,19 @@ type gtyp_Interface_TXT_Controler = {
             ldt_ts: DataType.DateTime,
             s_cmd: DataType.String,
             Workpiece: typ_Workpiece,
-            History: typ_History[] // [1..20]
+            History: FixedLengthArray<typ_History[], 20> // [1..20]
         }
     }
+}
+
+type Queue = {
+    x_Queue_Full: DataType.Boolean
+    i_Queue_Index: DataType.Int16 // index where the next element will be written (so 0 if the queue is empty)
+    Queue: FixedLengthArray<{
+        ldt_ts: DataType.DateTime
+        s_type: 'RED' | 'WHITE' | 'BLUE'
+        Workpiece_Parameters: typ_Workpiece_Parameters
+    }, 7>
 }
 
 type typ_State_Client = {
@@ -426,4 +438,4 @@ type typ_History = {
     i_code: DataType.Int16
 }
 
-type typ_Rack_History = typ_History[] // Max size 20
+type typ_Rack_History = FixedLengthArray<typ_History[], 20> // Max size 20
