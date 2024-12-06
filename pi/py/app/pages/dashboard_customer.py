@@ -128,10 +128,7 @@ def reset_buttons(n_intervals):
 )
 def display_queue(n_intervals):
     psm = PageStateManager()
-    queue = psm.get_data('dashboard-customer', 'queue')
-    
-    if queue is None:
-        raise PreventUpdate
+    queue_index: int = psm.get_data('dashboard-customer', 'queue_index') or 0
     
     return [
         html.Tr([
@@ -143,12 +140,12 @@ def display_queue(n_intervals):
         
     ] + [
         html.Tr([
-            html.Td(i),
-            html.Td(v.s_type),
-            html.Td(v.workpiece_parameters.ovenTime if v.workpiece_parameters.doOven else 'No'),
-            html.Td(v.sawTime if v.doSaw else 'No')
+            html.Td(i + 1),
+            html.Td(psm.get_data('dashboard-customer', f'queue_[{i}]_s_type')),
+            html.Td(psm.get_data('dashboard-customer', f'queue_[{i}]_wparams_OvenTime') if psm.get_data('dashboard-customer', f'queue_[{i}]_wparams_DoOven') else 'No'),
+            html.Td(psm.get_data('dashboard-customer', f'queue_[{i}]_wparams_SawTime') if psm.get_data('dashboard-customer', f'queue_[{i}]_wparams_DoSaw') else 'No')
         ])
-        for i, v in queue.value.value.value.enumerate()
+        for i in range(queue_index)
     ]
     
 @callback(

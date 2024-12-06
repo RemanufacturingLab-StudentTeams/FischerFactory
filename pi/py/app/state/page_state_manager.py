@@ -27,12 +27,14 @@ class PageStateManager:
         Args:
             page (str): Which page to fetch hydration data for.
         """
+        logging.debug(f'[PSM] Hydrating page: {page} with data: {[k for k, s in self.data.get("hydrate", {}).items()]}')
         
         hydration_tasks = []   
         
         for key, source in self.data.get(page, {}).get('hydrate', {}).items():
             if isinstance(source, OPCUASource):
                 async def task():
+                    logging.debug(source.value)
                     while source.value is None: # poll while no value was retrieved
                         v = await self.opcuaClient.read(source.node_id)
                         if v is not None:
@@ -72,10 +74,10 @@ class PageStateManager:
         Args:
             page (str): Which page to poll/subscribe to monitoring data for.
         """
-        logging.debug(f'[PSM] Monitoring page: {page}')
-        
         # Cancel any existing monitoring tasks
         await self.stop_monitoring()
+        
+        logging.debug(f'[PSM] Monitoring page: {page}')
 
         # Create monitoring tasks for OPCUA and MQTT sources
         for key, source in self.data.get(page, {}).get('monitor', {}).items():
