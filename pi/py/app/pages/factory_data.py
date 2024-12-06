@@ -41,7 +41,7 @@ layout = html.Div(
 )
 def update_sld(n_intervals, el):    
     psm = PageStateManager()
-    data = psm.get_data('factory-data', 'state_sld')
+    data = psm.get('factory-data', 'state_sld')
     
     if not data:
         raise PreventUpdate

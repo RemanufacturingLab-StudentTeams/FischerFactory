@@ -129,12 +129,13 @@ class PageStateManager:
         
         await asyncio.gather(*tasks)
     
-    def get_data(self, page: str, key: str) -> Any:
+    def get(self, page: str, key: str, return_none_if_clean=True) -> Any:
         """Accesses data for a specific page, based on a key. Resets the dirty bit.
 
         Args:
             page (str): Which page to get data for. Format is pathname without leading '/', so with hyphen delimiter. Example: `factory-overview`.
             key (str): The key this data is under. For example: `plc_version`.
+            return_none_if_clean (bool): Default True. If set to True, it will return None if nothing changed since last time it was called. Useful to catch with PreventUpdate for performance to prevent unnecessary UI updates.
             
         Returns:
             (Any): Returns `None` if the value is clean. Please raise `PreventUpdate` in the callbacks in case it returns None.
@@ -148,6 +149,10 @@ class PageStateManager:
                     if source.dirty: 
                         source.dirty = False
                         return source.value
-                    else: # return None if value is clean
-                        break
+                    else:
+                        if return_none_if_clean:
+                            break
+                        else:
+                            return source.value # return even though it is clean
+                            
         return None

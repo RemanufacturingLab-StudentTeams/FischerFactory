@@ -6,6 +6,9 @@
     --accent-color-text-2: #1bbfff;
     --bg-color-1: #e8e8e8;
     --bg-color-2: #8cebf8;
+    --red-puck-color: #dc143c;
+    --blue-puck-color: #00008b;
+    --white-puck-color: #ffffff;
 }
 
 html {

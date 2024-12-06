@@ -32,3 +32,34 @@
 .order-config .dash-dropdown {
     width: 100%;
 }
+
+.queue-full-banner {
+    grid-column: 1 / -1; 
+    border: 2px solid red;
+    color: red;
+}
+
+div.puck-empty, div.puck-red, div.puck-blue, div.puck-white {
+    border-radius: 25px;
+    display: grid;
+    place-items: center;
+}
+
+div.puck-empty {
+    background-color: var(--bg-color-1);
+}
+
+div.puck-red {
+    background-color: var(--red-puck-color);
+    color: white;
+}
+
+div.puck-blue {
+    background-color: var(--blue-puck-color);
+    color: white;
+}
+
+div.puck-white {
+    background-color: var(--white-puck-color);
+    color: black;
+}

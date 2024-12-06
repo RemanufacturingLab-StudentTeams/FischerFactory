@@ -3,7 +3,7 @@ from dash import Dash, html, Input, Output, State, callback, dcc, ALL, Patch
 import dash_daq as daq
 from backend import opcuaClient, mqttClient
 import logging
-from pages.components import hbw_view 
+from pages.components import hbw_view, display_hbw
 from state import PageStateManager
 from datetime import datetime, timezone
 from dash.exceptions import PreventUpdate
@@ -55,7 +55,7 @@ def validate_order_button(color_value):
     if color_value is None:
         return True, "Disabled: please select a color."
     psm = PageStateManager()
-    queue_full: bool | None = psm.get_data('customer-dashboard', 'queue_full')
+    queue_full: bool | None = psm.get('customer-dashboard', 'queue_full')
     if queue_full:
         return True, "Disabled: Queue is full."
     return False, 'Click to place your order.'
@@ -117,7 +117,7 @@ def reset_buttons(n_intervals):
     """
     # Order button
     psm = PageStateManager()
-    if psm.get_data('dashboard-customer', 'order_ldt_ts') is not None: # i.e., it is dirty, i.e., the user-sent data has been ack'ed
+    if psm.get('dashboard-customer', 'order_ldt_ts') is not None: # i.e., it is dirty, i.e., the user-sent data has been ack'ed
         return '', False, 'Click to place your order.' # reset the button
     else:
         raise PreventUpdate
@@ -128,53 +128,29 @@ def reset_buttons(n_intervals):
 )
 def display_queue(n_intervals):
     psm = PageStateManager()
-    queue_index: int = psm.get_data('dashboard-customer', 'queue_index') or 0
+    queue_index: int = psm.get('dashboard-customer', 'queue_index', False) or 0
+    queue_full: bool = psm.get('dashboard-customer', 'queue_full', False) or False
     
     return [
         html.Tr([
                 html.Th('Nr.'),
                 html.Th('Colour'), # bo'el o' wo'uh
                 html.Th('Oven'),
-                html.Th('Milling')
+                html.Th('Milling'),
+                html.Th('Ordered at')
             ])
         
     ] + [
         html.Tr([
             html.Td(i + 1),
-            html.Td(psm.get_data('dashboard-customer', f'queue_[{i}]_s_type')),
-            html.Td(psm.get_data('dashboard-customer', f'queue_[{i}]_wparams_OvenTime') if psm.get_data('dashboard-customer', f'queue_[{i}]_wparams_DoOven') else 'No'),
-            html.Td(psm.get_data('dashboard-customer', f'queue_[{i}]_wparams_SawTime') if psm.get_data('dashboard-customer', f'queue_[{i}]_wparams_DoSaw') else 'No')
+            html.Td(psm.get('dashboard-customer', f'queue_[{i}]_s_type', False)),
+            html.Td(psm.get('dashboard-customer', f'queue_[{i}]_wparams_OvenTime', False) if psm.get('dashboard-customer', f'queue_[{i}]_wparams_DoOven', False) else 'No'),
+            html.Td(psm.get('dashboard-customer', f'queue_[{i}]_wparams_SawTime', False) if psm.get('dashboard-customer', f'queue_[{i}]_wparams_DoSaw', False) else 'No'),
+            html.Td(psm.get('dashboard-customer', f'queue_[{i}]_ldt_ts', False).strftime("%m/%d/%Y, %H:%M:%S"))
         ])
         for i in range(queue_index)
-    ]
+    ] + ([
+        html.Tr('QUEUE FULL', className='queue-full-banner')
+    ] if queue_full else [])
     
-@callback(
-    Output('hbw-view-container', 'children'),
-    Input('updater', 'n_intervals')
-)
-def display_hbw():
-    psm = PageStateManager()
-    
-    buttons = [
-        html.Button(
-            classname='puck-' + psm.get_data(
-                'dashboard-customer', 
-                'rack_workpiece_[{x},{y}]_s_type'
-            ).lower() or 'empty' # class names will become 'puck-red', 'puck-blue', 'puck-white' or 'empty'
-        )
-            for x in range(3) 
-            for y in range(3)
-    ]
-    
-    return [
-            html.Div(),
-            html.Span('1', className='label'),
-            html.Span('2', className='label'),
-            html.Span('3', className='label'),
-            html.Span('A', className='label'),
-            *buttons[0:3], # button 0 to 3 exclusive, so the first 3
-            html.Span('B', className='label'),
-            *buttons[3:6],
-            html.Span('C', className='label'),
-            *buttons[6:9]
-    ]
+display_hbw # callback function defined in `pages/components/hbw_view.py`.

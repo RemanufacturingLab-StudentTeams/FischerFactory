@@ -149,7 +149,7 @@ layout = html.Div(
 )
 def display_plc_version(n_intervals):
     psm = PageStateManager()
-    data = psm.get_data('factory-overview', 'plc_version')
+    data = psm.get('factory-overview', 'plc_version')
     
     if not data:
         raise PreventUpdate
