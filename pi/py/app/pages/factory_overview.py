@@ -11,7 +11,7 @@ import dash_daq as daq
 import os
 from common import runtime_manager
 from asyncio import sleep
-from pages.components import hbw_view
+from pages.components import hbw_view, display_hbw
 
 layout = html.Div(
     [
@@ -143,6 +143,8 @@ layout = html.Div(
     className='overview',
 )
 
+dash.register_page(__name__, path='/', redirect_from=['/factory-overview'], layout=layout)
+
 @callback(
     Output('plc-version', 'children'),
     Input('updater', 'n_intervals')
@@ -156,5 +158,4 @@ def display_plc_version(n_intervals):
     else:
         return str(data)
     
-
-dash.register_page(__name__, path='/', redirect_from=['/factory-overview'], layout=layout)
+display_hbw

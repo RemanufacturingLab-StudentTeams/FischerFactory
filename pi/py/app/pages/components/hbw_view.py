@@ -18,14 +18,15 @@ hbw_view = html.Div(
 )
 def display_hbw(n_intervals):    
     psm = PageStateManager()
+    page = 'global'
     
     buttons = [
         (
             html.Div(
-                psm.get('dashboard-customer', f'rack_workpiece_[{x},{y}]_s_id', False),
-                className='puck-' + psm.get('dashboard-customer', f'rack_workpiece_[{x},{y}]_s_type', False).lower() # class names will become 'puck-red', 'puck-blue', 'puck-white' or 'empty'
+                psm.get(page, f'rack_workpiece_[{x},{y}]_s_id', False),
+                className='puck-' + psm.get(page, f'rack_workpiece_[{x},{y}]_s_type', False).lower() # class names will become 'puck-red', 'puck-blue', 'puck-white' or 'empty'
             )
-            if psm.get('dashboard-customer',f'rack_workpiece_[{x},{y}]_s_type',False)
+            if psm.get(page,f'rack_workpiece_[{x},{y}]_s_type',False)
             else html.Div(className='puck-empty')
         )
             for x in range(3) 

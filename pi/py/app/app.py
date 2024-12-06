@@ -118,10 +118,13 @@ def switch_page(pathname: str):
     logging.debug(f"Switched to page: {page_name}")
     
     psm = PageStateManager()
+    psm.dirty_all(page_name)
     rtm  = runtime_manager.RuntimeManager()
     
     rtm.add_task(psm.hydrate_page(page_name))
     rtm.add_task(psm.monitor_page(page_name))
+    rtm.add_task(psm.hydrate_page('global'))
+    rtm.add_task(psm.monitor_page('global'))
     
     return ['']
 
@@ -168,7 +171,7 @@ if __name__ == "__main__":
     # Start OPCUA and MQTT Clients (important: *before* starting the app!)
     rtm = runtime_manager.RuntimeManager()
     rtm.add_task(startClients())
-
+    
     # Launch the Dash app
     config.app.run(
         dev_tools_hot_reload=(config.mode == 'dev'), 

@@ -27,14 +27,13 @@ class PageStateManager:
         Args:
             page (str): Which page to fetch hydration data for.
         """
-        logging.debug(f'[PSM] Hydrating page: {page} with data: {[k for k, s in self.data.get("hydrate", {}).items()]}')
+        logging.debug(f'[PSM] Hydrating page: {page} with data: {[k for k, s in self.data.get(page, {}).get("hydrate", {}).items()]}')
         
         hydration_tasks = []   
         
         for key, source in self.data.get(page, {}).get('hydrate', {}).items():
             if isinstance(source, OPCUASource):
                 async def task():
-                    logging.debug(source.value)
                     while source.value is None: # poll while no value was retrieved
                         v = await self.opcuaClient.read(source.node_id)
                         if v is not None:
@@ -77,7 +76,7 @@ class PageStateManager:
         # Cancel any existing monitoring tasks
         await self.stop_monitoring()
         
-        logging.debug(f'[PSM] Monitoring page: {page}')
+        logging.debug(f'[PSM] Monitoring page: {page} with data: {[k for k, s in self.data.get(page, {}).get("monitor", {}).items()]}')
 
         # Create monitoring tasks for OPCUA and MQTT sources
         for key, source in self.data.get(page, {}).get('monitor', {}).items():
@@ -153,6 +152,16 @@ class PageStateManager:
                         if return_none_if_clean:
                             break
                         else:
-                            return source.value # return even though it is clean
-                            
+                            return source.value # return even though it is clean    
         return None
+    
+    def dirty_all(self, page):
+        """Gets all sources on this page to dirty.
+
+        Args:
+            page (str): Page name, with hyphen delimiter.
+        """        
+        if page in self.data:
+            for category in self.data[page].values():
+                for key in category:
+                    category[key].dirty = True

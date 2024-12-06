@@ -24,11 +24,6 @@ _data: dict[str, dict[str, dict[str, MQTTSource | OPCUASource]]] = {
             'plc_version': OPCUASource('ns=3;s="gtyp_Setup"."r_Version_SPS"')
         },
         'monitor': {
-            f'rack_workpiece_[{x},{y}]_{e}': OPCUASource(f'ns=3;s="gtyp_HBW"."Rack_Workpiece"[{x},{y}]."{e}"')
-            for x in range(3) 
-            for y in range(3) 
-            for e in ['s_id', 's_state', 's_type']
-        } | {
             'turtlebot_current_state': MQTTSource('Turtlebot/CurrentState')
         },
         'user': {
@@ -51,11 +46,6 @@ _data: dict[str, dict[str, dict[str, MQTTSource | OPCUASource]]] = {
             
         },
         'monitor': {
-            f'rack_workpiece_[{x},{y}]_{e}': OPCUASource(f'ns=3;s="gtyp_HBW"."Rack_Workpiece"[{x},{y}]."{e}"')
-            for x in range(3) 
-            for y in range(3) 
-            for e in ['s_id', 's_state', 's_type']
-        } | {
             'queue_full': OPCUASource('ns=3;s="Queue"."x_Queue_Full"'),
             'queue_index': OPCUASource('ns=3;s="Queue"."i_Queue_Index"')
         } | {   
@@ -75,6 +65,16 @@ _data: dict[str, dict[str, dict[str, MQTTSource | OPCUASource]]] = {
             'order_do_saw': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"."Workpiece_Parameters"."DoSaw"'),
             'order_ldt_ts': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"."ldt_ts"'),
         }
+    },
+    'global': { # every page
+        'hydrate': {
+        },
+        'monitor': {
+            f'rack_workpiece_[{x},{y}]_{e}': OPCUASource(f'ns=3;s="gtyp_HBW"."Rack_Workpiece"[{x},{y}]."{e}"')
+            for x in range(3) 
+            for y in range(3) 
+            for e in ['s_id', 's_state', 's_type']
+        } | {}
     }
 }
 
