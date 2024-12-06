@@ -137,9 +137,9 @@ type gtyp_Interface_Dashboard = {
             Workpiece_Parameters:
             {
                 DoOven: DataType.Boolean
-                OvenTime: DataType.DateTime
+                OvenTime: DataType.Int32
                 DoSaw: DataType.Boolean
-                SawTime: DataType.DateTime
+                SawTime: DataType.Int32
             }
         }
         ActionButtonNFCModule:

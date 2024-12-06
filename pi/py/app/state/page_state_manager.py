@@ -112,9 +112,10 @@ class PageStateManager:
             return
         
         logging.debug(f'[PSM] Sending user data: {keys_and_data}')
-        tasks = []  # List to hold async tasks for concurrent execution
+        tasks = []
         
         async def task(key, data, source):
+            logging.debug(f'trying task to send {data} over {source.node_id or source.topic}')
             if isinstance(source, OPCUASource):
                 await self.opcuaClient.write(source.node_id, data)
             elif isinstance(source, MQTTSource):
@@ -122,12 +123,12 @@ class PageStateManager:
             source.value = data
             source.dirty = True
         
-        for category in self.data[page].values():
-            for key, data in keys_and_data.items():
-                if key in category:
-                    source = category[key]
-                    tasks.append(task(key, data, source))
+        for key, data in keys_and_data.items():
+            source = self.data[page]['user'][key]
+            logging.debug(f'[PSM] found {source.node_id or source.topic} for {key}')
+            tasks.append(task(key, data, source))
         
+        logging.debug(tasks)
         await asyncio.gather(*tasks)
     
     def get(self, page: str, key: str, return_none_if_clean=True) -> Any:

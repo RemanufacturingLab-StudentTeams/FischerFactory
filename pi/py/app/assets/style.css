@@ -194,6 +194,7 @@ button.pending::before {
 
 .table> p.value {
     font-weight: bold;
+    text-align: right;
 }
 
 .table > * {
@@ -257,4 +258,8 @@ div.puck-blue {
 div.puck-white {
     background-color: var(--white-puck-color);
     color: black;
+}
+
+div.hidden {
+    display: none;
 }

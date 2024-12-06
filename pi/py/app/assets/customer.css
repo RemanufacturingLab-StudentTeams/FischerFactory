@@ -21,7 +21,7 @@
     padding: 5px;
 }
 
-.order-config > div {
+.order-config > div:not(.hidden) {
     padding: 10px 0px;
     display: flex;
     justify-content: space-between;

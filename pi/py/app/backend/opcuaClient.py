@@ -91,6 +91,7 @@ class OPCUAClient:
         try:
             converted_value = self._convert_to_correct_type(value, data_type)
             node = self.client.get_node(node_id)
+            logging.debug(f"[OPCUAClient] Trying to write value {value} to node {c(node_id, 'white')}")
             await node.write_value(converted_value)
             logging.info(f"[OPCUAClient] Wrote value {value} to node {c(node_id, 'white')}")
         except Exception as e:
@@ -98,6 +99,19 @@ class OPCUAClient:
             
     def _get_data_type_from_node_id(self, node_id: str) -> str:
         """Determine the data type from the node ID prefix."""
+        
+        # Hardcoded VariantTypes for node id's that do not fit the standard.
+        match node_id.split('.')[-1].strip('\"'):
+            case 'OvenTime':
+                return 'Int32'
+            case 'SawTime':
+                return 'Int32'
+            case 'DoOven':
+                return 'Boolean'
+            case 'DoSaw':
+                return 'Boolean'
+            
+        
         prefixes = {
             'x': 'Boolean',
             's': 'String',
@@ -115,20 +129,20 @@ class OPCUAClient:
     def _convert_to_correct_type(self, value: Any, data_type: str) -> object:
         """Convert the input value to the correct type."""
         if data_type == 'Boolean':
-            return bool(value)
+            return ua.DataValue(ua.Variant(value, ua.VariantType.Boolean))
         elif data_type == 'Int16':
-            return int(value)
+            return ua.DataValue(ua.Variant(value, ua.VariantType.Int16))
         elif data_type == 'Int32':
-            return int(value)
+            return ua.DataValue(ua.Variant(value, ua.VariantType.Int32))
         elif data_type == 'Float':
-            return float(value)
+            return ua.DataValue(ua.Variant(value, ua.VariantType.Float))
         elif data_type == 'DateTime':
             if isinstance(value, datetime):
-                return value.isoformat()
+                return ua.DataValue(ua.Variant(value, ua.VariantType.DateTime))
             else:
                 raise ValueError(f"Invalid datetime format for {data_type}")
         elif data_type == 'String':
-            return str(value)
+            return ua.DataValue(ua.Variant(value, ua.VariantType.String))
         elif data_type == 'Word':  # 16 bits
             return int(value) & 0xFFFF
         else:

@@ -24,7 +24,7 @@ layout = html.Div([
         html.Div([
             html.Label('Baking time [ms]'),
             dcc.Input(type='number', value=4000, debounce=True, step=100, id='order-baking-time')
-        ]),
+        ], id='baking-time'),
         html.Div([
             html.Label('Milling'),
             daq.ToggleSwitch(value=False, color='#0094CE', id='order-milling')
@@ -32,7 +32,7 @@ layout = html.Div([
         html.Div([
             html.Label('Milling time [ms]'),
             dcc.Input(type='number', value=4000, debounce=True, step=100, id='order-milling-time')
-        ]),
+        ], id='milling-time'),
         html.Button('ORDER', id='place-order', title="Disabled: please select a color.")
     ], className='order-config'),
     html.Div([
@@ -55,7 +55,6 @@ layout = html.Div([
     ], className='state-order-container'),
     html.Div(id='h')
 ], className='dashboard-customer')
-
 
 @callback(
     Output('place-order', 'disabled'),
@@ -102,7 +101,7 @@ def place_order(n_clicks, color_picker_value, baking, baking_time, milling, mill
         psm.send_data(
             page='dashboard-customer',
             keys_and_data={
-                's_type': color_picker_value, # type of puck (i.e., colour)   
+                's_type': color_picker_value.upper(), # type of puck (i.e., colour)   
                 'order_do_oven': baking,
                 'order_oven_time': baking_time if baking else 0,
                 'order_do_saw': milling,
@@ -113,6 +112,15 @@ def place_order(n_clicks, color_picker_value, baking, baking_time, milling, mill
     )
     
     return 'pending', True, 'Disabled: Pending' # disables the button until the reset_buttons callback resets it.
+
+@callback(
+    Output('baking-time', 'className'),
+    Output('milling-time', 'className'),
+    Input('order-baking', 'value'),
+    Input('order-milling', 'value')
+)
+def hide_time_fields(order_baking, order_milling):
+    return 'hidden' if not order_baking else '', 'hidden' if not order_milling else ''
 
 @callback(
     [
@@ -132,13 +140,12 @@ def reset_buttons(n_intervals):
         return '', False, 'Click to place your order.' # reset the button
     else:
         raise PreventUpdate
-  
+
 @callback(
     Output('state-order-table', 'children'), 
-    Input('updater', 'n_intervals'),
-    State('state-order-table', 'children')
+    Input('updater', 'n_intervals')
 )
-def a(n_intervals, old):
+def display_order(n_intervals):
     psm = PageStateManager()
     ts = psm.get(page='dashboard-customer', key='state_order_ldt_ts', return_none_if_clean=False)
     state = psm.get(page='dashboard-customer', key='state_order_s_state', return_none_if_clean=False)
