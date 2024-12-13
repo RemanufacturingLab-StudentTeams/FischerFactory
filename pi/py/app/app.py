@@ -118,7 +118,7 @@ def switch_page(pathname: str):
     logging.debug(f"Switched to page: {page_name}")
     
     psm = PageStateManager()
-    psm.dirty_all(page_name)
+    psm.dirty_all(page_name) # make all data dirty so it can be re-fetched without being ignored
     rtm  = runtime_manager.RuntimeManager()
     
     rtm.add_task(psm.hydrate_page(page_name))

@@ -47,20 +47,20 @@ class OPCUAClient:
         
     async def connect(self):
         try:
-            logging.info(f"[OPCUACLient] Attempting to connect to PLC at {self.url}.")
+            logging.info(f"[OPCUAClient] Attempting to connect to PLC at {self.url}.")
             await self.client.connect()
-            logging.info(f"[OPCUACLient] Connected to PLC at {self.url}.")
+            logging.info(f"[OPCUAClient] Connected to PLC at {self.url}.")
             self.reconnect_attempts = 0
             self.connection_status = True
             
         except Exception as e:
-            logging.error(f"[OPCUACLient] Failed to connect to PLC at {self.url}.")
+            logging.error(f"[OPCUAClient] Failed to connect to PLC at {self.url}.")
             self.reconnect_attempts += 1
             if self.reconnect_attempts <= self.max_reconnect_attempts:
-                logging.info(f"[OPCUACLient] Attempting reconnection attempt {self.reconnect_attempts}/{self.max_reconnect_attempts}")
+                logging.info(f"[OPCUAClient] Attempting reconnection attempt {self.reconnect_attempts}/{self.max_reconnect_attempts}")
                 await asyncio.create_task(self.attempt_reconnection())
             else:
-                logging.error("[OPCUACLient] Max reconnection attempts reached. Stopping OPCUA client.")
+                logging.error("[OPCUAClient] Max reconnection attempts reached. Stopping OPCUA client.")
                 raise ConnectionRefusedError()
             
     async def attempt_reconnection(self):
@@ -167,7 +167,7 @@ class OPCUAClient:
         try:
             res = await node.read_value()
             if os.getenv('LOG_MESSAGES') == 'TRUE':
-                logging.debug(f"[OPCUAClient] Read value of node {c(node_id, 'cyan', 'white')}: {c(res, 'cyan')}")
+                logging.debug(f"[OPCUAClient] Read node: {c(node_id, 'cyan', 'white')}: {c(res, 'cyan')}")
             return res
         except Exception as e:
             logging.error(f"[OPCUAClient] Failed to read value of node {c(node_id, 'white')}: {e}")

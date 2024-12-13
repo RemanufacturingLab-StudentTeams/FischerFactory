@@ -1,0 +1,7 @@
+[OPCUAClient] Running in production mode. Using real OPCUAClient.
+[MQTTCLIENT] Connecting to MQTT broker at 10.35.4.253:1883
+[OPCUAClient] Attempting to connect to PLC at opc.tcp://10.35.4.252:4840.
+[MQTTCLIENT] Connected to MQTT broker
+[OPCUAClient] Connected to PLC at opc.tcp://10.35.4.252:4840.
+[MQTTCLIENT] Subscribing to topic [37mTurtlebot/CurrentState[37m
+[MQTTCLIENT] Subscribed to topic, mid: 1, qos: (1,)
