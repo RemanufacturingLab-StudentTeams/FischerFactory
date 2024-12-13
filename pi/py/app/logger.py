@@ -57,11 +57,15 @@ class InternalFilter(logging.Filter): # Does the oppsite of the ExternalFilter.
 def setup():
     os.makedirs('logs', exist_ok=True) # create log directory if it doesn't exit yet
 
+    log_messages = os.getenv('LOG_MESSAGES')
+
     terminal_handler = logging.StreamHandler() # handles messages that will be logged to the terminal
     terminal_handler.setFormatter(ColorFormatter(
         fmt='%(asctime)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     ))
+    if log_messages == 'FALSE' or log_messages == 'FILE':
+        terminal_handler.addFilter(InternalFilter())
     
     # Internal log file handler
     internal_handler = logging.FileHandler('logs/internal_logs')
@@ -77,9 +81,14 @@ def setup():
     ))
     external_handler.addFilter(ExternalFilter())
     
-    level = str(os.getenv('LOG_LEVEL'))
+    handlers = []
+    handlers.append(terminal_handler)
+    handlers.append(internal_handler)
+    if log_messages == 'TRUE' or log_messages == 'FILE':
+        handlers.append(external_handler)
     
-    logging.basicConfig(level=level, handlers=[terminal_handler, external_handler, internal_handler])
+    level = str(os.getenv('LOG_LEVEL'))
+    logging.basicConfig(level=level, handlers=handlers)
     
     # Suppress HTTP requests logging
     logging.getLogger('werkzeug').setLevel(logging.ERROR)

@@ -78,6 +78,7 @@ class PageStateManager:
         if page != 'global':
             await self.stop_monitoring()
         
+        logging.debug(f'[PSM] data: {self.data}')
         logging.debug(f'[PSM] Monitoring page: {page} with data: {[k for k, s in self.data.get(page, {}).get("monitor", {}).items()]}')
 
         # Create monitoring tasks for OPCUA and MQTT sources

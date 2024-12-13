@@ -83,7 +83,6 @@ class MqttClient:
                 res = json.loads(payload)
             except Exception as e:
                 logging.error(f"[MQTTCLIENT] Payload is not valid JSON: {payload}")
-            if os.getenv('LOG_MESSAGES') == 'TRUE':
                 logging.debug(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(res, 'white')}")
             if callback:
                 callback(res)

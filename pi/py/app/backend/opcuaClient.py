@@ -166,9 +166,7 @@ class OPCUAClient:
         
         try:
             res = await node.read_value()
-            if os.getenv('LOG_MESSAGES') == 'TRUE':
-                logging.debug(f"[OPCUAClient] Read node: {c(node_id, 'cyan', 'white')}: {c(res, 'cyan')}")
-            return res
+            logging.debug(f"[OPCUAClient] Read node: {c(node_id, 'cyan', 'white')}: {c(res, 'cyan')}")
         except Exception as e:
             logging.error(f"[OPCUAClient] Failed to read value of node {c(node_id, 'white')}: {e}")
             return None
