@@ -45,14 +45,14 @@ class ExternalFilter(logging.Filter): # Filters messages that were sent by [OPCU
         super().__init__()
 
     def filter(self, record):
-        return record.msg.lower().startswith(('[opcuaclient]', '[mockopcuaclient]', '[mqttclient]'))
+        return str(record.msg).lower().startswith(('[opcuaclient]', '[mockopcuaclient]', '[mqttclient]'))
     
 class InternalFilter(logging.Filter): # Does the oppsite of the ExternalFilter.
     def __init__(self):
         super().__init__()
 
     def filter(self, record):
-        return not record.msg.lower().startswith(('[opcuaclient]', '[mockopcuaclient]', '[mqttclient]'))
+        return not (str(record.msg).lower().startswith(('[opcuaclient]', '[mockopcuaclient]', '[mqttclient]')))
     
 def setup():
     os.makedirs('logs', exist_ok=True) # create log directory if it doesn't exit yet

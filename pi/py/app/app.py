@@ -20,7 +20,7 @@ page_icons = {
 # Global layout for the app
 config.app.layout = html.Div(
     [
-        dcc.Location('location'),
+        dcc.Location('location', refresh=True),
         html.Div(
             [
                 html.Div("FischerFactory Dash Dashboard"),
@@ -46,7 +46,7 @@ config.app.layout = html.Div(
                         html.I(
                             className=page_icons[page["name"]], style={"margin": "5px"}
                         ),
-                        dcc.Link(f"{page['name']}", href=(page["relative_path"])),
+                        dcc.Link(f"{page['name']}", href=(page["relative_path"]), refresh=True),
                     ],
                     className="side-panel-link",
                 )
@@ -109,11 +109,12 @@ def update_status_mqtt(n_intervals):
 
 @config.app.callback(
     [Output("dummy", "children", allow_duplicate=True)], 
-    Input("location", "pathname")
+    Input("location", "href")
 )
-def switch_page(pathname: str):
+def switch_page(href: str):
     import logging # bit weird to not put this import at the top of the page but the logger setup really needs to run first so ¯\_(ツ)_/¯
-    page_name = pathname.lstrip('/') or 'factory-overview'
+    # page_name = pathname.lstrip('/') or 'factory-overview'
+    page_name = href.split('/')[-1].split('?')[0] or 'factory-overview'
     
     logging.debug(f"Switched to page: {page_name}")
     
@@ -123,8 +124,6 @@ def switch_page(pathname: str):
     
     rtm.add_task(psm.hydrate_page(page_name))
     rtm.add_task(psm.monitor_page(page_name))
-    rtm.add_task(psm.hydrate_page('global'))
-    rtm.add_task(psm.monitor_page('global'))
     
     return ['']
 
@@ -163,14 +162,18 @@ if __name__ == "__main__":
 
     logger.setup()
 
-    async def startClients():
+    async def startClients(rtm):
         # Initialize the MQTT client
         mqtt = mqttClient.MqttClient()
         opcua = opcuaClient.OPCUAClient()
+        
+        psm = PageStateManager()
+        rtm.add_task(psm.hydrate_page('global'))
+        rtm.add_task(psm.monitor_page('global'))
 
     # Start OPCUA and MQTT Clients (important: *before* starting the app!)
     rtm = runtime_manager.RuntimeManager()
-    rtm.add_task(startClients())
+    rtm.add_task(startClients(rtm))
     
     # Launch the Dash app
     config.app.run(

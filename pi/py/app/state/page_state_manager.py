@@ -18,7 +18,9 @@ class PageStateManager:
             self.mqttClient = mqttClient.MqttClient()
             self.opcuaClient = opcuaClient.OPCUAClient() 
             self.monitor_tasks: list[Task[Any]] = []
+            self.global_monitor_tasks: list[Task[Any]] = []
             self.data = state_data_schema._data
+    
             self.initialized = True
     
     async def hydrate_page(self, page: str):
@@ -34,7 +36,7 @@ class PageStateManager:
         for key, source in self.data.get(page, {}).get('hydrate', {}).items():
             if isinstance(source, OPCUASource):
                 async def task():
-                    while source.value is None: # poll while no value was retrieved
+                    while source.dirty: # poll while no value was retrieved
                         v = await self.opcuaClient.read(source.node_id)
                         if v is not None:
                             source.set_value(v)
@@ -61,24 +63,23 @@ class PageStateManager:
         
         for task in self.monitor_tasks:
             try:
-                if not task.done:
-                    task.cancel()
+                
+                task.cancel()
                 await task  # Ensure the task is properly canceled
             except asyncio.CancelledError as e: # this is actually fine, it should give a CancelledError because it was cancelled
                 pass
         self.monitor_tasks = []
 
-    async def monitor_page(self, page: str):
+    async def monitor_page(self, page: str, is_global=False):
         """Called on page load. Stops all previous monitoring tasks and starts monitoring data for the requested page. For OPCUA, it continually monitors the monitoring data for the requested page with a polling period of 0.5s. For MQTT, it subscribes to all the monitoring topics. Sets the dirty bit.
 
         Args:
             page (str): Which page to poll/subscribe to monitoring data for.
         """
-        # Cancel any existing monitoring tasks
-        if page != 'global':
-            await self.stop_monitoring()
         
-        logging.debug(f'[PSM] data: {self.data}')
+        # Cancel any existing monitoring tasks
+        await self.stop_monitoring()
+        
         logging.debug(f'[PSM] Monitoring page: {page} with data: {[k for k, s in self.data.get(page, {}).get("monitor", {}).items()]}')
 
         # Create monitoring tasks for OPCUA and MQTT sources
@@ -86,19 +87,29 @@ class PageStateManager:
             
             if isinstance(source, OPCUASource):
                 async def poll_opcua_source(source):
-                    while True:
-                        v = await self.opcuaClient.read(source.node_id)
-                        source.set_value(v)
-                        await asyncio.sleep(0.5)
+                    try:
+                        while True:
+                            v = await asyncio.wait_for(self.opcuaClient.read(source.node_id), timeout=2.0)
+                            source.set_value(v)
+                            await asyncio.sleep(0.5)
+                    except asyncio.TimeoutError:
+                        logging.error(f'[PSM] Timeout reading from node: {source.node_id}')
 
+                if is_global:
+                    self.global_monitor_tasks.append(asyncio.create_task(poll_opcua_source(source)))
                 self.monitor_tasks.append(asyncio.create_task(poll_opcua_source(source)))
 
             elif isinstance(source, MQTTSource):
                 def callback(message):
                     source.set_value(message)
 
+                if is_global:
+                    self.global_monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(source.topic, qos=1, callback=callback)))
                 self.monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(source.topic, qos=1, callback=callback)))
 
+        if is_global:
+            await asyncio.gather(*self.global_monitor_tasks)
+        
         await asyncio.gather(*self.monitor_tasks)  # Await all tasks
     
     async def send_data(self, page: str, keys_and_data: dict):
@@ -142,21 +153,20 @@ class PageStateManager:
             
         Returns:
             (Any): Returns `None` if the value is clean. Please raise `PreventUpdate` in the callbacks in case it returns None.
-        """        
+        """
     
-        if page in self.data:
-            for category in self.data[page].values():
-                if key in category:
-                    source = category[key]
-                    
-                    if source.dirty: 
-                        source.dirty = False
-                        return source.value
+        for category in self.data[page].values():
+            if key in category:
+                source = category[key]
+                
+                if source.dirty: 
+                    source.dirty = False
+                    return source.value
+                else:
+                    if return_none_if_clean:
+                        break
                     else:
-                        if return_none_if_clean:
-                            break
-                        else:
-                            return source.value # return even though it is clean    
+                        return source.value # return even though it is clean    
         return None
     
     def dirty_all(self, page):
