@@ -21,6 +21,7 @@ todo.md
 server/influx/config/*
 server/influx/data/*
 server/influx/telegraf/telegraf.prod.conf
+**/logs/*
 
 # Downloaded files
 # InfluxDB

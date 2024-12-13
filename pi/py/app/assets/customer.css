@@ -1,11 +1,11 @@
 .dashboard-customer {
     display: grid;
     grid-template-areas: 
-    "order-config order-queue"
-    "hbw-view order-queue"
+    "order-config order-queue hbw-view"
+    "order-state-container tracking-container  ."
     ;
-    grid-template-columns: 1fr 2fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-columns: 1fr 1.5fr 1fr;
+    grid-template-rows: 2fr 1fr;
     background-color: var(--bg-color-1);
 }
 
@@ -25,7 +25,7 @@
     padding: 5px;
 }
 
-.order-config > div {
+.order-config > div:not(.hidden) {
     padding: 10px 0px;
     display: flex;
     justify-content: space-between;
@@ -37,4 +37,10 @@
 
 .order-config .dash-dropdown {
     width: 100%;
+}
+
+.queue-full-banner {
+    grid-column: 1 / -1; 
+    border: 2px solid red;
+    color: red;
 }

@@ -18,7 +18,9 @@ class PageStateManager:
             self.mqttClient = mqttClient.MqttClient()
             self.opcuaClient = opcuaClient.OPCUAClient() 
             self.monitor_tasks: list[Task[Any]] = []
+            self.global_monitor_tasks: list[Task[Any]] = []
             self.data = state_data_schema._data
+    
             self.initialized = True
     
     async def hydrate_page(self, page: str):
@@ -27,13 +29,14 @@ class PageStateManager:
         Args:
             page (str): Which page to fetch hydration data for.
         """
+        logging.debug(f'[PSM] Hydrating page: {page} with data: {[k for k, s in self.data.get(page, {}).get("hydrate", {}).items()]}')
         
         hydration_tasks = []   
         
         for key, source in self.data.get(page, {}).get('hydrate', {}).items():
             if isinstance(source, OPCUASource):
                 async def task():
-                    while source.value is None: # poll while no value was retrieved
+                    while source.dirty: # poll while no value was retrieved
                         v = await self.opcuaClient.read(source.node_id)
                         if v is not None:
                             source.set_value(v)
@@ -60,6 +63,7 @@ class PageStateManager:
         
         for task in self.monitor_tasks:
             try:
+                
                 task.cancel()
                 await task  # Ensure the task is properly canceled
             except asyncio.CancelledError as e: # this is actually fine, it should give a CancelledError because it was cancelled
@@ -72,29 +76,43 @@ class PageStateManager:
         Args:
             page (str): Which page to poll/subscribe to monitoring data for.
         """
-        logging.debug(f'[PSM] Monitoring page: {page}')
+        
+        is_global = page == 'global'
         
         # Cancel any existing monitoring tasks
-        await self.stop_monitoring()
+        if not is_global:
+            await self.stop_monitoring()
+        
+        logging.debug(f'[PSM] Monitoring page: {page} with data: {[k for k, s in self.data.get(page, {}).get("monitor", {}).items()]}')
 
         # Create monitoring tasks for OPCUA and MQTT sources
         for key, source in self.data.get(page, {}).get('monitor', {}).items():
             
             if isinstance(source, OPCUASource):
                 async def poll_opcua_source(source):
-                    while True:
-                        v = await self.opcuaClient.read(source.node_id)
-                        source.set_value(v)
-                        await asyncio.sleep(0.5)
+                    try:
+                        while True:
+                            v = await asyncio.wait_for(self.opcuaClient.read(source.node_id), timeout=2.0)
+                            source.set_value(v)
+                            await asyncio.sleep(0.5)
+                    except asyncio.TimeoutError:
+                        logging.error(f'[PSM] Timeout reading from node: {source.node_id}')
 
+                if is_global:
+                    self.global_monitor_tasks.append(asyncio.create_task(poll_opcua_source(source)))
                 self.monitor_tasks.append(asyncio.create_task(poll_opcua_source(source)))
 
             elif isinstance(source, MQTTSource):
                 def callback(message):
                     source.set_value(message)
 
+                if is_global:
+                    self.global_monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(source.topic, qos=1, callback=callback)))
                 self.monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(source.topic, qos=1, callback=callback)))
 
+        if is_global:
+            await asyncio.gather(*self.global_monitor_tasks)
+        
         await asyncio.gather(*self.monitor_tasks)  # Await all tasks
     
     async def send_data(self, page: str, keys_and_data: dict):
@@ -109,9 +127,10 @@ class PageStateManager:
             return
         
         logging.debug(f'[PSM] Sending user data: {keys_and_data}')
-        tasks = []  # List to hold async tasks for concurrent execution
+        tasks = []
         
         async def task(key, data, source):
+            logging.debug(f'trying task to send {data} over {source.node_id or source.topic}')
             if isinstance(source, OPCUASource):
                 await self.opcuaClient.write(source.node_id, data)
             elif isinstance(source, MQTTSource):
@@ -119,33 +138,47 @@ class PageStateManager:
             source.value = data
             source.dirty = True
         
-        for category in self.data[page].values():
-            for key, data in keys_and_data.items():
-                if key in category:
-                    source = category[key]
-                    tasks.append(task(key, data, source))
+        for key, data in keys_and_data.items():
+            source = self.data[page]['user'][key]
+            logging.debug(f'[PSM] found {source.node_id or source.topic} for {key}')
+            tasks.append(task(key, data, source))
         
+        logging.debug(tasks)
         await asyncio.gather(*tasks)
     
-    def get_data(self, page: str, key: str) -> Any:
+    def get(self, page: str, key: str, return_none_if_clean=True) -> Any:
         """Accesses data for a specific page, based on a key. Resets the dirty bit.
 
         Args:
             page (str): Which page to get data for. Format is pathname without leading '/', so with hyphen delimiter. Example: `factory-overview`.
             key (str): The key this data is under. For example: `plc_version`.
+            return_none_if_clean (bool): Default True. If set to True, it will return None if nothing changed since last time it was called. Useful to catch with PreventUpdate for performance to prevent unnecessary UI updates.
             
         Returns:
             (Any): Returns `None` if the value is clean. Please raise `PreventUpdate` in the callbacks in case it returns None.
-        """        
+        """
     
+        for category in self.data[page].values():
+            if key in category:
+                source = category[key]
+                
+                if source.dirty: 
+                    source.dirty = False
+                    return source.value
+                else:
+                    if return_none_if_clean:
+                        break
+                    else:
+                        return source.value # return even though it is clean    
+        return None
+    
+    def dirty_all(self, page):
+        """Gets all sources on this page to dirty.
+
+        Args:
+            page (str): Page name, with hyphen delimiter.
+        """        
         if page in self.data:
             for category in self.data[page].values():
-                if key in category:
-                    source = category[key]
-                    
-                    if source.dirty: 
-                        source.dirty = False
-                        return source.value
-                    else: # return None if value is clean
-                        break
-        return None
+                for key in category:
+                    category[key].dirty = True

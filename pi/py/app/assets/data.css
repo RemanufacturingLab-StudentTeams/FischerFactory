@@ -1,6 +1,12 @@
 /* Styling for the "Factory Data" page. */
 @import './style.css';
 
+.factory-data {
+    display: flex;
+    flex-flow: column nowrap;
+    padding: 20px;
+}
+
 .device-data-table {
     overflow-x: scroll;
     width: 100%;
