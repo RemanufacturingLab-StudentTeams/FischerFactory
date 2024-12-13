@@ -70,15 +70,18 @@ class PageStateManager:
                 pass
         self.monitor_tasks = []
 
-    async def monitor_page(self, page: str, is_global=False):
+    async def monitor_page(self, page: str):
         """Called on page load. Stops all previous monitoring tasks and starts monitoring data for the requested page. For OPCUA, it continually monitors the monitoring data for the requested page with a polling period of 0.5s. For MQTT, it subscribes to all the monitoring topics. Sets the dirty bit.
 
         Args:
             page (str): Which page to poll/subscribe to monitoring data for.
         """
         
+        is_global = page == 'global'
+        
         # Cancel any existing monitoring tasks
-        await self.stop_monitoring()
+        if not is_global:
+            await self.stop_monitoring()
         
         logging.debug(f'[PSM] Monitoring page: {page} with data: {[k for k, s in self.data.get(page, {}).get("monitor", {}).items()]}')
 
