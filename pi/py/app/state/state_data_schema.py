@@ -35,7 +35,7 @@ _data: dict[str, dict[str, dict[str, MQTTSource | OPCUASource]]] = {
             
         },
         'monitor': {
-        'state_sld': MQTTSource('f/i/state/sld')
+            'state_sld': MQTTSource('f/i/state/sld')
         },
         'user': {
             
@@ -50,7 +50,8 @@ _data: dict[str, dict[str, dict[str, MQTTSource | OPCUASource]]] = {
             'queue_index': OPCUASource('ns=3;s="Queue"."i_Queue_Index"'),
             'state_order_ldt_ts': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Subscribe"."State_Order"."ldt_ts"'),
             'state_order_s_state': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Subscribe"."State_Order"."s_state"'),
-            'state_order_s_type': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Subscribe"."State_Order"."s_type"')
+            'state_order_s_type': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Subscribe"."State_Order"."s_type"'),
+            'tracking': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Subscribe"."State_Track"."track_puck"')
         } | {   
             f'queue_[{n}]_{e}': OPCUASource(f'ns=3;s="Queue"."Queue"[{n}]."{e}"')
             for n in range(7)

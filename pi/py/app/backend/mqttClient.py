@@ -46,7 +46,6 @@ class MqttClient:
             logging.info(f"[MQTTCLIENT] Connecting to MQTT broker at {self.broker_ip}:{self.broker_port}")
             await asyncio.to_thread(self.client.connect, self.broker_ip, self.broker_port)
             await asyncio.to_thread(self.client.loop_start)
-            self.connection_status = True
             self.reconnect_attempts = 0
         except Exception as e:
             logging.error(f"[MQTTCLIENT] Failed to connect to MQTT broker: {e}")
@@ -65,7 +64,6 @@ class MqttClient:
 
     def disconnect(self):
         logging.info("[MQTTCLIENT] Disconnected from MQTT broker")
-        self.connection_status = False
 
     async def publish(self, topic, payload, qos=1):
         # convert payload to JSON
@@ -96,6 +94,7 @@ class MqttClient:
     # Callback functions
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
+            self.connection_status = True
             logging.info("[MQTTCLIENT] Connected to MQTT broker")
         else:
             logging.error(f"Failed to connect, return code {rc}")

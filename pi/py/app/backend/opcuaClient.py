@@ -110,7 +110,8 @@ class OPCUAClient:
                 return 'Boolean'
             case 'DoSaw':
                 return 'Boolean'
-            
+            case 'track_puck':
+                return 'String'
         
         prefixes = {
             'x': 'Boolean',

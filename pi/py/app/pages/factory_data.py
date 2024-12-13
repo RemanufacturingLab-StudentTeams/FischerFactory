@@ -8,16 +8,11 @@ import logging
 from common import runtime_manager
 from state.page_state_manager import PageStateManager
 
-layout = html.Div(
-    [
-        html.Div([
-            html.H2('Environmental Variables')
-        ], className='environment'),
+layout = html.Div([
         html.Div([
             html.H2('Sorting Line Data'),
             html.Table([
                 html.Tr([
-                    html.Th(),
                     html.Th('Active', className='label'),
                     html.Th('Error', className='label'),
                     html.Th('Error message', className='label'),
@@ -28,8 +23,7 @@ layout = html.Div(
                 ]),
                 html.Tr()
             ], className='device-data-table', id='sld-table'),
-        ], className='sld'),
-        dcc.Store(id='sld-history')
+        ], className='sld')
     ],
     className='factory-data'
 )
@@ -46,12 +40,9 @@ def update_sld(n_intervals, el):
     if not data:
         raise PreventUpdate
     
-    print('doing update!')
     patch = Patch() # patch object of the sld-table children.
     
-    patch[1] = html.Tr([
-            html.Td('Latest')
-        ] + [ # patch[1] is the first <tr> element, the 0th is the headers
+    patch[1] = html.Tr([ # patch[1] is the first <tr> element, the 0th is the headers
             html.Td(str(data.get(v, 'No data yet')), className='value') 
             for v in ['active', 'error', 'errorMessage', 'workpieceID', 'workpieceType', 'onTransportBelt', 'observedColor']
         ])

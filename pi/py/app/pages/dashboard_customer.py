@@ -53,7 +53,13 @@ layout = html.Div([
             html.P('Loading...', className='value')
         ], className='state-order table', id='state-order-table')
     ], className='state-order-container'),
-    html.Div(id='h')
+    html.Div([
+        html.H2('Tracking'),
+        html.Div([
+            html.Span('Location', 'label'),
+            html.P('Loading...', className='value', id='tracking')
+        ], className='tracking table')
+    ], className='tracking-container')
 ], className='dashboard-customer')
 
 @callback(
@@ -195,6 +201,16 @@ def display_queue(n_intervals):
         html.Tr('QUEUE FULL', className='queue-full-banner')
     ] if queue_full else [])
 
+@callback(
+    Output('tracking', 'children'),
+    Input('updater', 'n_intervals')
+)
+def display_tracking(n_intervals):
+    psm = PageStateManager()
+    tracking = psm.get('dashboard-customer', 'tracking')
+    if not tracking:
+        raise PreventUpdate
+    return tracking
     
 dash.register_page(__name__, path='/dashboard-customer', layout=layout)
 
