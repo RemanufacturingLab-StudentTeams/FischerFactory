@@ -20,11 +20,11 @@ type schema = {
             //If the puck is rejected 'AtEnd' will not be published 
             //Only one of the OnBlue,OnRed,OnWhite will be published
             //Incase the oven is used 'OutsiteOven' will be published twice, once when entering and when exiting.
-            payload: "Warehouse" | "BeforeCrane" | "OnCrane" | "OutsiteOven" | "InsideOven" | "OnBelt" | "OnSaw" | "OnSortBelt" | "Behindcolorsens" | "OnRed" | "OnBlue" | "OnWhite" | "AtEnd"
+            payload: {
+                trackPuck: "Warehouse" | "BeforeCrane" | "OnCrane" | "OutsiteOven" | "InsideOven" | "OnBelt" | "OnSaw" | "OnSortBelt" | "Behindcolorsens" | "OnRed" | "OnBlue" | "OnWhite" | "AtEnd"
+            }
 
         }
-
-
 
 
         i: { // topics that are published to to translate OPC UA messages from the PLC to MQTT

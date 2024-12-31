@@ -1,7 +1,8 @@
 from .types import Mapping, SpecialRuleOPCUA
 
 """Mappings for the Relay. It will relay the FROM node/topic to the TO node/topic.
-    - If the topic/node has descendants (direct or indirect children), it will relay the descendants as well, keeping the same nested structure. For example, `FROM="gtyp_Interface_Dashboard"."Subscribe"` will also relay `"gtyp_Interface_Dashboard"."Subscribe"."State_HBW"."x_sensor_oven"`.
+    - If the node has descendants (direct or indirect children), it will relay the descendants as well, keeping the same nested structure. For example, `FROM="gtyp_Interface_Dashboard"."Subscribe"` will also relay `"gtyp_Interface_Dashboard"."Subscribe"."State_HBW"."x_sensor_oven"`.
+    - If it is a MQTT->OPCUA mapping, it will NOT apply recursive subscribe. The reason for that is because MQTT does not implement a way to browse child topics from a topic. What that means is that for an MQTT->OPCUA mapping, the target node must be a single leaf node.
     - It automatically converts MQTT format names (e.g.: `errorMessage`) to OPCUA format names (`s_ErrorMessage`)
     - There are nodes and topic names that don't follow convention, in which case there are SpecialRuleOPCUA types. It will internally interpret and process these nodes based on their `MEANS` argument.
     - The default OPCUA namespace is 3. This can be given as an argument for different namespaces.
