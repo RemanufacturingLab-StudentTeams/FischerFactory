@@ -30,6 +30,7 @@ What it comes down to is that the less `Interval` elements, the better. That is 
 Furthermore, the less DOM updates the better. If multiple DOM mutations can be bundled into one callback `Output`, then it should be done. That is the reason for the wildly complicated lists `Output`s in some callbacks (like hydration callbacks).
 
 *Note: I chose not to use `dcc.Store` because it is client-side storage, which means it would mean even more HTTP traffic between the client and the server.*
+*At some point in the future, it would be preferable to use SocketIO to push data to the client-side, and receive this with JavaScript client-side scripts, that writes this pushed data to a `dcc.Store`, which the callbacks can take as input. This would allow for realtime-updates, and it would allow for the admittedly hideously complicated polling logic to be removed.*
 
 [^1]: A positive poll is a data poll that does not return `None`. I.d., either a successful poll or an error response poll. 
 [^2]: See `common/singleton_decorator.py`.

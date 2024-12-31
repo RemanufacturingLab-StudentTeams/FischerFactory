@@ -2,12 +2,23 @@ import os
 import logging
 from logger import c
 import asyncio
-from asyncua import Client, ua
+from asyncua import Client, ua, Node
+from asyncua.common.subscription import DataChangeNotificationHandlerAsync, DataChangeNotif
 from common import singleton_decorator as s
-from typing import Any
+from typing import Any, Callable
 from common import config
 from backend import mockOpcuaClient
 from datetime import datetime
+
+class SubHandler(DataChangeNotificationHandlerAsync):
+    def __init__(self, cb: Callable = None):
+        super().__init__()
+        self.cb = cb
+        
+    async def datachange_notification(self, node: Node, val: Any, data: DataChangeNotif):
+        logging.debug(f"[OPCUAClient] Data change on node {node}: New Value={val}")
+        if self.cb:
+            self.cb()
 
 @s.singleton
 class OPCUAClient:
@@ -171,6 +182,27 @@ class OPCUAClient:
         except Exception as e:
             logging.error(f"[OPCUAClient] Failed to read value of node {c(node_id, 'white')}: {e}")
             return None
+        
+    async def subscribe(self, node_id: str, cb: Callable=None) -> None:
+        """Subscribes to an OPCUA Node.
+
+        Args:
+            node_id (str): Example format: `ns=3;s=\"gtyp_Setup\".\"r_Version_SPS\"`.
+            cb (Callable): Callback function with a single parameter that will be called with the returned value as argument when a value is written to this node.
+        """        
+        
+        if not self.connection_status:
+            logging.warning(f"[OPCUAClient] Trying to subscribe to node, but connection status is False.")
+            return None
+        
+        subscription = await self.client.create_subscription(100, handler=SubHandler(cb))
+        node = self.client.get_node(node_id)
+        
+        try:
+            await subscription.subscribe_data_change(node)
+            logging.debug(f"[OPCUAClient] Subscribed to node: {c(node_id, 'cyan', 'white')}: {c(res, 'cyan')}")
+        except Exception as e:
+            logging.error(f"[OPCUAClient] Failed to subscribe to node {c(node_id, 'white')}: {e}")
         
     def get_status(self):
         return self.connection_status

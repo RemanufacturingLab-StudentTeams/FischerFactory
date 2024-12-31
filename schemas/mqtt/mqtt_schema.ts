@@ -48,6 +48,11 @@ type schema = {
                         ts: Date
                         station: 'dsi'
                         code: number // 0 available, 1 not available
+                        description: string
+                        active: 1
+                        error: number
+                        errorMessage: string
+                        target: 'dsi'
                     }
                 },
                 // DSO state is sent over MQTT after 'gtyp_Interface_Dashboard"."Subscribe"."State_DSO' nodes are polled
@@ -57,6 +62,11 @@ type schema = {
                         ts: Date
                         station: "dso"
                         code: number // 0 available, 1 not available
+                        description: string
+                        active: 1
+                        error: number
+                        errorMessage: string
+                        target: 'dso'
                     }
                 },
 
@@ -113,6 +123,8 @@ type schema = {
                         code: number // Bit code for lamps: Red=4 Yellow=2 Green=1
                         description: string,
                         active: number,
+                        error: number,
+                        errorMessage: string,
                         target: 'vgr' // target node for process
                     }
 
@@ -127,9 +139,9 @@ type schema = {
                         code: number // Bit code for lamps: Red=4 Yellow=2 Green=1
                         description: string,
                         active: 1,
+                        error: number,
+                        errorMessage: string,
                         target: "hbw",
-                        err: false,
-                        errorMessage: string
                     }
 
                 },
@@ -252,19 +264,44 @@ type schema = {
         }
     },
 
-    fl: { // no idea what this is, it may be a typo 
+    fl: {
         i: {
             // NFC reader - deliver read values from MQTT to OPC UA
             nfc: {
                 ds: {
                     topic: 'fl/i/nfc/ds'
+                    payload: {
+                        ts: Date
+                        workpiece: {
+                            id: string
+                            type: string
+                            state: string
+                        }
+                        history: FixedLengthArray<{
+                            code: number
+                            ts: Date
+                        }, 9>
+                    }
                 }
             }
         },
         o: {
-            nfc: {
+            nfc: { // relay MQTT payload from fl/i/nfc/ds to OPC UA after adding a command (cmd)
                 ds: {
-                    topic: 'fl/o/nfc/ds'
+                    topic: 'fl/o/nfc/ds',
+                    payload: {
+                        ts: Date
+                        cmd: string
+                        workpiece: {
+                            id: string
+                            type: string
+                            state: string
+                        },
+                        history: FixedLengthArray<{
+                            code: number
+                            ts: Date
+                        }, 9>
+                    }
                 }
             }
         },

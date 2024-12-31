@@ -89,18 +89,12 @@ class PageStateManager:
         for key, source in self.data.get(page, {}).get('monitor', {}).items():
             
             if isinstance(source, OPCUASource):
-                async def poll_opcua_source(source):
-                    try:
-                        while True:
-                            v = await asyncio.wait_for(self.opcuaClient.read(source.node_id), timeout=2.0)
-                            source.set_value(v)
-                            await asyncio.sleep(0.5)
-                    except asyncio.TimeoutError:
-                        logging.error(f'[PSM] Timeout reading from node: {source.node_id}')
-
+                def callback(message):
+                    source.set_value(message)
+                
                 if is_global:
-                    self.global_monitor_tasks.append(asyncio.create_task(poll_opcua_source(source)))
-                self.monitor_tasks.append(asyncio.create_task(poll_opcua_source(source)))
+                    self.global_monitor_tasks.append(asyncio.create_task(self.opcuaClient.subscribe(source.node_id, callback)))
+                self.monitor_tasks.append(asyncio.create_task(self.opcuaClient.subscribe(source.node_id, callback)))
 
             elif isinstance(source, MQTTSource):
                 def callback(message):
