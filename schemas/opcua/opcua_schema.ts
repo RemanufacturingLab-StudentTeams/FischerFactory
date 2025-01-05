@@ -19,15 +19,12 @@ enum DataType {
 
 import { FixedLengthArray } from "../mqtt/mqtt_schema"
 
+/**
+ * Nodes that the PLC publishes to, and that the Raspberry Pi consumes.
+ */ 
 type gtyp_Interface_Dashboard = {
-    // Nodes that the PLC publishes to, and that the Raspberry Pi consumes.
     Subscribe: {
-
-        State_Track:{ //node(s) used for tracking feature
-            track_puck: DataType.String
-        }
-
-        EnvironmentSensor:
+        EnvironmentSensor: // For these nodes, the BME680 publishes its data over MQTT, which the relay publishes to OPC UA. Presumably, there are in gtyp_Interface_Subscribe_Dashboard because the Dashboard can subscribe to these. However, the Dashboard can also just subscribe to the original MQTT datasource directly, so this is, as far as I understand it, not necessary.
         {
             test: DataType.Boolean
             ldt_ts: DataType.DateTime
@@ -40,13 +37,13 @@ type gtyp_Interface_Dashboard = {
             i_aq: DataType.Int16 // e.g., 3
             di_gr: DataType.Int32 // e.g., 919245
         }
-        BrightnessSensor:
+        BrightnessSensor: // For these nodes, the Photoresistor publishes its data over MQTT, which the relay publishes to OPC UA. Presumably, there are in gtyp_Interface_Subscribe_Dashboard because the Dashboard can subscribe to these. However, the Dashboard can also just subscribe to the original MQTT datasource directly, so this is, as far as I understand it, not necessary.
         {
             ldt_ts: DataType.DateTime
             r_br: DataType.Float // e.g., 88.0
             i_ldr: DataType.Int16 // e.g., 1804
         }
-        CameraPicture:
+        CameraPicture: // For these nodes, the Camera publishes its data over MQTT, which the relay publishes to OPC UA. Presumably, there are in gtyp_Interface_Subscribe_Dashboard because the Dashboard can subscribe to these. However, the Dashboard can also just subscribe to the original MQTT datasource directly, so this is, as far as I understand it, not necessary.
         {
             ldt_ts: DataType.DateTime
             s_data: DataType.String
@@ -81,12 +78,10 @@ type gtyp_Interface_Dashboard = {
         State_DSI: typ_State_Client,
         State_DSO: typ_State_Client,
 
-        Stock_HBW:
-        {
-            ldt_ts: DataType.DateTime
-            StockItem: typ_StockItem,
-            s_location: DataType.String
+        State_Track:{ //node(s) used for tracking feature
+            track_puck: DataType.String
         }
+
         State_Order:
         {
             ldt_ts: DataType.DateTime
@@ -102,6 +97,13 @@ type gtyp_Interface_Dashboard = {
                 ldt_ts: DataType.DateTime
                 i_code: DataType.Int16
             }
+        }
+
+        Stock_HBW:
+        {
+            ldt_ts: DataType.DateTime
+            StockItem: typ_StockItem,
+            s_location: DataType.String
         }
     },
 

@@ -1,53 +1,27 @@
 from .state_data_sources import MQTTSource, OPCUASource
 
-_data: dict[str, dict[str, dict[str, MQTTSource | OPCUASource]]] = {
-# """Data that will be fetched per page by the PageStateManager.
+_data: dict[str, dict[str, str]] = {
+# """Data that will be fetched per page by the PageStateManager. The data will be made available for polling (or, in the future, pushing with WebSockets) using the given key.
 
 #     Format:
 #         {
 #             '`page-pathname`' : {
-#                 'hydrate': {
-#                     '`key`': OPCUASource | MQTTSource
-#                 },
-#                 'monitor': {
-#                     '`key`': OPCUASource | MQTTSource
-#                 },
-#                 'user': {
-#                     '`key`': OPCUASource | MQTTSource
-#                 }
+#                 '`key`': `topic/name`
 #             }
 #         }
 # """    
 
     'factory-overview': { # yes, using a hyphen as a delimiter, not an underscore, because it has to correspond with the page URLs. 
-        'hydrate': {
-            'plc_version': OPCUASource('ns=3;s="gtyp_Setup"."r_Version_SPS"')
-        },
-        'monitor': {
-            'turtlebot_current_state': MQTTSource('Turtlebot/CurrentState')
-        },
-        'user': {
-            'clean_rack': OPCUASource('ns=3;s="gtyp_Setup"."x_Clean_Rack_HBW"')
-        }
+        'plc_version': 'f/setup/versionSPS',
+        'turtlebot_current_state': 'Turtlebot/CurrentState'
     },
     'factory-data': {
-        'hydrate': {
-            
-        },
-        'monitor': {
-            'state_sld': MQTTSource('f/i/state/sld')
-        },
-        'user': {
-            
-        }
+        'state_sld': 'f/i/state/sld'
     },
     'dashboard-customer': {
-        'hydrate': {
-            
-        },
+        'queue': 'f/queue/',
+        'state_order': '',
         'monitor': {
-            'queue_full': OPCUASource('ns=3;s="Queue"."x_Queue_Full"'),
-            'queue_index': OPCUASource('ns=3;s="Queue"."i_Queue_Index"'),
             'state_order_ldt_ts': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Subscribe"."State_Order"."ldt_ts"'),
             'state_order_s_state': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Subscribe"."State_Order"."s_state"'),
             'state_order_s_type': OPCUASource('ns=3;s="gtyp_Interface_Dashboard"."Subscribe"."State_Order"."s_type"'),

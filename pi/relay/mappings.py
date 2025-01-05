@@ -14,6 +14,8 @@ from .types import Mapping, SpecialRuleOPCUA
 mappings = [
     # PLC -> Dashboard
     Mapping(FROM='"gtyp_Interface_Dashboard"."Subscribe"', TO='f/i'),
+    Mapping(FROM='"gtyp_Setup"', TO='f/setup'),
+    Mapping(FROM='"Queue"', TO='f/queue'),
     # Dashboard -> PLC
     Mapping(FROM='f/o/state/ack', TO='"gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"'),
     Mapping(FROM='f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"'),
@@ -36,5 +38,17 @@ special_rules = [
     SpecialRuleOPCUA(ORIGINAL='DoOven', MEANS='s_doOven'),
     SpecialRuleOPCUA(ORIGINAL='OvenTime', MEANS='s_ovenTime'),
     SpecialRuleOPCUA(ORIGINAL='DoSaw', MEANS='s_doSaw'),
-    SpecialRuleOPCUA(ORIGINAL='SawTime', MEANS='s_doOven')
+    SpecialRuleOPCUA(ORIGINAL='SawTime', MEANS='s_doOven'),
+    SpecialRuleOPCUA(ORIGINAL='AlertMessage', MEANS='"Alert"'),
+    SpecialRuleOPCUA(ORIGINAL='PosPanTiltUnit', MEANS='"Ptu"'),
+    SpecialRuleOPCUA(ORIGINAL='State_HBW', MEANS='"State"."Hbw"'),
+    SpecialRuleOPCUA(ORIGINAL='State_VGR', MEANS='"State"."Vgr"'),
+    SpecialRuleOPCUA(ORIGINAL='State_MPO', MEANS='"State"."Mpo"'),
+    SpecialRuleOPCUA(ORIGINAL='State_SLD', MEANS='"State"."Sld"'),
+    SpecialRuleOPCUA(ORIGINAL='State_DSI', MEANS='"State"."Dsi"'),
+    SpecialRuleOPCUA(ORIGINAL='State_DSO', MEANS='"State"."Dso"'),
+    SpecialRuleOPCUA(ORIGINAL='State_Track', MEANS='"Track"'),
+    SpecialRuleOPCUA(ORIGINAL='State_Order', MEANS='"Order"'),
+    SpecialRuleOPCUA(ORIGINAL='State_NFC_Device', MEANS='"Nfc"'),
+    SpecialRuleOPCUA(ORIGINAL='Stock_HBW', MEANS='"Stock"'),
 ]
