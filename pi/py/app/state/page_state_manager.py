@@ -5,9 +5,9 @@ from typing import Any
 import asyncio
 import logging
 from asyncio import Task
-from state.state_data_sources import OPCUASource, MQTTSource
 from state import state_data_schema
-                
+
+
 @s.singleton
 class PageStateManager:
     '''Manages and fetches state from external sources (MQTT or OPCUA). It is more or less a buffer, so that the results of async calls can be made accessible to Dash callbacks. It is a singleton.
@@ -23,40 +23,6 @@ class PageStateManager:
     
             self.initialized = True
     
-    async def hydrate_page(self, page: str):
-        """Called on page load. Makes calls to the backend to make sure all the hydration resources are there. For OPCUA sources, it keeps polling every 0.5s, until it gets data (which is not `None`), then it stops. For MQTT sources, it subscribes, then unsubscribes once it receives a message. Sets the dirty bit.
-
-        Args:
-            page (str): Which page to fetch hydration data for.
-        """
-        logging.debug(f'[PSM] Hydrating page: {page} with data: {[k for k, s in self.data.get(page, {}).get("hydrate", {}).items()]}')
-        
-        hydration_tasks = []   
-        
-        for key, source in self.data.get(page, {}).get('hydrate', {}).items():
-            if isinstance(source, OPCUASource):
-                async def task():
-                    while source.dirty: # poll while no value was retrieved
-                        v = await self.opcuaClient.read(source.node_id)
-                        if v is not None:
-                            source.set_value(v)
-                            break
-                        await asyncio.sleep(0.5)
-                        
-                hydration_tasks.append(asyncio.create_task(task()))
-
-            elif isinstance(source, MQTTSource):
-                async def task():
-                    def callback(message):
-                        source.set_value(message)
-                        self.mqttClient.unsubscribe(source.topic) # unsubscribe when a message is received
-
-                    await self.mqttClient.subscribe(source.topic, callback=callback)
-                    
-                hydration_tasks.append(asyncio.create_task(task()))
-                
-        await asyncio.gather(*hydration_tasks)
-    
     async def stop_monitoring(self):
         """Stop all monitoring tasks."""
         logging.debug(f'[PSM] Stopping all monitoring tasks')
@@ -71,7 +37,9 @@ class PageStateManager:
         self.monitor_tasks = []
 
     async def monitor_page(self, page: str):
-        """Called on page load. Stops all previous monitoring tasks and starts monitoring data for the requested page. For OPCUA, it continually monitors the monitoring data for the requested page with a polling period of 0.5s. For MQTT, it subscribes to all the monitoring topics. Sets the dirty bit.
+        """Called on page load. Stops all previous monitoring tasks and starts monitoring data for the requested page. 
+        When it receives a message on a topic, it emits this value over a WebSocket using the page and key for the pathname. For instance, when monitoring the `factory-overview` page, it will emit on `factory-overview/plc_version` and `factory-overview/turtlebot_current_state`.
+        On the clientside, a clientside callback listens on this websocket and stores the value in a dcc.Store, so it can be accessed by the GUI.
 
         Args:
             page (str): Which page to poll/subscribe to monitoring data for.
@@ -86,93 +54,29 @@ class PageStateManager:
         logging.debug(f'[PSM] Monitoring page: {page} with data: {[k for k, s in self.data.get(page, {}).get("monitor", {}).items()]}')
 
         # Create monitoring tasks for OPCUA and MQTT sources
-        for key, source in self.data.get(page, {}).get('monitor', {}).items():
-            
-            if isinstance(source, OPCUASource):
-                def callback(message):
-                    source.set_value(message)
-                
-                if is_global:
-                    self.global_monitor_tasks.append(asyncio.create_task(self.opcuaClient.subscribe(source.node_id, callback)))
-                self.monitor_tasks.append(asyncio.create_task(self.opcuaClient.subscribe(source.node_id, callback)))
-
-            elif isinstance(source, MQTTSource):
-                def callback(message):
-                    source.set_value(message)
-
-                if is_global:
-                    self.global_monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(source.topic, qos=1, callback=callback)))
-                self.monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(source.topic, qos=1, callback=callback)))
+        for key, topic in self.data.get(page, {}).items():
+            def callback(message):
+                config.socketio.emit(namespace=f'{page}/{key}', args=message)
+            if is_global:
+                self.global_monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(topic, qos=1, callback=callback)))
+            self.monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(topic, qos=1, callback=callback)))
 
         if is_global:
             await asyncio.gather(*self.global_monitor_tasks)
         
         await asyncio.gather(*self.monitor_tasks)  # Await all tasks
     
-    async def send_data(self, page: str, keys_and_data: dict):
-        """Write or publish multiple data items to a source. When the call completes, the results will be 
-        available for polling under the given keys. Sets the dirty bit for each source.
+    async def send_data(self, page: str, key: str, data: dict):
+        """Publish a data item to a source.
 
         Args:
-            page (str): Page to store the results for. Use a hyphen as a delimiter. Example: `factory-data`.
-            keys_and_data (dict): A dictionary where keys are the data keys and values are the data to send. Example: {'order_do_oven': True, 'order_bake_time': 4000}.
+            page (str): Page to that contains the key. Use a hyphen as a delimiter. Example: `factory-data`.
+            data (dict): A dictionary that will be translated to JSON to send to the broker. Example: {'order_do_oven': True, 'order_bake_time': 4000}.
         """
         if page not in self.data:
             return
         
-        logging.debug(f'[PSM] Sending user data: {keys_and_data}')
-        tasks = []
+        topic = self.data.get(page, {}).get(key, {})
         
-        async def task(key, data, source):
-            logging.debug(f'trying task to send {data} over {source.node_id or source.topic}')
-            if isinstance(source, OPCUASource):
-                await self.opcuaClient.write(source.node_id, data)
-            elif isinstance(source, MQTTSource):
-                await self.mqttClient.publish(source.topic, data)
-            source.value = data
-            source.dirty = True
-        
-        for key, data in keys_and_data.items():
-            source = self.data[page]['user'][key]
-            logging.debug(f'[PSM] found {source.node_id or source.topic} for {key}')
-            tasks.append(task(key, data, source))
-        
-        logging.debug(tasks)
-        await asyncio.gather(*tasks)
-    
-    def get(self, page: str, key: str, return_none_if_clean=True) -> Any:
-        """Accesses data for a specific page, based on a key. Resets the dirty bit.
-
-        Args:
-            page (str): Which page to get data for. Format is pathname without leading '/', so with hyphen delimiter. Example: `factory-overview`.
-            key (str): The key this data is under. For example: `plc_version`.
-            return_none_if_clean (bool): Default True. If set to True, it will return None if nothing changed since last time it was called. Useful to catch with PreventUpdate for performance to prevent unnecessary UI updates.
-            
-        Returns:
-            (Any): Returns `None` if the value is clean. Please raise `PreventUpdate` in the callbacks in case it returns None.
-        """
-    
-        for category in self.data[page].values():
-            if key in category:
-                source = category[key]
-                
-                if source.dirty: 
-                    source.dirty = False
-                    return source.value
-                else:
-                    if return_none_if_clean:
-                        break
-                    else:
-                        return source.value # return even though it is clean    
-        return None
-    
-    def dirty_all(self, page):
-        """Gets all sources on this page to dirty.
-
-        Args:
-            page (str): Page name, with hyphen delimiter.
-        """        
-        if page in self.data:
-            for category in self.data[page].values():
-                for key in category:
-                    category[key].dirty = True
+        logging.debug(f'[PSM] Sending user data: {data} over {topic}')
+        await self.mqttClient.publish(topic, data)

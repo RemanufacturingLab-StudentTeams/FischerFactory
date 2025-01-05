@@ -121,7 +121,7 @@ def place_order(n_clicks, color_picker_value, baking, baking_time, milling, mill
     rtm.add_task(
         psm.send_data(
             page='dashboard-customer',
-            keys_and_data={
+            data={
                 's_type': color_picker_value.upper(), # type of puck (i.e., colour)   
                 'order_do_oven': baking,
                 'order_oven_time': baking_time if baking else 0,

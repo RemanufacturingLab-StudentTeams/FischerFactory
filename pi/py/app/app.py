@@ -176,7 +176,16 @@ if __name__ == "__main__":
     rtm.add_task(startClients(rtm))
     
     # Launch the Dash app
-    config.app.run(
-        dev_tools_hot_reload=(config.mode == 'dev'), 
-        debug=False, port=os.getenv("PORT")
+    @config.socketio.on("connect")
+    def handle_connect():
+        print("[SOCKETIO] Connected!")
+
+    @config.socketio.on("disconnect")
+    def handle_disconnect():
+        print("[SOCKETIO] Disconnected!")
+    
+    config.socketio.run(
+        config.server, 
+        debug=(config.mode == 'dev'),
+        port=int(os.getenv("PORT", 8050))
     )

@@ -272,6 +272,7 @@ type schema = {
                 topic: 'f/o/order'
                 payload: {
                     type: 'RED' | 'WHITE' | 'BLUE'
+                    workpieceParameters: WorkpieceParameters
                     ts: Date
                 }
             },

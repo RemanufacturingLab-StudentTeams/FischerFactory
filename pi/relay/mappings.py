@@ -15,6 +15,7 @@ mappings = [
     # PLC -> Dashboard
     Mapping(FROM='"gtyp_Interface_Dashboard"."Subscribe"', TO='f/i'),
     Mapping(FROM='"gtyp_Setup"', TO='f/setup'),
+    Mapping(FROM='"gtyp_HBW"', TO='f/setup'),
     Mapping(FROM='"Queue"', TO='f/queue'),
     # Dashboard -> PLC
     Mapping(FROM='f/o/state/ack', TO='"gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"'),
