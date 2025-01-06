@@ -1,7 +1,6 @@
 import dash
 from dash import Dash, html, Input, Output, State, callback, dcc, ALL, Patch
 import dash_daq as daq
-from backend import opcuaClient, mqttClient
 import logging
 from pages.components import hbw_view, display_hbw
 from state import PageStateManager

@@ -1,9 +1,6 @@
 import dash
 from dash import Dash, html, Input, Output, State, callback, dcc, no_update
 from dash.exceptions import PreventUpdate
-from dash_extensions import WebSocket
-from backend import mqttClient, opcuaClient
-from common import runtime_manager
 from state import PageStateManager
 import asyncio
 import logging
@@ -13,7 +10,9 @@ from common import runtime_manager
 from asyncio import sleep
 from pages.components import hbw_view, display_hbw
 
+psm = PageStateManager()
 layout = html.Div(
+    psm.generate_websockets('factory-overview') + 
     [
         html.Link(href='../assets/overview.css', rel='stylesheet'),
         html.Div(id='dummy'),
@@ -150,8 +149,6 @@ dash.register_page(__name__, path='/', redirect_from=['/factory-overview'], layo
     Input('updater', 'n_intervals')
 )
 def display_plc_version(n_intervals):
-    psm = PageStateManager()
-    data = psm.get('factory-overview', 'plc_version')
     
     if not data:
         raise PreventUpdate
