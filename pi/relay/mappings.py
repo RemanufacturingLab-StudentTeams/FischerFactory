@@ -1,4 +1,4 @@
-from .types import Mapping, SpecialRuleOPCUA
+from relay_types import Mapping, SpecialRuleOPCUA
 
 """Mappings for the Relay. It will relay the FROM node/topic to the TO node/topic.
     - If the node has descendants (direct or indirect children), it will relay the descendants as well, keeping the same nested structure. For example, `FROM="gtyp_Interface_Dashboard"."Subscribe"` will also relay `"gtyp_Interface_Dashboard"."Subscribe"."State_HBW"."x_sensor_oven"`.
@@ -11,7 +11,7 @@ from .types import Mapping, SpecialRuleOPCUA
     *Note: the nodeID and topic in the FROM parameter should exist. *
 """
 
-mappings = [
+mappings: list[Mapping] = [
     # PLC -> Dashboard
     Mapping(FROM='"gtyp_Interface_Dashboard"."Subscribe"', TO='f/i'),
     Mapping(FROM='"gtyp_Setup"', TO='f/setup'),
@@ -31,23 +31,23 @@ mappings = [
     # Sensors -> PLC (presumably, the reason it says "Subscribe" even though it is PLC *ingress*, is because it is considered Dashboard input?)
     Mapping(FROM='i/cam', TO='"gtyp_Interface_Dashboard"."Subscribe"."CameraPicture"'),
     Mapping(FROM='i/bme680', TO='"gtyp_Interface_Dashboard"."Subscribe"."EnvironmentSensor"'),
-    Mapping(FROM='i/ldr', TO='"gtyp_Interface_Dashboard"."Subscribe"."BrightnessSensor"'),    
+    Mapping(FROM='i/ldr', TO='"gtyp_Interface_Dashboard"."Subscribe"."BrightnessSensor"')
 ]
 
 special_rules = [
     SpecialRuleOPCUA(ORIGINAL='track_puck', MEANS='s_trackPuck'),
-    SpecialRuleOPCUA(ORIGINAL='DoOven', MEANS='s_doOven'),
+    SpecialRuleOPCUA(ORIGINAL='DoOven', MEANS='x_doOven'),
     SpecialRuleOPCUA(ORIGINAL='OvenTime', MEANS='s_ovenTime'),
-    SpecialRuleOPCUA(ORIGINAL='DoSaw', MEANS='s_doSaw'),
-    SpecialRuleOPCUA(ORIGINAL='SawTime', MEANS='s_doOven'),
+    SpecialRuleOPCUA(ORIGINAL='DoSaw', MEANS='x_doSaw'),
+    SpecialRuleOPCUA(ORIGINAL='SawTime', MEANS='s_sawTime'),
     SpecialRuleOPCUA(ORIGINAL='AlertMessage', MEANS='"Alert"'),
     SpecialRuleOPCUA(ORIGINAL='PosPanTiltUnit', MEANS='"Ptu"'),
-    SpecialRuleOPCUA(ORIGINAL='State_HBW', MEANS='"State"."Hbw"'),
-    SpecialRuleOPCUA(ORIGINAL='State_VGR', MEANS='"State"."Vgr"'),
-    SpecialRuleOPCUA(ORIGINAL='State_MPO', MEANS='"State"."Mpo"'),
-    SpecialRuleOPCUA(ORIGINAL='State_SLD', MEANS='"State"."Sld"'),
-    SpecialRuleOPCUA(ORIGINAL='State_DSI', MEANS='"State"."Dsi"'),
-    SpecialRuleOPCUA(ORIGINAL='State_DSO', MEANS='"State"."Dso"'),
+    SpecialRuleOPCUA(ORIGINAL='State_HBW', MEANS='"state/hbw"'),
+    SpecialRuleOPCUA(ORIGINAL='State_VGR', MEANS='"state/vgr"'),
+    SpecialRuleOPCUA(ORIGINAL='State_MPO', MEANS='"state/mpo"'),
+    SpecialRuleOPCUA(ORIGINAL='State_SLD', MEANS='"state/sld"'),
+    SpecialRuleOPCUA(ORIGINAL='State_DSI', MEANS='"state/dsi"'),
+    SpecialRuleOPCUA(ORIGINAL='State_DSO', MEANS='"state/dso"'),
     SpecialRuleOPCUA(ORIGINAL='State_Track', MEANS='"Track"'),
     SpecialRuleOPCUA(ORIGINAL='State_Order', MEANS='"Order"'),
     SpecialRuleOPCUA(ORIGINAL='State_NFC_Device', MEANS='"Nfc"'),

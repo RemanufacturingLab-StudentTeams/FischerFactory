@@ -1,5 +1,5 @@
 from mappings import special_rules
-from asyncua import ua
+from asyncua import ua, Node
 from datetime import datetime
 
 def _no_prefix(s: str):
@@ -8,6 +8,8 @@ def _no_prefix(s: str):
         s (str): The last part of a node ID, without double quote characters. Example: `ldt_ts`.
     """
     
+    if s.find('_') == -1: 
+        return s
     return s.split('_')[1]
 
 def _camel_case(s: str):
@@ -22,7 +24,7 @@ def _camel_case(s: str):
     return s[0].lower() + s[1:]
 
 def _convert(s):
-    return _camel_case(_no_prefix(s))
+    return _camel_case(_no_prefix(s.strip('"')))
 
 # Helper functions for converting field names
 def name_to_mqtt(name: str):
@@ -31,35 +33,25 @@ def name_to_mqtt(name: str):
             name = rule.MEANS
     return _convert(name)
 
-def get_data_type_from_node_id(node_id: str) -> str:
+async def get_datatype_as_str(node: Node) -> str:
     """Determine the data type from the node ID prefix."""
     
-    # Hardcoded VariantTypes for node id's that do not fit the standard.
-    match node_id.split('.')[-1].strip('\"'):
-        case 'OvenTime':
-            return 'Int32'
-        case 'SawTime':
-            return 'Int32'
-        case 'DoOven':
-            return 'Boolean'
-        case 'DoSaw':
-            return 'Boolean'
-        case 'track_puck':
-            return 'String'
-    
-    prefixes = {
-        'x': 'Boolean',
-        's': 'String',
-        'w': 'Word',  # 16 bits
-        'ldt': 'DateTime',
-        'i': 'Int16',
-        'di': 'Int32',
-        'r': 'Float'
+    datatype_node_ids: dict[int, str] = { # all the primitive types
+        1: 'Boolean',
+        3014: 'String',
+        3002: 'Word',  # 16 bits
+        13: 'DateTime',
+        4: 'Int16',
+        6: 'Int32',
+        10: 'Float'
     }
-    for prefix, data_type in prefixes.items():
-        if node_id.split('.')[-1].strip('\"').split('_')[0] == prefix:
-            return data_type
-    raise ValueError(f"Unknown node ID prefix: {node_id[:2]}")
+    
+    dt = (await node.read_data_type()).Identifier
+    try:
+        return datatype_node_ids[dt]
+    except KeyError:
+        # Nested type
+        return 'Nested'
     
 def value_to_ua(value: any, data_type: str) -> object:
     """Convert the input value to the correct UA type."""
