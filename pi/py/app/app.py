@@ -1,15 +1,15 @@
 import pprint
-from dash import dcc, html, Dash, Input, Output
-import dash
-from dash import dcc
+from dash import dcc, html, Input, Output, page_container, page_registry, Dash
 import logger
 from dotenv import load_dotenv
 import os, argparse
-from backend import mqttClient, opcuaClient
+from backend import mqttClient
 from threading import Thread
 from common import runtime_manager
 from state import PageStateManager
 from common import config
+import websockets
+import asyncio
 
 page_icons = {
     "Factory overview": "fas fa-home",
@@ -17,8 +17,20 @@ page_icons = {
     "Dashboard customer": "fas fa-solid fa-cart-shopping",
     "Debug": "fa fa-bug",
 }
+
+app = Dash(__name__,
+                external_stylesheets=[
+                    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+                ],
+                external_scripts=[
+                    "https://cdn.socket.io/4.0.0/socket.io.min.js"
+                ],
+                use_pages=True,
+                prevent_initial_callbacks=True
+                )
+
 # Global layout for the app
-config.app.layout = html.Div(
+app.layout = html.Div(
     [
         dcc.Location('location', refresh=True),
         html.Div(
@@ -28,10 +40,7 @@ config.app.layout = html.Div(
                     [
                         html.Div(
                             [], id="mqtt-broker-status", className="connection-status"
-                        ),
-                        html.Div(
-                            [], id="opcua-plc-status", className="connection-status"
-                        ),
+                        )
                     ],
                     className="status-container",
                 ),
@@ -50,7 +59,7 @@ config.app.layout = html.Div(
                     ],
                     className="side-panel-link",
                 )
-                for page in dash.page_registry.values()
+                for page in page_registry.values()
                 if page["module"] != "pages.not_found_404"
             ],
             className="side-panel",
@@ -59,7 +68,7 @@ config.app.layout = html.Div(
         html.Div([], id="dummy"),
         html.Div(
             [
-                dash.page_container,
+                page_container,
             ],
             className="page-content",
         ),
@@ -76,7 +85,7 @@ layoutDebug = html.Div(
 )
 
 
-@config.app.callback(
+@app.callback(
     [Output("mqtt-broker-status", "children"), Output("mqtt-broker-status", "style")],
     Input("updater", "n_intervals"),
 )
@@ -107,7 +116,7 @@ def update_status_mqtt(n_intervals):
 
     return status_text, style
 
-@config.app.callback(
+@app.callback(
     [Output("dummy", "children", allow_duplicate=True)], 
     Input("location", "href")
 )
@@ -127,26 +136,6 @@ def switch_page(href: str):
     
     return ['']
 
-@config.app.callback(
-    [Output("opcua-plc-status", "children"), Output("opcua-plc-status", "style")],
-    Input("updater", "n_intervals"),
-)
-def update_status_opcua(n_intervals):
-    client = opcuaClient.OPCUAClient()
-    status_text = f"PLC at {os.getenv('PLC_IP')}: " if config.mode == 'prod' else 'Mock PLC: '
-
-    if client.get_status():
-        status_text += 'OK'
-        style = {'backgroundColor': 'green', 'color': 'white'}
-    elif client.get_reconnection_attempts() < 10:
-        status_text += f"Reconnecting... {client.get_reconnection_attempts()}/10 attempts"
-        style = {'backgroundColor': 'yellow', 'color': 'black'}
-    else:
-        status_text += 'Disconnected'
-        style = {'backgroundColor': 'red', 'color': 'white'}
-
-    return status_text, style
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the application.")
@@ -165,7 +154,6 @@ if __name__ == "__main__":
     async def startClients(rtm):
         # Initialize the MQTT client
         mqtt = mqttClient.MqttClient()
-        opcua = opcuaClient.OPCUAClient()
         
         psm = PageStateManager()
         rtm.add_task(psm.hydrate_page('global'))
@@ -176,16 +164,7 @@ if __name__ == "__main__":
     rtm.add_task(startClients(rtm))
     
     # Launch the Dash app
-    @config.socketio.on("connect")
-    def handle_connect():
-        print("[SOCKETIO] Connected!")
-
-    @config.socketio.on("disconnect")
-    def handle_disconnect():
-        print("[SOCKETIO] Disconnected!")
-    
-    config.socketio.run(
-        config.server, 
-        debug=(config.mode == 'dev'),
-        port=int(os.getenv("PORT", 8050))
+    app.run(
+        dev_tools_hot_reload=(config.mode == 'dev'), 
+        debug=False, port=os.getenv("PORT")
     )

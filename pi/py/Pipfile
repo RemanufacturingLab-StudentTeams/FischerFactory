@@ -15,8 +15,7 @@ dash-daq = "*"
 paho-mqtt = "*"
 colorama = "*"
 dash-extensions = "*"
-python-socketio = "*"
-flask-socketio = "*"
+websockets = "*"
 
 [dev-packages]
 

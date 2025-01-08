@@ -1,12 +1,15 @@
 from common import config
 from common import singleton_decorator as s
-from backend import mqttClient, opcuaClient, mockOpcuaClient
+from backend import mqttClient, ws_client
 from typing import Any
 import asyncio
 import logging
 from asyncio import Task
 from state import state_data_schema
-
+from dash_extensions import WebSocket
+import os
+import websockets
+import json
 
 @s.singleton
 class PageStateManager:
@@ -16,10 +19,10 @@ class PageStateManager:
     def __init__(self):
         if not hasattr(self, 'initialized'):
             self.mqttClient = mqttClient.MqttClient()
-            self.opcuaClient = opcuaClient.OPCUAClient() 
             self.monitor_tasks: list[Task[Any]] = []
             self.global_monitor_tasks: list[Task[Any]] = []
             self.data = state_data_schema._data
+            self.ws_clients = {}
     
             self.initialized = True
     
@@ -56,7 +59,10 @@ class PageStateManager:
         # Create monitoring tasks for OPCUA and MQTT sources
         for key, topic in self.data.get(page, {}).items():
             def callback(message):
-                config.socketio.emit(namespace=f'{page}/{key}', args=message)
+                try:
+                    self.ws_clients.get(key).send(json.dumps(message))
+                except Exception as e:
+                    logging.error(f'[PSM] Failed to push external data to frontend with WebSocket: {e}.')
             if is_global:
                 self.global_monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(topic, qos=1, callback=callback)))
             self.monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(topic, qos=1, callback=callback)))
@@ -80,3 +86,17 @@ class PageStateManager:
         
         logging.debug(f'[PSM] Sending user data: {data} over {topic}')
         await self.mqttClient.publish(topic, data)
+        
+    def generate_websockets(self, page: str) -> list[WebSocket]:
+        """Must be called in the layout variable of every page to receive external data updates. Generates the WebSocket components that function as endpoints for the PSM to send external data to.
+
+        Args:
+            page (str): Page to that contains the key. Use a hyphen as a delimiter. Example: `factory-data`.
+        """
+        
+        res = []
+        for (key, topic) in self.data.get(page, {}).items():
+            ws = WebSocket(id=key, url=f"ws://localhost:{os.getenv('WS_PORT')}/{key}")
+            self.ws_clients[key] = ws # update registry so stuff can be sent to the clients
+            res += ws
+        return res

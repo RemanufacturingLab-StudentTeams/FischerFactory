@@ -1,12 +1,11 @@
 import dash
 from dash import Dash, html, Input, Output, State, callback, dcc, ALL, Patch
 from dash.exceptions import PreventUpdate
-from backend import opcuaClient, mqttClient
 import asyncio
 import dash_daq as daq
 import logging
 from common import runtime_manager
-from state.page_state_manager import PageStateManager
+from state import PageStateManager
 
 layout = html.Div([
         html.Div([

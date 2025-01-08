@@ -10,6 +10,8 @@ from typing import List, Dict, Coroutine
 from .page_topics import *
 import json
 from common import singleton_decorator as s
+from typing import Callable, Optional
+from common import RuntimeManager
 
 @s.singleton
 class MqttClient:
@@ -52,7 +54,7 @@ class MqttClient:
             self.connection_status = False
             self.reconnect_attempts += 1
             if self.reconnect_attempts <= self.max_reconnect_attempts:
-                logging.info(f"[MQTTCLIENT] Attempting reconnection attempt {self.reconnect_attempts}/{self.max_reconnect_attempts}")
+                logging.warning(f"[MQTTCLIENT] Attempting reconnection attempt {self.reconnect_attempts}/{self.max_reconnect_attempts}")
                 await asyncio.create_task(self.attempt_reconnection())
             else:
                 logging.error("[MQTTCLIENT] Max reconnection attempts reached. Stopping MQTT client.")
@@ -72,7 +74,7 @@ class MqttClient:
         result = self.client.publish(topic, payload, qos=qos)
         logging.info(f"[MQTTCLIENT] Published message to topic {c(topic, 'white', 'cyan')}: {c(payload, 'white', 'cyan')} (Result: {result.rc})")
 
-    async def subscribe(self, topic, qos=1, callback=None):
+    async def subscribe(self, topic, qos=1, callback: Optional[Callable] = None):
         logging.info(f"[MQTTCLIENT] Subscribing to topic {c(topic, 'white')}")
         
         @self.client.topic_callback(topic)
@@ -84,7 +86,11 @@ class MqttClient:
             except Exception as e:
                 logging.error(f"[MQTTCLIENT] Payload is not valid JSON: {payload}")
                 logging.debug(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(res, 'white')}")
-            if callback:
+            
+            if asyncio.iscoroutinefunction(callback):
+                rtm = RuntimeManager()
+                rtm.add_task(callback(res))
+            elif callback:
                 callback(res)
 
         self.client.message_callback_add(topic, on_message_wrapper)

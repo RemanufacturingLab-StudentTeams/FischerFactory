@@ -1,6 +1,6 @@
 import asyncio, threading
 from common import singleton_decorator as s
-from typing import Callable, Coroutine
+from typing import Callable, Coroutine, Optional
 import logging
 
 @s.singleton
@@ -21,7 +21,7 @@ class RuntimeManager:
         asyncio.set_event_loop(self.loop)
         self.loop.run_forever()
 
-    def add_task(self, coro: Coroutine, cb: Callable=None):
+    def add_task(self, coro: Coroutine, cb: Optional[Callable]=None):
         """Adds an asynchronous task to the runtime manager with a possible callback for when it finishes. 
 
         Args:
