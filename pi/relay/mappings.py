@@ -17,6 +17,9 @@ mappings: list[Mapping] = [
     Mapping(FROM='"gtyp_Setup"', TO='f/setup'),
     Mapping(FROM='"gtyp_HBW"', TO='f/setup'),
     Mapping(FROM='"Queue"', TO='f/queue'),
+    # PLC -> NFC Reader (PLC then sends the commands to the NFC reader)
+    Mapping(FROM='"gtyp_Interface_TXT_Controler"."Publish"."ActionButtonNFCModule"', TO='fl/o/nfc/ds'),
+    
     # Dashboard -> PLC
     Mapping(FROM='f/o/state/ack', TO='"gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"'),
     Mapping(FROM='f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"'),
@@ -24,8 +27,6 @@ mappings: list[Mapping] = [
     Mapping(FROM='o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"'),
     # Dashboard -> PLC (Dashboard sends NFC commands to the PLC)
     Mapping(FROM='f/o/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
-    # PLC -> NFC Reader (PLC then sends the commands to the NFC reader)
-    Mapping(FROM='"gtyp_Interface_TXT_Controler"."Publish"."ActionButtonNFCModule"', TO='fl/o/nfc/ds'),
     # NFC Reader -> PLC (NFC reader responds to PLC with read value)
     Mapping(FROM='fl/i/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
     # Sensors -> PLC (presumably, the reason it says "Subscribe" even though it is PLC *ingress*, is because it is considered Dashboard input?)

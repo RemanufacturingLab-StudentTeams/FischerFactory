@@ -3,6 +3,8 @@ from asyncio import run_coroutine_threadsafe
 import json
 from asyncua import Node, ua
 from asyncua import Client as OPCUAClient
+from asyncua.ua.uaerrors import BadTooManySubscriptions
+from asyncua.client.client import Subscription
 from paho.mqtt import client as mqtt_client
 from paho.mqtt.client import Client as MqttClient
 from dotenv import load_dotenv
@@ -21,7 +23,30 @@ MQTT_BROKER_PORT = int(os.getenv('MQTT_BROKER_PORT'))
 MQTT_USERNAME = os.getenv('MQTT_USERNAME')
 MQTT_PASSWORD = os.getenv('MQTT_PASSWORD')
 
-async def relay_opcua_to_mqtt(opcua_client: OPCUAClient, mqtt_client: mqtt_client.Client):
+opcua_clients = []
+async def add_opcua_client():
+    new_client = OPCUAClient(f"opc.tcp://{PLC_IP}:{PLC_PORT}")
+    opcua_clients.append(new_client)
+    async def connect_opcua(opcua_client: OPCUAClient):
+        try:
+            await opcua_client.connect()
+            print(f'Connected to PLC OPCUA server at <{PLC_IP}:{PLC_PORT}>')
+        except Exception as e:
+            print(f'Failed to connect to PLC at <{PLC_IP}:{PLC_PORT}>: {e}')
+            print('Retrying a second...')
+            await asyncio.sleep(1)
+            await connect_opcua()
+    await connect_opcua(new_client)
+    
+async def opcua_create_subscription_safe(handler: LeafDataChangeHandler | FieldDataChangeHandler) -> Subscription:
+    try:
+        return await opcua_clients[-1].create_subscription(period=1000, handler=handler)
+    except BadTooManySubscriptions:
+        print('OPCUA Client has too many subscriptions, making another one...')
+        await add_opcua_client()
+        return await opcua_clients[-1].create_subscription(period=1000, handler=handler)
+        
+async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient], mqtt_client: mqtt_client.Client):
     async def subscribe_recursive(node: Node, base_topic: str):
         node_name = (await node.read_display_name()).Text
         print(f"[MQTT_RELAY] Recursively subscribing to '{node_name}', mapping to topic '{base_topic}'")
@@ -31,13 +56,14 @@ async def relay_opcua_to_mqtt(opcua_client: OPCUAClient, mqtt_client: mqtt_clien
             print(f'Node {node_name} is leaf')
             if (await node.read_node_class()) == 2: 
                 handler = LeafDataChangeHandler(mqtt_client, base_topic)
-                subscription = await opcua_client.create_subscription(period=1000, handler=handler)
+                subscription = await opcua_create_subscription_safe(handler)
                 await handler.read_initial_value(node=node)
-                await subscription.subscribe_data_change(node)
+                await subscription.subscribe_data_change(node)    
+                
             else: # Sometimes a leaf node is not a UAVariable type, which means it cannot be subscribed to. In this case, subscribe to the fields individually 
                 for field in (await node.get_children()):
                     handler = FieldDataChangeHandler(mqtt_client, base_topic)
-                    subscription = await opcua_client.create_subscription(period=1000, handler=handler)
+                    subscription = await opcua_create_subscription_safe(handler)
                     await handler.read_initial_value(node=field)
                     await subscription.subscribe_data_change(field)
         else:  # Non-leaf node (i.e., it has grandchildren), recurse
@@ -50,7 +76,7 @@ async def relay_opcua_to_mqtt(opcua_client: OPCUAClient, mqtt_client: mqtt_clien
                 print(f'Generated subtopic: {mqtt_sub_topic} from {child_name}')
                 await subscribe_recursive(child, mqtt_sub_topic)
 
-    async with opcua_client:
+    async with opcua_clients[-1] as opcua_client:
         for mapping in mappings:
             print(f'[MQTT_RELAY] Mapping {mapping.FROM} to {mapping.TO}')
             if mapping.FROM.startswith('"'):  # OPC UA -> MQTT
@@ -93,18 +119,7 @@ async def relay_mqtt_to_opcua(opcua_client: OPCUAClient, mqtt_client: MqttClient
 
 async def main():
     # OPC UA Client
-    opcua_client = OPCUAClient(f"opc.tcp://{PLC_IP}:{PLC_PORT}")
-    async def connect_opuca():
-        try:
-            await opcua_client.connect()
-            print(f'Connected to PLC OPCUA server at <{PLC_IP}:{PLC_PORT}>')
-        except Exception as e:
-            print(f'Failed to connect to PLC at <{PLC_IP}:{PLC_PORT}>: {e}')
-            print('Retrying a second...')
-            await asyncio.sleep(1)
-            await connect_opuca()
-
-    await connect_opuca()
+    await add_opcua_client()
 
     client = MqttClient()
     client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
@@ -124,7 +139,7 @@ async def main():
 
     # Tasks
     await asyncio.gather(
-        relay_opcua_to_mqtt(opcua_client, mqtt_client)
+        relay_opcua_to_mqtt(opcua_clients, mqtt_client)
         # relay_mqtt_to_opcua(opcua_client, mqtt_client),
     )
 
