@@ -66,13 +66,14 @@ layout = html.Div([
 @callback(
     Output('place-order', 'disabled'),
     Output('place-order', 'title'),
-    Input('order-color', 'value')
+    Input('order-color', 'value'),
+    Input('mqtt:queue', 'message')
 )
-def validate_order_button(color_value):
+def validate_order_button(color_value, queue):
     if color_value is None:
         return True, "Disabled: please select a color."
     psm = PageStateManager()
-    queue_full: bool | None = psm.get('customer-dashboard', 'queue_full')
+    queue_full: bool = queue['queue']['queueFull']
     if queue_full:
         return True, "Disabled: Queue is full."
     return False, 'Click to place your order.'
@@ -142,37 +143,35 @@ def place_order(n_clicks, color_picker_value, baking, baking_time, milling, mill
 def hide_time_fields(order_baking, order_milling):
     return 'hidden' if not order_baking else '', 'hidden' if not order_milling else ''
 
-@callback(
-    [
-        Output('place-order', 'className', allow_duplicate=True),
-        Output('place-order', 'disabled', allow_duplicate=True),
-        Output('place-order', 'title', allow_duplicate=True)
-    ],
-    Input('updater', 'n_intervals'),
-    prevent_initial_call=True
-)
-def reset_buttons(n_intervals):
-    """Resets greyed out buttons when it notices the call has been acknowledged. It does this by checking if the user-sent data has been set to clean (which the psm does when the call is awaited).
-    """
-    # Order button
-    psm = PageStateManager()
-    if psm.get('dashboard-customer', 'order_ldt_ts') is not None: # i.e., it is dirty, i.e., the user-sent data has been ack'ed
-        return '', False, 'Click to place your order.' # reset the button
-    else:
-        raise PreventUpdate
+# !TODO: Ack and error handling mechanism
+# @callback(
+#     [
+#         Output('place-order', 'className', allow_duplicate=True),
+#         Output('place-order', 'disabled', allow_duplicate=True),
+#         Output('place-order', 'title', allow_duplicate=True)
+#     ],
+#     Input('updater', 'n_intervals'),
+#     prevent_initial_call=True
+# )
+# def reset_buttons(n_intervals):
+#     """Resets greyed out buttons when it notices the call has been acknowledged. It does this by checking if the user-sent data has been set to clean (which the psm does when the call is awaited).
+#     """
+#     # Order button
+#     psm = PageStateManager()
+#     if psm.get('dashboard-customer', 'order_ldt_ts') is not None: # i.e., it is dirty, i.e., the user-sent data has been ack'ed
+#         return '', False, 'Click to place your order.' # reset the button
+#     else:
+#         raise PreventUpdate
 
 @callback(
     Output('state-order-table', 'children'), 
-    Input('updater', 'n_intervals')
+    Input('mqtt:state_order', 'message')
 )
-def display_order(n_intervals):
+def display_order(state_order):
     psm = PageStateManager()
-    ts = psm.get(page='dashboard-customer', key='state_order_ldt_ts', return_none_if_clean=False)
-    state = psm.get(page='dashboard-customer', key='state_order_s_state', return_none_if_clean=False)
-    color = psm.get(page='dashboard-customer', key='state_order_s_type', return_none_if_clean=False)
-
-    if (ts is None) and (state is None) and (color is None):
-        raise PreventUpdate
+    ts = state_order['ts']
+    state = state_order['state']
+    color = state_order['type']
     
     patch = Patch()
     if ts:
@@ -186,12 +185,12 @@ def display_order(n_intervals):
 
 @callback(
     Output('order-queue-table', 'children'),
-    Input('updater', 'n_intervals')
+    Input('mqtt:queue', 'message')
 )
-def display_queue(n_intervals):
+def display_queue(queue):
     psm = PageStateManager()
-    queue_index: int = psm.get('dashboard-customer', 'queue_index', False) or 0
-    queue_full: bool = psm.get('dashboard-customer', 'queue_full', False) or False
+    queue_index: int = queue['queueIndex'] or 0
+    queue_full: bool = queue['queue']['queueFull'] or False
     
     return [
         html.Tr([
@@ -204,24 +203,23 @@ def display_queue(n_intervals):
         
     ] + [
         html.Tr([
-            html.Td(i + 1),
-            html.Td(psm.get('dashboard-customer', f'queue_[{i}]_s_type', False)),
-            html.Td(psm.get('dashboard-customer', f'queue_[{i}]_wparams_OvenTime', False) if psm.get('dashboard-customer', f'queue_[{i}]_wparams_DoOven', False) else 'No'),
-            html.Td(psm.get('dashboard-customer', f'queue_[{i}]_wparams_SawTime', False) if psm.get('dashboard-customer', f'queue_[{i}]_wparams_DoSaw', False) else 'No'),
-            html.Td(psm.get('dashboard-customer', f'queue_[{i}]_ldt_ts', False).strftime("%m/%d/%Y, %H:%M:%S"))
+            html.Td(index + 1),
+            html.Td(puck['type']),
+            html.Td(puck['parameters']['ovenTime'] if puck['parameters']['doOven'] else 'No'),
+            html.Td(puck['parameters']['sawTime'] if puck['parameters']['doSaw'] else 'No'),
+            html.Td(puck['ts'].strftime("%m/%d/%Y, %H:%M:%S"))
         ])
-        for i in range(queue_index)
+        for index, puck in enumerate(queue['queue'][:queue_index])
     ] + ([
         html.Tr('QUEUE FULL', className='queue-full-banner')
     ] if queue_full else [])
 
 @callback(
     Output('tracking', 'children'),
-    Input('updater', 'n_intervals')
+    Input('mqtt:tracking', 'message')
 )
-def display_tracking(n_intervals):
-    psm = PageStateManager()
-    tracking = psm.get('dashboard-customer', 'tracking')
+def display_tracking(tracking):
+    tracking = tracking.get('trackPuck')
     if not tracking:
         raise PreventUpdate
     return tracking

@@ -96,3 +96,4 @@ def setup():
     
     # Suppress OPCUA
     logging.getLogger('asyncua').setLevel(logging.WARNING)
+    logging.getLogger('websockets').setLevel(logging.WARNING)

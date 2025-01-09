@@ -9,11 +9,11 @@ import asyncio
 from typing import List, Dict, Coroutine
 from .page_topics import *
 import json
-from common import singleton_decorator as s
+from common import singleton
 from typing import Callable, Optional
 from common import RuntimeManager
 
-@s.singleton
+@singleton
 class MqttClient:
     connection_status = False
     
@@ -40,8 +40,6 @@ class MqttClient:
             self.reconnect_attempts = 0
             self.max_reconnect_attempts = 10
             self.reconnect_interval = 5
-            
-            asyncio.create_task(self.connect())
 
     async def connect(self):
         try:
@@ -83,9 +81,9 @@ class MqttClient:
             res = ''
             try:
                 res = json.loads(payload)
+                logging.debug(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(res, 'white')}")
             except Exception as e:
                 logging.error(f"[MQTTCLIENT] Payload is not valid JSON: {payload}")
-                logging.debug(f"[MQTTCLIENT] Received message on topic {c(topic, 'white', 'cyan')}: {c(res, 'white')}")
             
             if asyncio.iscoroutinefunction(callback):
                 rtm = RuntimeManager()

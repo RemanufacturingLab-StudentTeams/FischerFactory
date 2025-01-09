@@ -10,21 +10,20 @@ _data: dict[str, dict[str, str]] = {
 # """    
 
     'factory-overview': { # yes, using a hyphen as a delimiter, not an underscore, because it has to correspond with the page URLs. 
-        'plc_version': 'f/setup/versionSPS',
+        'setup': 'relay/f/setup',
         'turtlebot_current_state': 'Turtlebot/CurrentState'
     },
     'factory-data': {
-        'state_sld': 'f/i/state/sld'
+        'state_sld': 'relay/f/i/state/sld'
     },
     'dashboard-customer': {
-        'queue': 'f/queue/',
-        'state_order': 'f/i/order',
-        'tracking': 'f/i/track',
-        'place_order': 'f/o/order',
-        'queue': 'f/queue'
+        'queue': 'relay/f/queue',
+        'state_order': 'relay/f/i/order',
+        'tracking': 'relay/f/i/track',
+        'place_order': 'relay/f/o/order',
     },
     'global': { # every page
-        'stock' : 'f/i/stock'
+        'stock' : 'relay/f/i/stock'
     }
 }
 

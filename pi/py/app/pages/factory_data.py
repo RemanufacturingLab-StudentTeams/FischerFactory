@@ -29,22 +29,23 @@ layout = html.Div([
 
 @callback(
     Output('sld-table', 'children'),
-    Input('updater', 'n_intervals'),
+    Input('mqtt:state_sld', 'message'),
     State('sld-table', 'children')
 )
-def update_sld(n_intervals, el):    
-    psm = PageStateManager()
-    data = psm.get('factory-data', 'state_sld')
-    
-    if not data:
-        raise PreventUpdate
-    
+def update_sld(state_sld, el):            
     patch = Patch() # patch object of the sld-table children.
     
     patch[1] = html.Tr([ # patch[1] is the first <tr> element, the 0th is the headers
-            html.Td(str(data.get(v, 'No data yet')), className='value') 
-            for v in ['active', 'error', 'errorMessage', 'workpieceID', 'workpieceType', 'onTransportBelt', 'observedColor']
-        ])
+            html.Td(str(state_sld.get(prop, 'No data yet')), className='value') 
+            for prop in ['active', 'error', 'errorMessage']
+        ] + [
+            html.Td(str(state_sld.get('workpiece').get(workpieceProp, 'No data yet')), className='value') 
+            for workpieceProp in ['id', 'type', 'state']
+        ] + [
+            html.Td(str(state_sld.get('workpiece').get('states').get(workpieceState, 'No data yet')), className='value') 
+            for workpieceState in ['onTransportBelt', 'colorObserved']
+        ]
+    )
 
     return patch
 

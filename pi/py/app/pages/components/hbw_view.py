@@ -1,5 +1,7 @@
-from dash import html, callback, Input, Output
+from dash import html, callback, Input, Output, State
 from state import PageStateManager
+from dash.exceptions import PreventUpdate
+import logging
 
 hbw_view = html.Div(
     [
@@ -13,23 +15,27 @@ hbw_view = html.Div(
 
 @callback(
     Output('hbw-view-container', 'children'),
-    Input('updater', 'n_intervals'),
+    Input('mqtt:stock', 'message'),
+    State('mqtt:stock', 'state'),
     prevent_initial_call=True
 )
-def display_hbw(n_intervals):    
-    psm = PageStateManager()
-    page = 'global'
+def display_hbw(stock, state):    
+    logging.debug(f'display_hbw called with {stock}')
+    logging.debug(f'WebSocket is in state {state}')
+    
+    if stock is None:
+        raise PreventUpdate
     
     buttons = [
         (
             html.Div(
-                psm.get(page, f'rack_workpiece_[{x},{y}]_s_id', False),
-                className='puck-' + psm.get(page, f'rack_workpiece_[{x},{y}]_s_type', False).lower() # class names will become 'puck-red', 'puck-blue', 'puck-white' or 'empty'
+                stock['stockItem'][f'{x},{y}']['id'],
+                className='puck-' + stock['stockItem'][f'{x},{y}']['type'].lower() # class names will become 'puck-red', 'puck-blue', 'puck-white' or 'empty'
             )
-            if psm.get(page,f'rack_workpiece_[{x},{y}]_s_type',False)
+            if stock['stockItem'][f'{x},{y}'].get('type', False)
             else html.Div(className='puck-empty')
         )
-            for x in range(3) 
+            for x in range(3)
             for y in range(3)
     ]
     

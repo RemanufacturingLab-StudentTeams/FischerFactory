@@ -1,15 +1,16 @@
 from common import config
 from common import singleton_decorator as s
-from backend import mqttClient, ws_client
 from typing import Any
 import asyncio
 import logging
 from asyncio import Task
 from state import state_data_schema
-from dash_extensions import WebSocket
-import os
+from dash_extensions import WebSocket as FrontEndWebSocket
 import websockets
+from websockets.client import ClientConnection as BackEndWebSocket
+import os
 import json
+from backend import mqttClient
 
 @s.singleton
 class PageStateManager:
@@ -22,9 +23,29 @@ class PageStateManager:
             self.monitor_tasks: list[Task[Any]] = []
             self.global_monitor_tasks: list[Task[Any]] = []
             self.data = state_data_schema._data
-            self.ws_clients = {}
+            self.ws_clients: dict[str, BackEndWebSocket] = {}
     
             self.initialized = True
+    
+    async def hydrate_page(self, page: str):
+        """Meant to fetch data once (as opposed to monitoring, which fetches continually), used to fetch static (unchanging) data for a page. 
+        It does this by sending a read request to the relay to re-publish all PLC values.
+        For other MQTT data sources, it unfortunately cannot request data, because MQTT does not natively support read requests.
+        
+        Args:
+            page (str): Which page to fetch hydration data for.
+        """
+        await self.mqttClient.publish(
+            os.getenv('MQTT_RELAY_TOPIC')+'/read',
+            {
+                'topics': [
+                    topic.lstrip('relay/') 
+                    for topic 
+                    in self.data.get(page, {}).values() 
+                    if topic.startswith('relay') # only send read requests for PLC topics
+                ]
+            }
+        )
     
     async def stop_monitoring(self):
         """Stop all monitoring tasks."""
@@ -32,7 +53,6 @@ class PageStateManager:
         
         for task in self.monitor_tasks:
             try:
-                
                 task.cancel()
                 await task  # Ensure the task is properly canceled
             except asyncio.CancelledError as e: # this is actually fine, it should give a CancelledError because it was cancelled
@@ -54,23 +74,39 @@ class PageStateManager:
         if not is_global:
             await self.stop_monitoring()
         
-        logging.debug(f'[PSM] Monitoring page: {page} with data: {[k for k, s in self.data.get(page, {}).get("monitor", {}).items()]}')
+        logging.debug(f'[PSM] Monitoring page: {page} with data: {[k for k, s in self.data.get(page, {}).items()]}')
 
         # Create monitoring tasks for OPCUA and MQTT sources
         for key, topic in self.data.get(page, {}).items():
-            def callback(message):
+            async def callback(message, key=key): # Push MQTT data to frontend with websockets
                 try:
-                    self.ws_clients.get(key).send(json.dumps(message))
+                    logging.debug(f'[PSM] Received message: {json.dumps(message)}')
+                    await self.ws_clients.get(key).send(json.dumps(message))
+                    logging.debug(f'[PSM] Sent to FrontEnd WebSocket {key} via Backend WebSocket {self.ws_clients.get(key).id}')
                 except Exception as e:
                     logging.error(f'[PSM] Failed to push external data to frontend with WebSocket: {e}.')
+                    logging.debug(self.ws_clients)
             if is_global:
-                self.global_monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(topic, qos=1, callback=callback)))
-            self.monitor_tasks.append(asyncio.create_task(self.mqttClient.subscribe(topic, qos=1, callback=callback)))
+                self.global_monitor_tasks.append(asyncio.create_task(
+                    self.mqttClient.subscribe(
+                        topic, 
+                        qos=1, 
+                        callback=callback
+                    )
+                ))
+            else: 
+                self.monitor_tasks.append(asyncio.create_task(
+                self.mqttClient.subscribe(
+                    topic,
+                    qos=1, 
+                    callback=callback
+                )
+            ))
 
         if is_global:
             await asyncio.gather(*self.global_monitor_tasks)
-        
-        await asyncio.gather(*self.monitor_tasks)  # Await all tasks
+        else:
+            await asyncio.gather(*self.monitor_tasks)  # Await all tasks
     
     async def send_data(self, page: str, key: str, data: dict):
         """Publish a data item to a source.
@@ -87,7 +123,7 @@ class PageStateManager:
         logging.debug(f'[PSM] Sending user data: {data} over {topic}')
         await self.mqttClient.publish(topic, data)
         
-    def generate_websockets(self, page: str) -> list[WebSocket]:
+    async def generate_websockets(self, page: str) -> list[FrontEndWebSocket]:
         """Must be called in the layout variable of every page to receive external data updates. Generates the WebSocket components that function as endpoints for the PSM to send external data to.
 
         Args:
@@ -96,7 +132,13 @@ class PageStateManager:
         
         res = []
         for (key, topic) in self.data.get(page, {}).items():
-            ws = WebSocket(id=key, url=f"ws://localhost:{os.getenv('WS_PORT')}/{key}")
-            self.ws_clients[key] = ws # update registry so stuff can be sent to the clients
-            res += ws
+            url = f"ws://localhost:{os.getenv('WS_PORT')}/{key}"
+            
+            frontendWS = FrontEndWebSocket(id=f'mqtt:{key}', url=url, message=None)
+            backendWS = await websockets.connect(url)
+            logging.debug(f"[PSM] Generated frontend WebSocket: id=mqtt:{key} on url=ws://localhost:{os.getenv('WS_PORT')}/{key}")
+            self.ws_clients[key] = backendWS # update registry so stuff can be sent to the clients
+            logging.debug(f"[PSM] WS_Clients: {[f'{key}:{ws.id}' for key, ws in self.ws_clients.items()]}")
+            res += frontendWS
+        
         return res
