@@ -21,16 +21,18 @@ def push_mqtt(topic: str, mqtt_client: MqttClient):
     """Emits data on this topic, if it is a leaf, or on all its subtopics, if not.
 
     Args:
-        topic (str): Topic name, without leading slash. Example: 'f/i/state/mpo'
-    """    
-    topic_parts = topic[1:].split('/')
+        topic (str): Topic name, with or without leading slash. Example: 'f/i/state/mpo'
+    """
+    topic_parts = topic.lstrip('/').split('/')
     partial_state = state
     for topic_part in topic_parts:
         partial_state = partial_state.get('/'+topic_part)
+        if partial_state is None:
+            print(f'!!ERROR!! Could not access {topic_part} while trying to access {topic} in state {state}')
     
     print(f'Sending partial state: {partial_state} over topic {topic}')
     if partial_state_is_leaf(partial_state):
-        mqtt_client.publish(topic='relay/' + topic, payload=json.dumps(partial_state, default=_serialize_fallback))
+        mqtt_client.publish(topic='relay' + topic, payload=json.dumps(partial_state, default=_serialize_fallback))
     else:
         for subtopic in partial_state.keys():
             push_mqtt(f'{topic}/{subtopic}', mqtt_client=mqtt_client)

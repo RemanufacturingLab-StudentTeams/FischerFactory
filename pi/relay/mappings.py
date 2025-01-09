@@ -14,11 +14,11 @@ from relay_types import Mapping, SpecialRuleOPCUA
 mappings: list[Mapping] = [
     # PLC -> Dashboard
     Mapping(FROM='"gtyp_Setup"', TO='f/setup'),
-    Mapping(
-        FROM='"gtyp_Interface_Dashboard"."Subscribe"', 
-        TO='f/i',
-        EXCLUDE=['History']
-    ),
+    # Mapping(
+    #     FROM='"gtyp_Interface_Dashboard"."Subscribe"', 
+    #     TO='f/i',
+    #     EXCLUDE=['History']
+    # ),
     # Commented out because it generates an idiotic amount of data and it is not used in the Dashboard code, could be uncommented if useful in the future
     # Reason it generates so much data by the way is because it keeps a 20-item history of each of the 9 slots
     # Mapping(FROM='"gtyp_HBW"', TO='f/hbw', EXCLUDE=['Rack_Workpiece', 'Workpiece', 'History']),
