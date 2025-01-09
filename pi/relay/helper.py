@@ -10,7 +10,7 @@ def _no_prefix(s: str):
     
     if s.find('_') == -1: 
         return s
-    return s.split('_')[1]
+    return ''.join(s.split('_')[1:]) # i know it's unreadable but i promise this works bro
 
 def _camel_case(s: str):
     """Convert the last part of a node ID to camelCase (first letter lowercase). 

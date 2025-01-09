@@ -1,5 +1,5 @@
 import asyncio
-from asyncio import run_coroutine_threadsafe
+from asyncio import run_coroutine_threadsafe, Future
 import json
 from asyncua import Node, ua
 from asyncua import Client as OPCUAClient
@@ -13,6 +13,7 @@ from mappings import mappings, special_rules
 from datetime import datetime
 from helper import name_to_mqtt, value_to_ua, get_datatype_as_str
 from opcua_datachange_handler import LeafDataChangeHandler, FieldDataChangeHandler
+from typing import Optional
 
 # Load environment variables
 load_dotenv()
@@ -35,7 +36,7 @@ async def add_opcua_client():
             print(f'Failed to connect to PLC at <{PLC_IP}:{PLC_PORT}>: {e}')
             print('Retrying a second...')
             await asyncio.sleep(1)
-            await connect_opcua()
+            await connect_opcua(opcua_client)
     await connect_opcua(new_client)
     
 async def opcua_create_subscription_safe(handler: LeafDataChangeHandler | FieldDataChangeHandler) -> Subscription:
@@ -47,7 +48,7 @@ async def opcua_create_subscription_safe(handler: LeafDataChangeHandler | FieldD
         return await opcua_clients[-1].create_subscription(period=1000, handler=handler)
         
 async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient], mqtt_client: mqtt_client.Client):
-    async def subscribe_recursive(node: Node, base_topic: str):
+    async def subscribe_recursive(node: Node, base_topic: str, EXCLUDE:Optional[list[str]]=None):
         node_name = (await node.read_display_name()).Text
         print(f"[MQTT_RELAY] Recursively subscribing to '{node_name}', mapping to topic '{base_topic}'")
         children = await node.get_children()
@@ -55,13 +56,19 @@ async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient], mqtt_client: mqt
         if not has_grandchildren:  # Leaf node, children is payload
             print(f'Node {node_name} is leaf')
             if (await node.read_node_class()) == 2: 
-                handler = LeafDataChangeHandler(mqtt_client, base_topic)
+                handler = LeafDataChangeHandler(mqtt_client, base_topic, EXCLUDE=EXCLUDE)
                 subscription = await opcua_create_subscription_safe(handler)
                 await handler.read_initial_value(node=node)
                 await subscription.subscribe_data_change(node)    
                 
             else: # Sometimes a leaf node is not a UAVariable type, which means it cannot be subscribed to. In this case, subscribe to the fields individually 
                 for field in (await node.get_children()):
+                    field_name = (await field.read_display_name()).Text
+                    print(f'Found independent field {field_name}')
+                    if EXCLUDE:
+                        if (field_name) in EXCLUDE:
+                            print(f'Skipping explicitly excluded field {field_name}')
+                            continue
                     handler = FieldDataChangeHandler(mqtt_client, base_topic)
                     subscription = await opcua_create_subscription_safe(handler)
                     await handler.read_initial_value(node=field)
@@ -70,11 +77,15 @@ async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient], mqtt_client: mqt
             for child in children:
                 child_name = (await child.read_display_name()).Text
                 print(f'Found child {child_name}')
+                if EXCLUDE:
+                    if child_name in EXCLUDE:
+                        print(f'Skipping explicitly excluded child {child_name}')
+                        continue
                 if not child_name:
                     raise ValueError(f'Child {child} has no display name.')
                 mqtt_sub_topic = f"{base_topic}/{name_to_mqtt(child_name)}"
                 print(f'Generated subtopic: {mqtt_sub_topic} from {child_name}')
-                await subscribe_recursive(child, mqtt_sub_topic)
+                await subscribe_recursive(child, mqtt_sub_topic, EXCLUDE=EXCLUDE)
 
     async with opcua_clients[-1] as opcua_client:
         for mapping in mappings:
@@ -82,7 +93,8 @@ async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient], mqtt_client: mqt
             if mapping.FROM.startswith('"'):  # OPC UA -> MQTT
                 root_node: Node = opcua_client.get_node('ns=3;s=' + mapping.FROM)
                 base_topic = mapping.TO
-                await subscribe_recursive(root_node, base_topic)
+                await subscribe_recursive(root_node, base_topic, EXCLUDE=mapping.EXCLUDE)
+        await asyncio.Future()
 
 async def relay_mqtt_to_opcua(opcua_client: OPCUAClient, mqtt_client: MqttClient):
     async def handle_message(opcua_client: OPCUAClient, topic, payload):
