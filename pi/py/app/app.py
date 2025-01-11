@@ -1,5 +1,5 @@
 import pprint
-from dash import dcc, html, Input, Output, Dash
+from dash import dcc, html, Input, Output, Dash, ALL
 import logger
 from dotenv import load_dotenv
 import os, argparse
@@ -11,105 +11,60 @@ from common import config
 import asyncio
 import websockets
 from websockets.asyncio.server import Server as WebSocketServer
+from websockets.asyncio.server import ServerConnection
+from websockets.http11 import Request
 from threading import Thread
+import json
 
-async def init_dash() -> Dash:
-    app = Dash(__name__,
-            external_stylesheets=[
-                "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-            ],
-            external_scripts=[
-                "https://cdn.socket.io/4.0.0/socket.io.min.js"
-            ],
-            use_pages=True,
-            prevent_initial_callbacks=True
-            )
-    
+def init_dash() -> Dash:
+    return Dash(__name__,
+        external_stylesheets=[
+            "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+        ],
+        external_scripts=[
+            "https://cdn.socket.io/4.0.0/socket.io.min.js"
+        ],
+        use_pages=True,
+        prevent_initial_callbacks=True
+        )    
+
+async def generate_global_layout(app: Dash) -> None:    
     from global_layout import layout
     app.layout = await layout()
-    
-    @app.callback(
-        [Output("mqtt-broker-status", "children"), Output("mqtt-broker-status", "style")],
-        Input("updater", "n_intervals"),
-    )
-    def update_status_mqtt(n_intervals):
-        client = mqttClient.MqttClient()
-        status_text = f"MQTT Broker at {os.getenv('MQTT_BROKER_IP')}: "
 
-        if client.get_status():
-            status_text += "OK"
-            style = {
-                "backgroundColor": "green",
-                "color": "white",
-            }
-        elif client.get_reconnection_attempts() < 10:
-            status_text += (
-                f"Reconnecting... {client.get_reconnection_attempts()}/10 attempts"
-            )
-            style = {
-                "backgroundColor": "yellow",
-                "color": "black",
-            }
-        else:
-            status_text += "Disconnected"
-            style = {
-                "backgroundColor": "red",
-                "color": "white",
-            }
+connections: dict[ServerConnection] = {}
 
-        return status_text, style
-
-    @app.callback(
-        [Output("dummy", "children", allow_duplicate=True)], 
-        Input("location", "href")
-    )
-    def switch_page(href: str):
-        import logging # bit weird to not put this import at the top of the page but the logger setup really needs to run first so ¯\_(ツ)_/¯
-        # page_name = pathname.lstrip('/') or 'factory-overview'
-        page_name = href.split('/')[-1].split('?')[0] or 'factory-overview'
-        
-        logging.debug(f"Switched to page: {page_name}")
-        
-        psm = PageStateManager()
-        rtm  = runtime_manager.RuntimeManager()
-        
-        async def task():
-            await psm.hydrate_page(page_name)
-            await psm.monitor_page(page_name)
-            
-        rtm.add_task(task())
-        
-        return ['']
-    
-    return app
-
-connected_clients = set() # ew, global variables
-
-async def start_ws() -> WebSocketServer:
+def start_ws():
     import os # Cannot put this on the top of the file because it needs to be imported after the main function loads the environment variables
     import logging # same here, it needs to be set up first 
+    from backend import MqttClient
     
-    async def websocket_handler(websocket):
+    async def websocket_handler(conn: ServerConnection):
         """Handles WebSocket connections and messages."""
-        # Register the new client
-        connected_clients.add(websocket)
-        logging.info('[WS_SERVER] Client connected')
-        try:
-            async for message in websocket:
-                logging.debug(f"[WS_SERVER] Received: {message}")
-        except websockets.exceptions.ConnectionClosed:
-            logging.info("[WS_SERVER] Client disconnected")
-        finally:
-            # Unregister the client
-            connected_clients.remove(websocket)
-        
-    async def run_server() -> WebSocketServer:
+        async for message in conn:
+            logging.debug(f"[WS_SERVER] Received: {message}")
+    
+    def request_handler(conn: ServerConnection, req: Request):
+        logging.debug(f'[WS_SERVER] Incoming request on path {req.path}')
+        if connections.get(req.path) is None:
+            connections[req.path] = conn
+            mqttClient = MqttClient()
+            async def send_to_frontend(msg, conn=conn, path=req.path):
+                try:                   
+                    conn.send(json.dumps(msg))
+                    logging.debug(f'[WS_SERVER] Sent message {msg} to FrontEnd WebSocket {path}')
+                except Exception as e:
+                    logging.error(f'[WS_SERVER] Failed to send message to frontend WebSocket {path}')
+            psm = PageStateManager()
+            psm.monitor_tasks.append(asyncio.create_task(mqttClient.subscribe(req.path, callback=send_to_frontend)))
+    
+    async def run_server():
         logging.info(f"Starting WebSocket server on ws://localhost:{os.getenv('WS_PORT')}...")
-        ws_server = await websockets.serve(websocket_handler, "localhost", 8765)
-        logging.info("WebSocket server is running.")
-        return ws_server
-
-    return (await run_server())
+        async with websockets.serve(websocket_handler, "localhost", 8765, process_request=request_handler):
+            logging.info("WebSocket server is running.")
+            await asyncio.Future()
+    
+    asyncio.run(run_server())
 
 async def main():
     parser = argparse.ArgumentParser(description="Run the application.")
@@ -130,16 +85,18 @@ async def main():
     await mqtt.connect()
     
     # Start the WebSocket server in a separate Thread
-    ws_server = await start_ws()
-    thread = Thread(target=ws_server.serve_forever, daemon=True)
-    thread.start()
+    Thread(target=start_ws, daemon=True).start()
     
-    # Init the Dash app
-    app = await init_dash()
+    app = init_dash()
     
     # Register pages
     from pages.factory_overview import register as register_overview
     await register_overview()
+    from pages.dashboard_customer import register as register_dashboard_customer
+    await register_dashboard_customer()
+    
+    # Init the Dash app
+    await generate_global_layout(app)
     
     # Launch the app
     app.run(

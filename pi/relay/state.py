@@ -23,7 +23,8 @@ def push_mqtt(topic: str, mqtt_client: MqttClient):
     Args:
         topic (str): Topic name, with or without leading slash. Example: 'f/i/state/mpo'
     """
-    topic_parts = topic.lstrip('/').split('/')
+    topic = topic.lstrip('/')
+    topic_parts = topic.split('/')
     partial_state = state
     for topic_part in topic_parts:
         partial_state = partial_state.get('/'+topic_part)
@@ -32,7 +33,7 @@ def push_mqtt(topic: str, mqtt_client: MqttClient):
     
     print(f'Sending partial state: {partial_state} over topic {topic}')
     if partial_state_is_leaf(partial_state):
-        mqtt_client.publish(topic='relay' + topic, payload=json.dumps(partial_state, default=_serialize_fallback))
+        mqtt_client.publish(topic='relay/' + topic, payload=json.dumps(partial_state, default=_serialize_fallback))
     else:
         for subtopic in partial_state.keys():
             push_mqtt(f'{topic}/{subtopic}', mqtt_client=mqtt_client)

@@ -83,8 +83,12 @@ fn main() -> io::Result<()> {
                 let mut custom_payload = String::new();
                 io::stdin().read_line(&mut custom_payload).expect("Failed to read line");
                 let custom_payload = custom_payload.trim();
-                client.publish(input, QoS::AtLeastOnce, false, custom_payload.to_string()).await.unwrap();
-                println!("Custom message sent to topic: {}", input);
+                let res = client.publish(input, QoS::AtLeastOnce, false, custom_payload.to_string()).await;
+                if let Err(e) = res {
+                    eprintln!("Error sending message: {}", e);
+                } else{
+                    println!("Custom message sent to topic: {}", input);
+                }
             }
         }
     });

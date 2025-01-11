@@ -130,20 +130,20 @@ async def relay_mqtt_to_opcua(opcua_client: OPCUAClient, mqtt_client: MqttClient
             (mapping.FROM, 0) for mapping in mappings if not mapping.FROM.startswith('"')
         ])
 
-async def listen_for_pull_requests(mqtt_client: MqttClient):
-    """Not a GitHub pull request, this function listens to a special topic called 'pull', which accepts a list of topics. This function will then try to re-publish the stored state for those topics, if it exists. 
+async def listen_for_read_requests(mqtt_client: MqttClient):
+    """This function listens to a special topic called 'read', which accepts a list of topics. This function will then try to re-publish the stored state for those topics, if it exists. 
     """    
-    topic = 'relay/pull'
+    topic = 'relay/read'
     @mqtt_client.topic_callback(topic)
     def try_push(client, userdata, msg):
         payload = msg.payload.decode()
         try:
             payload = json.loads(payload)
             for topic in payload['topics']:
-                print(f'Pull request for state on topic {topic}')
+                print(f'Read request for state on topic {topic}')
                 push_mqtt(topic, mqtt_client)
         except Exception as e:
-            print(f'Error parsing payload {payload} to push topics: {e}.')
+            print(f'Error parsing payload {payload} to read topics: {e}.')
             pass
     
     mqtt_client.message_callback_add(topic, callback=try_push)
@@ -175,7 +175,7 @@ async def main():
     await asyncio.gather(
         relay_opcua_to_mqtt(opcua_clients, mqtt_client),
         # relay_mqtt_to_opcua(opcua_client, mqtt_client),
-        listen_for_pull_requests(mqtt_client)
+        listen_for_read_requests(mqtt_client)
     )
 
 if __name__ == "__main__":

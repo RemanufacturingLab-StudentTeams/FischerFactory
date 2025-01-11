@@ -72,6 +72,9 @@ class LeafDataChangeHandler(DataChangeNotificationHandler):
         except asyncio.QueueEmpty:
             pass
         
+    def status_change_notification(self, status):
+        print(f"Status change notification: {status}")
+        
 class FieldDataChangeHandler(DataChangeNotificationHandler):
     def __init__(self, mqtt_client: MqttClient, topic: str):
         self.mqtt_client = mqtt_client
@@ -109,3 +112,6 @@ class FieldDataChangeHandler(DataChangeNotificationHandler):
                 
         except asyncio.QueueEmpty:
             pass
+        
+    def status_change_notification(self, status):
+        print(f"Status change notification: {status}")

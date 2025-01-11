@@ -7,7 +7,6 @@ from asyncio import Task
 from state import state_data_schema
 from dash_extensions import WebSocket as FrontEndWebSocket
 import websockets
-from websockets.client import ClientConnection as BackEndWebSocket
 import os
 import json
 from backend import mqttClient
@@ -23,7 +22,6 @@ class PageStateManager:
             self.monitor_tasks: list[Task[Any]] = []
             self.global_monitor_tasks: list[Task[Any]] = []
             self.data = state_data_schema._data
-            self.ws_clients: dict[str, BackEndWebSocket] = {}
     
             self.initialized = True
     
@@ -47,66 +45,59 @@ class PageStateManager:
             }
         )
     
-    async def stop_monitoring(self):
+    async def stop_monitoring(self, page:str):
         """Stop all monitoring tasks."""
         logging.debug(f'[PSM] Stopping all monitoring tasks')
-        
         for task in self.monitor_tasks:
             try:
+                for topic in self.data.get(page, {}):
+                    self.mqttClient.client.unsubscribe(topic)
                 task.cancel()
                 await task  # Ensure the task is properly canceled
             except asyncio.CancelledError as e: # this is actually fine, it should give a CancelledError because it was cancelled
                 pass
         self.monitor_tasks = []
 
-    async def monitor_page(self, page: str):
-        """Called on page load. Stops all previous monitoring tasks and starts monitoring data for the requested page. 
-        When it receives a message on a topic, it emits this value over a WebSocket using the page and key for the pathname. For instance, when monitoring the `factory-overview` page, it will emit on `factory-overview/plc_version` and `factory-overview/turtlebot_current_state`.
-        On the clientside, a clientside callback listens on this websocket and stores the value in a dcc.Store, so it can be accessed by the GUI.
+    # async def monitor_page(self, page: str):
+    #     """Called on page load. Stops all previous monitoring tasks and starts monitoring data for the requested page. 
+    #     When it receives a message on a topic, it emits this value over a WebSocket using the page and key for the pathname. For instance, when monitoring the `factory-overview` page, it will emit on `factory-overview/plc_version` and `factory-overview/turtlebot_current_state`.
+    #     On the clientside, a clientside callback listens on this websocket and stores the value in a dcc.Store, so it can be accessed by the GUI.
 
-        Args:
-            page (str): Which page to poll/subscribe to monitoring data for.
-        """
+    #     Args:
+    #         page (str): Which page to poll/subscribe to monitoring data for.
+    #     """
         
-        is_global = page == 'global'
+    #     is_global = page == 'global'
         
-        # Cancel any existing monitoring tasks
-        if not is_global:
-            await self.stop_monitoring()
+    #     # Cancel any existing monitoring tasks
+    #     if not is_global:
+    #         await self.stop_monitoring()
         
-        logging.debug(f'[PSM] Monitoring page: {page} with data: {[k for k, s in self.data.get(page, {}).items()]}')
+    #     logging.debug(f'[PSM] Monitoring page: {page} with data: {[k for k, s in self.data.get(page, {}).items()]}')
 
-        # Create monitoring tasks for OPCUA and MQTT sources
-        for key, topic in self.data.get(page, {}).items():
-            async def callback(message, key=key): # Push MQTT data to frontend with websockets
-                try:
-                    logging.debug(f'[PSM] Received message: {json.dumps(message)}')
-                    await self.ws_clients.get(key).send(json.dumps(message))
-                    logging.debug(f'[PSM] Sent to FrontEnd WebSocket {key} via Backend WebSocket {self.ws_clients.get(key).id}')
-                except Exception as e:
-                    logging.error(f'[PSM] Failed to push external data to frontend with WebSocket: {e}.')
-                    logging.debug(self.ws_clients)
-            if is_global:
-                self.global_monitor_tasks.append(asyncio.create_task(
-                    self.mqttClient.subscribe(
-                        topic, 
-                        qos=1, 
-                        callback=callback
-                    )
-                ))
-            else: 
-                self.monitor_tasks.append(asyncio.create_task(
-                self.mqttClient.subscribe(
-                    topic,
-                    qos=1, 
-                    callback=callback
-                )
-            ))
+    #     # Create monitoring tasks for OPCUA and MQTT sources
+    #     for key, topic in self.data.get(page, {}).items():
+    #         if is_global:
+    #             self.global_monitor_tasks.append(asyncio.create_task(
+    #                 self.mqttClient.subscribe(
+    #                     topic, 
+    #                     qos=1, 
+    #                     callback=callback
+    #                 )
+    #             ))
+    #         else: 
+    #             self.monitor_tasks.append(asyncio.create_task(
+    #             self.mqttClient.subscribe(
+    #                 topic,
+    #                 qos=1, 
+    #                 callback=callback
+    #             )
+    #         ))
 
-        if is_global:
-            await asyncio.gather(*self.global_monitor_tasks)
-        else:
-            await asyncio.gather(*self.monitor_tasks)  # Await all tasks
+    #     if is_global:
+    #         await asyncio.gather(*self.global_monitor_tasks)
+    #     else:
+    #         await asyncio.gather(*self.monitor_tasks)  # Await all tasks
     
     async def send_data(self, page: str, key: str, data: dict):
         """Publish a data item to a source.
@@ -134,11 +125,8 @@ class PageStateManager:
         for (key, topic) in self.data.get(page, {}).items():
             url = f"ws://localhost:{os.getenv('WS_PORT')}/{key}"
             
-            frontendWS = FrontEndWebSocket(id=f'mqtt:{key}', url=url, message=None)
-            backendWS = await websockets.connect(url)
-            logging.debug(f"[PSM] Generated frontend WebSocket: id=mqtt:{key} on url=ws://localhost:{os.getenv('WS_PORT')}/{key}")
-            self.ws_clients[key] = backendWS # update registry so stuff can be sent to the clients
-            logging.debug(f"[PSM] WS_Clients: {[f'{key}:{ws.id}' for key, ws in self.ws_clients.items()]}")
+            frontendWS = FrontEndWebSocket(id={'source': 'mqtt', 'path': f'{key}'}, url=url, message=None)
+            logging.debug(f"[PSM] Generated frontend WebSocket: id={key} on url=ws://localhost:{os.getenv('WS_PORT')}/{key}")
             res += frontendWS
         
         return res

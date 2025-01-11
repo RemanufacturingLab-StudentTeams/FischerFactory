@@ -1,6 +1,9 @@
 from state import PageStateManager
-from dash import html, dcc
+from dash import html, dcc, callback, Input, Output, ALL
 from dash import page_registry, page_container
+from backend import MqttClient
+from common import RuntimeManager
+import os
 
 # Global layout for the app
 page_icons = {
@@ -13,7 +16,6 @@ page_icons = {
 async def layout():
     psm = PageStateManager()
     await psm.hydrate_page('global')
-    await psm.monitor_page('global')
     layout = html.Div(
         await psm.generate_websockets('global') +
         [
@@ -62,11 +64,56 @@ async def layout():
         className="wrapper",
     )
     
-    return layout
+    @callback(
+        [Output("mqtt-broker-status", "children"), Output("mqtt-broker-status", "style")],
+        Input("updater", "n_intervals"),
+    )
+    def update_status_mqtt(n_intervals):
+        client = MqttClient()
+        status_text = f"MQTT Broker at {os.getenv('MQTT_BROKER_IP')}: "
 
-layoutDebug = html.Div(
-    [
-        html.Button("debug", id="debug-button", n_clicks=0),
-        html.Div(children="no clicks", id="debug-div"),
-    ]
-)
+        if client.get_status():
+            status_text += "OK"
+            style = {
+                "backgroundColor": "green",
+                "color": "white",
+            }
+        elif client.get_reconnection_attempts() < 10:
+            status_text += (
+                f"Reconnecting... {client.get_reconnection_attempts()}/10 attempts"
+            )
+            style = {
+                "backgroundColor": "yellow",
+                "color": "black",
+            }
+        else:
+            status_text += "Disconnected"
+            style = {
+                "backgroundColor": "red",
+                "color": "white",
+            }
+
+        return status_text, style
+
+    @callback(
+        Output(
+            component_id={'source': 'ws', 'path': ALL}, 
+            component_property="send"
+        ),
+        Input("location", "href")
+    )
+    def switch_page(href: str):
+        import logging # bit weird to not put this import at the top of the page but the logger setup really needs to run first so ¯\_(ツ)_/¯
+        # page_name = pathname.lstrip('/') or 'factory-overview'
+        page_name = href.split('/')[-1].split('?')[0] or 'factory-overview'
+        
+        logging.debug(f"Switched to page: {page_name}")
+        
+        psm = PageStateManager()
+        rtm  = RuntimeManager()
+            
+        rtm.add_task(psm.hydrate_page(page_name))
+        
+        return 'connect' # send connect signal over WebSockets
+    
+    return layout
