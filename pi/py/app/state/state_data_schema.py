@@ -26,4 +26,3 @@ _data: dict[str, dict[str, str]] = {
         'stock' : 'relay/f/i/stock'
     }
 }
-

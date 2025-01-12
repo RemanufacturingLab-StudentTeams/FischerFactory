@@ -15,13 +15,11 @@ hbw_view = html.Div(
 
 @callback(
     Output('hbw-view-container', 'children'),
-    Input('mqtt:stock', 'message'),
-    State('mqtt:stock', 'state'),
+    Input({'source': 'mqtt', 'key': 'stock'}, 'message'),
     prevent_initial_call=True
 )
 def display_hbw(stock, state):    
     logging.debug(f'display_hbw called with {stock}')
-    logging.debug(f'WebSocket is in state {state}')
     
     if stock is None:
         raise PreventUpdate
