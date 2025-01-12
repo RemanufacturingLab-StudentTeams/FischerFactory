@@ -326,7 +326,6 @@ def display_queue(queue):
         + ([html.Tr("QUEUE FULL", className="queue-full-banner")] if queue_full else [])
     )
 
-
 @callback(
     Output("tracking", "children"), 
     Input({"source": "mqtt", "topic": "relay/f/i/track"}, "message"))
