@@ -7,7 +7,6 @@ import os, argparse
 from backend import mqttClient
 from threading import Thread
 from common import RuntimeManager
-from state import PageStateManager, state_data_schema
 from common import config
 import asyncio
 import websockets
@@ -41,12 +40,12 @@ def init_dash() -> Dash:
         "Dashboard customer": "fas fa-solid fa-cart-shopping",
         "Debug": "fa fa-bug",
     }
-
+    
     layout = html.Div(
         [
             FrontEndWebSocket(
-                id={'source': 'mqtt', 'key': 'stock'}, 
-                url="ws://localhost:8765/stock"
+                id={"source": "mqtt", "topic": "global"},
+                url="ws://localhost:8765/global" # I would LOVE to add a `os.getenv` in here, but if I do that for some reason it stops working. Thanks Plotly Dash.
             ),
             dcc.Location("location", refresh=True),
             html.Div(
@@ -133,9 +132,9 @@ def init_dash() -> Dash:
 
 
     @callback(
-        Output(component_id={"source": "mqtt", "key": ALL}, component_property="send"),
+        Output(component_id={"source": "mqtt", "topic": ALL}, component_property="send"),
         Input("location", "href"),
-        State(component_id={"source": "mqtt", "key": ALL}, component_property="id")
+        State(component_id={"source": "mqtt", "topic": ALL}, component_property="id")
     )
     def switch_page(href: str, websockets: list[str]):
         import logging  # bit weird to not put this import at the top of the page but the logger setup really needs to run first so ¯\_(ツ)_/¯
@@ -145,19 +144,13 @@ def init_dash() -> Dash:
 
         logging.debug(f"Switched to page: {page_name}")
 
-        psm = PageStateManager()
-        rtm = RuntimeManager()
-
-        rtm.add_task(psm.hydrate_page(page_name))
-        rtm.add_task(psm.monitor_page(page_name))
-
         return ["keepalive" for w in websockets]  # send keepalive signal over WebSockets
 
     app.layout = layout    
     
     return app
 
-connections: dict[ServerConnection] = {}
+connections: dict[str, ServerConnection] = {} # global variables, ew
 
 def start_ws():
     import os # Cannot put this on the top of the file because it needs to be imported after the main function loads the environment variables
@@ -166,18 +159,46 @@ def start_ws():
     
     async def connection_handler(conn: ServerConnection):
         """Handles WebSocket connections and messages."""
-        async for message in conn:
-            logging.debug(f"[WS_SERVER] Received: {message}")
+        try:
+            async for message in conn:
+                logging.debug(f"[WS_SERVER] Received: {message}")
+        except websockets.ConnectionClosed | websockets.ConnectionClosedError | websockets.ConnectionClosedOK:
+            logging.debug(f'[WS_SERVER] Client disconnected')
+            topic = [k for k, v in connections if v == conn][0]
+            mqttClient = MqttClient()
+            mqttClient.client.unsubscribe(topic)
+            connections.pop(topic)
     
     def request_handler(conn: ServerConnection, req: Request):
-        logging.debug(f'[WS_SERVER] Incoming request on path {req.path}')
-        # if connections.get(req.path) is None:
-        connections[req.path] = conn
-        psm = PageStateManager()
-        logging.debug(f'[WS_SERVER] Adding ServerConnection for {req.path}')
-            # already_connected = psm.connections.get(req.path)
-            # if already_connected is None:
-        psm.connections[req.path.lstrip('/')] = conn
+        topic = req.path.lstrip('/')
+        logging.debug(f'[WS_SERVER] Adding ServerConnection for {topic}')
+        connections[topic] = conn
+        
+        rtm = RuntimeManager()
+        mqttClient = MqttClient()
+        
+        if topic.startswith('relay'):
+            rtm.add_task( # hydrate
+                mqttClient.publish(
+                    os.getenv("MQTT_RELAY_TOPIC") + "/read",
+                    {
+                        "topics": [topic]
+                    }
+                )
+            )
+        
+        async def cb(msg, conn=conn, topic=topic):
+            logging.debug(f'[WS_SERVER] Received message on {topic}')
+            try:                
+                await conn.send(json.dumps(msg))
+            except Exception as e:
+                logging.error(f"[WS_SERVER] Failed to send message to frontend WebSocket {topic}: {e}")
+        rtm.add_task(
+            mqttClient.subscribe(
+                topic,
+                callback=cb
+            )
+        )
     
     async def run_server():
         logging.info(f"Starting WebSocket server on ws://localhost:{os.getenv('WS_PORT')}...")

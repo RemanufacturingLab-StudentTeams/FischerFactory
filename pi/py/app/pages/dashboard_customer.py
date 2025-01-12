@@ -12,37 +12,21 @@ from dash import (
     page_registry,
 )
 import dash_daq as daq
-from dash_extensions import WebSocket as FrontEndWebSocket
+from dash_extensions import WebSocket
 import logging
 from pages.components import hbw_view, display_hbw
-from state import PageStateManager
 from datetime import datetime, timezone
 from dash.exceptions import PreventUpdate
 from common import RuntimeManager
 import json
+import os
 
 layout = html.Div(
     [
-        FrontEndWebSocket(
-            id={"source": "mqtt", "key": "queue"},
-            url="ws://localhost:8765/queue",
-            message=None,
-        ),
-        FrontEndWebSocket(
-            id={"source": "mqtt", "key": "state_order"},
-            url="ws://localhost:8765/state_order",
-            message=None,
-        ),
-        FrontEndWebSocket(
-            id={"source": "mqtt", "key": "tracking"},
-            url="ws://localhost:8765/tracking",
-            message=None,
-        ),
-        FrontEndWebSocket(
-            id={"source": "mqtt", "key": "place_order"},
-            url="ws://localhost:8765/place_order",
-            message=None,
-        ),
+        *[WebSocket(
+            id={"source": "mqtt", "topic": topic},
+            url=f"ws://localhost:{os.getenv('MQTT_BROKER_PORT')}/{topic}",
+        ) for topic in ['relay/f/queue', 'relay/f/i/order', 'relay/f/i/track', 'relay/f/o/order']],
         dcc.Store(
             storage_type="memory", id="order-store"
         ),  # used to remember the orders the customer placed.
@@ -161,12 +145,12 @@ layout = html.Div(
     Output("place-order", "disabled"),
     Output("place-order", "title"),
     Input("order-color", "value"),
-    Input({"source": "mqtt", "key": "queue"}, "message"),
+    Input({"source": "mqtt", "topic": "relay/f/queue"}, "message"),
 )
 def validate_order_button(color_value, queue):
     if color_value is None:
         return True, "Disabled: please select a color."
-    psm = PageStateManager()
+    queue = json.loads(queue.get('data'))
     queue_full: bool = queue["queue"]["queueFull"]
     if queue_full:
         return True, "Disabled: Queue is full."
@@ -279,9 +263,10 @@ def hide_time_fields(order_baking, order_milling):
 
 @callback(
     Output("state-order-table", "children"), 
-    Input({"source": "mqtt", "key": "state_order"}, "message"))
+    Input({"source": "mqtt", "topic": "relay/f/i/order"}, "message"))
 def display_order(state_order):
-    psm = PageStateManager()
+    state_order= json.loads(state_order.get('data'))
+    
     ts = state_order["ts"]
     state = state_order["state"]
     color = state_order["type"]
@@ -299,9 +284,10 @@ def display_order(state_order):
 
 @callback(
     Output("order-queue-table", "children"), 
-    Input({"source": "mqtt", "key": "queue"}, "message"))
+    Input({"source": "mqtt", "topic": "relay/f/queue"}, "message"),
+    prevent_initial_call=True)
 def display_queue(queue):
-    psm = PageStateManager()
+    queue = json.loads(queue.get('data'))
     queue_index: int = queue["queueIndex"] or 0
     queue_full: bool = queue["queue"]["queueFull"] or False
 
@@ -343,11 +329,12 @@ def display_queue(queue):
 
 @callback(
     Output("tracking", "children"), 
-    Input({"source": "mqtt", "key": "tracking"}, "message"))
+    Input({"source": "mqtt", "topic": "relay/f/i/track"}, "message"))
 def display_tracking(tracking):
-    tracking = tracking.get("trackPuck")
     if not tracking:
         raise PreventUpdate
+    tracking = json.loads(tracking.get('data'))
+    tracking = tracking.get("trackPuck")
     return tracking
 
 

@@ -1,5 +1,4 @@
 from dash import html, callback, Input, Output, State
-from state import PageStateManager
 from dash.exceptions import PreventUpdate
 import logging
 

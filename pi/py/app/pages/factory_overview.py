@@ -1,8 +1,7 @@
 import dash
 from dash import Dash, html, Input, Output, State, callback, dcc, no_update
 from dash.exceptions import PreventUpdate
-from dash_extensions import WebSocket as FrontEndWebSocket
-from state import PageStateManager
+from dash_extensions import WebSocket
 import asyncio
 import logging
 import dash_daq as daq
@@ -14,14 +13,13 @@ import json
 
 layout = html.Div(
     [
-        FrontEndWebSocket(
-            id={"source": "mqtt", "key": "setup"},
-            url="ws://localhost:8765/setup"
-        ),
-        FrontEndWebSocket(
-            id={"source": "mqtt", "key": "turtlebot_current_state"},
-            url="ws://localhost:8765/turtlebot_current_state"
-        ),
+        *[WebSocket(
+            id={"source": "mqtt", "topic": topic},
+            url=f"ws://localhost:8765/{topic}"
+        ) for topic in [
+            'relay/f/setup', 'Turtlebot/CurrentState'
+        ]],
+        
         html.Link(href="../assets/overview.css", rel="stylesheet"),
         html.Div(id="dummy"),
         html.Div(
@@ -226,15 +224,13 @@ layout = html.Div(
 
 @callback(
     Output("plc-version", "children"), 
-    Input({"source": "mqtt", "key": "setup"}, "message"))
+    Input({"source": "mqtt", "topic": "relay/f/setup"}, "message"))
 def display_plc_version(setup):
-
 
     if setup is None:
         raise PreventUpdate
 
     setup = json.loads(setup.get('data'))
-    logging.warning(f'Display received {setup}')
     return str(setup.get("versionSPS"))
 
 
