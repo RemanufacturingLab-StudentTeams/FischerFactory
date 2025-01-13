@@ -139,9 +139,10 @@ async def listen_for_read_requests(mqtt_client: MqttClient):
         payload = msg.payload.decode()
         try:
             payload = json.loads(payload)
-            for topic in payload['topics']:
-                print(f'Read request for state on topic {topic}')
-                push_mqtt(topic, mqtt_client)
+            for requested_topic in payload['topics']:
+                requested_topic = requested_topic.lstrip('relay')
+                print(f'Read request for state on topic {requested_topic}')
+                push_mqtt(requested_topic, mqtt_client)
         except Exception as e:
             print(f'Error parsing payload {payload} to read topics: {e}.')
             pass
