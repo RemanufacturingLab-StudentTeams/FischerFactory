@@ -101,7 +101,7 @@ class MqttClient:
             logging.error(f"Failed to connect, return code {rc}")
 
     def on_message(self, client, userdata, msg):
-        logging.info(f"[MQTTCLIENT] Message received from {msg.topic}: {msg.payload.decode()}")
+        logging.debug(f"[MQTTCLIENT] Message received from {msg.topic}: {msg.payload.decode()}")
 
     def on_disconnect(self, client, userdata, rc):
         logging.info("[MQTTCLIENT] Disconnected from MQTT broker")
@@ -111,7 +111,7 @@ class MqttClient:
         logging.info(f"[MQTTCLIENT] Message {mid} published successfully")
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        logging.info(f"[MQTTCLIENT] Subscribed to topic, mid: {mid}, qos: {granted_qos}")
+        logging.debug(f"[MQTTCLIENT] Subscribed to topic, mid: {mid}, qos: {granted_qos}")
             
     def get_status(self) -> bool:
         return self.connection_status

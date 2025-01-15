@@ -56,20 +56,37 @@ async def get_datatype_as_str(node: Node) -> str:
 def value_to_ua(value: any, data_type: str) -> object:
     """Convert the input value to the correct UA type."""
     if data_type == 'Boolean':
-        return ua.DataValue(ua.Variant(value, ua.VariantType.Boolean))
+        try:
+            return ua.DataValue(ua.Variant(bool(value), ua.VariantType.Boolean))
+        except Exception as e:
+            raise ValueError(f'Value {value} was expected to be {data_type}, but was: {type(value)}: {e}')
     elif data_type == 'Int16':
-        return ua.DataValue(ua.Variant(value, ua.VariantType.Int16))
+        try:
+            return ua.DataValue(ua.Variant(int(value), ua.VariantType.Int16))
+        except Exception as e:
+            raise ValueError(f'Value {value} was expected to be {data_type}, but was: {type(value)}: {e}')
     elif data_type == 'Int32':
-        return ua.DataValue(ua.Variant(value, ua.VariantType.Int32))
+        try:
+            return ua.DataValue(ua.Variant(int(value), ua.VariantType.Int32))
+        except Exception as e:
+            raise ValueError(f'Value {value} was expected to be {data_type}, but was: {type(value)}: {e}')
     elif data_type == 'Float':
-        return ua.DataValue(ua.Variant(value, ua.VariantType.Float))
+        try:
+            return ua.DataValue(ua.Variant(float(value), ua.VariantType.Float))
+        except Exception as e:
+            raise ValueError(f'Value {value} was expected to be {data_type}, but was: {type(value)}: {e}')
     elif data_type == 'DateTime':
         if isinstance(value, datetime):
             return ua.DataValue(ua.Variant(value, ua.VariantType.DateTime))
+        elif isinstance(value, str):
+            try:
+                return ua.DataValue(ua.Variant(datetime.strptime(value[:-1], "%Y-%m-%dT%H:%M:%S.%f"), ua.VariantType.DateTime))
+            except Exception as e:
+                raise ValueError(f"Invalid datetime string format for {value}")
         else:
-            raise ValueError(f"Invalid datetime format for {data_type}")
+            raise ValueError(f"Invalid datetime format for {data_type}: {value}")
     elif data_type == 'String':
-        return ua.DataValue(ua.Variant(value, ua.VariantType.String))
+        return ua.DataValue(ua.Variant(str(value), ua.VariantType.String))
     elif data_type == 'Word':  # 16 bits
         return int(value) & 0xFFFF
     else:

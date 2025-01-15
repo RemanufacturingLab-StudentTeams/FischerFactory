@@ -115,36 +115,31 @@ async def relay_mqtt_to_opcua(opcua_client: OPCUAClient):
         leaf_node_id = mapping.TO
         logging.info(f'[MQTT->OPCUA] Mapping {topic} to {leaf_node_id}')
         
-        async def send_to_opcua(msg, opcua_client=opcua_client, leaf_node_id=leaf_node_id, topic=topic):
-            payload = msg.payload.decode()
-            logging.debug(f'[MQTT->OPCUA] Received payload {payload} on topic {topic}')
+        async def send_to_opcua(payload, opcua_client=opcua_client, leaf_node_id=leaf_node_id, topic=topic) -> None:
             try:
-                payload = json.loads(payload)
+                logging.debug(f'[MQTT->OPCUA] Received payload {payload} on topic {topic}')
                 if not isinstance(payload, dict):
-                    raise ValueError(f'Payload of topic {topic} was expected to be a dict, but it was {payload_dict}')
+                    raise ValueError(f'Payload of topic {topic} was expected to be a dict, but it was {payload}')
                 
                 leaf_node_id = 'ns=3;s=' + mapping.TO
                 node = opcua_client.get_node(leaf_node_id)
                 fields = await node.get_children()
-                nodes = []
+                nodes_to_send: list[Node] = []
                 values = []
                 for field in fields:
-                    field = name_to_mqtt((await field.read_display_name()).Text)
-                    logging.debug(f'[MQTT->OPCUA] Trying to find payload key for {field}')
-                    if field in payload.keys():
-                        logging.debug(f'[MQTT->OPCUA] Found payload key for {field}, sending to node.')
-                        nodes.append(field)
-                        values.append(value_to_ua(payload[field], get_datatype_as_str(field)))
+                    field_name = name_to_mqtt((await field.read_display_name()).Text)
+                    if field_name in payload.keys():
+                        logging.debug(f'[MQTT->OPCUA] Found payload key for {field_name}, sending to node.')
+                        nodes_to_send.append(field)
+                        values.append(value_to_ua(payload[field_name], (await get_datatype_as_str(field))))
                 
-                await opcua_client.write_values(nodes, values)
+                await opcua_client.write_values(nodes_to_send, values)
+                logging.info(f'[MQTT->OPCUA] Sent values {values} to OPCUA.')
             except Exception as e:
-                logging.error(f'[MQTT->OPCUA] Could not process payload {msg} on topic {topic} for leaf node {leaf_node_id}')
+                logging.error(f'[MQTT->OPCUA] Could not process payload {payload} on topic {topic} for leaf node {leaf_node_id}: {e}')
                 
-        rtm = RuntimeManager()
-        rtm.add_task(
-            mqtt_client.subscribe(topic, callback=send_to_opcua)
-        )
         
+        mqtt_client.subscribe(topic, callback=send_to_opcua)
     await asyncio.Future()
 
 

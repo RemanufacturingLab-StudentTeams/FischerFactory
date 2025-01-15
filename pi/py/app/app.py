@@ -44,8 +44,8 @@ def init_dash() -> Dash:
     layout = html.Div(
         [
             FrontEndWebSocket(
-                id={"source": "mqtt", "topic": "global"},
-                url="ws://localhost:8765/global" # I would LOVE to add a `os.getenv` in here, but if I do that for some reason it stops working. Thanks Plotly Dash.
+                id={"source": "mqtt", "topic": "relay/f/i/stock"},
+                url="ws://localhost:8765/relay/f/i/stock" # I would LOVE to add a `os.getenv` in here, but if I do that for some reason it stops working. Thanks Plotly Dash.
             ),
             dcc.Location("location", refresh=True),
             html.Div(
@@ -190,7 +190,7 @@ def start_ws():
         async def cb(msg, conn=conn, topic=topic):
             logging.debug(f'[WS_SERVER] Received message on {topic}')
             try:                
-                await conn.send(json.dumps(msg))
+                await conn.send(msg)
             except Exception as e:
                 logging.error(f"[WS_SERVER] Failed to send message to frontend WebSocket {topic}: {e}")
         rtm.add_task(

@@ -21,7 +21,7 @@ class MqttClient:
         if not hasattr(self, 'initialized'):  # Prevent reinitialization
             self.broker_ip = os.getenv('MQTT_BROKER_IP')
             self.broker_port = int(os.getenv('MQTT_BROKER_PORT', 1883))
-            self.client_id = os.getenv('MQTT_CLIENT_ID', 'mqtt_client')
+            self.client_id = os.getenv('MQTT_USERNAME', 'dash')
             
             # MQTT Client setup
             self.client = paho_client.Client(client_id=self.client_id)
@@ -61,9 +61,6 @@ class MqttClient:
     async def attempt_reconnection(self):
         await asyncio.sleep(self.reconnect_interval)
         await self.connect()
-
-    def disconnect(self):
-        logging.info("[MQTTCLIENT] Disconnected from MQTT broker")
 
     async def publish(self, topic, payload, qos=1):
         # convert payload to JSON

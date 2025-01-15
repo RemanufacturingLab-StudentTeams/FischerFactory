@@ -20,13 +20,14 @@ from dash.exceptions import PreventUpdate
 from common import RuntimeManager
 import json
 import os
+from backend import MqttClient
 
 layout = html.Div(
     [
         *[WebSocket(
             id={"source": "mqtt", "topic": topic},
-            url=f"ws://localhost:{os.getenv('MQTT_BROKER_PORT')}/{topic}",
-        ) for topic in ['relay/f/queue', 'relay/f/i/order', 'relay/f/i/track', 'relay/f/o/order']],
+            url=f"ws://localhost:8765/{topic}",
+        ) for topic in ['relay/f/queue', 'relay/f/i/order', 'relay/f/i/track', 'relay/f/i/order']],
         dcc.Store(
             storage_type="memory", id="order-store"
         ),  # used to remember the orders the customer placed.
@@ -150,8 +151,10 @@ layout = html.Div(
 def validate_order_button(color_value, queue):
     if color_value is None:
         return True, "Disabled: please select a color."
+    if queue is None:
+        raise PreventUpdate
     queue = json.loads(queue.get('data'))
-    queue_full: bool = queue["queue"]["queueFull"]
+    queue_full: bool = queue["queueFull"]
     if queue_full:
         return True, "Disabled: Queue is full."
     return False, "Click to place your order."
@@ -207,18 +210,20 @@ def place_order(
         """
     )
 
-    psm = PageStateManager()
     rtm = RuntimeManager()
+    mqtt_client = MqttClient()
     rtm.add_task(
-        psm.send_data(
-            page="dashboard-customer",
-            data={
-                "s_type": color_picker_value.upper(),  # type of puck (i.e., colour)
-                "order_do_oven": baking,
-                "order_oven_time": baking_time if baking else 0,
-                "order_do_saw": milling,
-                "order_saw_time": milling_time if milling else 0,
-                "order_ldt_ts": datetime.now(),
+        mqtt_client.publish(
+            topic="relay/f/o/order",
+            payload={
+                "type": color_picker_value.upper(),  # type of puck (i.e., colour)
+                "workpieceParameters": {
+                    "doOven": baking,
+                    "ovenTime": baking_time if baking else 0,
+                    "doSaw": milling,
+                    "sawTime": milling_time if milling else 0,
+                },
+                "ts": datetime.now(),
             },
         )
     )
@@ -265,6 +270,9 @@ def hide_time_fields(order_baking, order_milling):
     Output("state-order-table", "children"), 
     Input({"source": "mqtt", "topic": "relay/f/i/order"}, "message"))
 def display_order(state_order):
+    if state_order is None:
+        raise PreventUpdate
+    
     state_order= json.loads(state_order.get('data'))
     
     ts = state_order["ts"]
@@ -273,7 +281,7 @@ def display_order(state_order):
 
     patch = Patch()
     if ts:
-        patch[1]["props"]["children"] = ts.strftime("%m/%d/%Y, %H:%M:%S")
+        patch[1]["props"]["children"] = ts
     if state:
         patch[3]["props"]["children"] = state
     if color:
@@ -287,9 +295,12 @@ def display_order(state_order):
     Input({"source": "mqtt", "topic": "relay/f/queue"}, "message"),
     prevent_initial_call=True)
 def display_queue(queue):
+    if queue is None:
+        raise PreventUpdate
+    
     queue = json.loads(queue.get('data'))
     queue_index: int = queue["queueIndex"] or 0
-    queue_full: bool = queue["queue"]["queueFull"] or False
+    queue_full: bool = queue["queueFull"] or False
 
     return (
         [
@@ -330,8 +341,9 @@ def display_queue(queue):
     Output("tracking", "children"), 
     Input({"source": "mqtt", "topic": "relay/f/i/track"}, "message"))
 def display_tracking(tracking):
-    if not tracking:
+    if tracking is None:
         raise PreventUpdate
+    
     tracking = json.loads(tracking.get('data'))
     tracking = tracking.get("trackPuck")
     return tracking

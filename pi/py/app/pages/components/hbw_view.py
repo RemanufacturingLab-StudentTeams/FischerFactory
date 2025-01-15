@@ -1,6 +1,7 @@
 from dash import html, callback, Input, Output, State
 from dash.exceptions import PreventUpdate
 import logging
+import json
 
 hbw_view = html.Div(
     [
@@ -14,14 +15,14 @@ hbw_view = html.Div(
 
 @callback(
     Output('hbw-view-container', 'children'),
-    Input({'source': 'mqtt', 'key': 'stock'}, 'message'),
+    Input({'source': 'mqtt', 'topic': 'relay/f/i/stock'}, 'message'),
     prevent_initial_call=True
 )
-def display_hbw(stock, state):    
-    logging.debug(f'display_hbw called with {stock}')
-    
+def display_hbw(stock):        
     if stock is None:
         raise PreventUpdate
+    
+    stock = json.loads(stock.get('data'))
     
     buttons = [
         (
