@@ -8,16 +8,26 @@ from asyncua.client.client import Subscription
 from paho.mqtt import client as mqtt_client
 from paho.mqtt.client import Client as MqttClient
 from dotenv import load_dotenv
-import os
+import os, argparse
+import pprint
 from mappings import mappings, special_rules
 from datetime import datetime
 from helper import name_to_mqtt, value_to_ua, get_datatype_as_str
 from opcua_datachange_handler import LeafDataChangeHandler, FieldDataChangeHandler
 from typing import Optional
 from state import push_mqtt
+from common import MqttClient, singleton, RuntimeManager, setup
 
 # Load environment variables
-load_dotenv()
+os.environ.clear()
+
+load_dotenv(dotenv_path=f".env")
+print(f"Running with environment variables:")
+pprint.pprint(os.environ.copy())
+setup()
+
+import logging
+
 PLC_IP = os.getenv('PLC_IP')
 PLC_PORT = int(os.getenv('PLC_PORT'))
 MQTT_BROKER_IP = os.getenv('MQTT_BROKER_IP')
@@ -32,10 +42,10 @@ async def add_opcua_client():
     async def connect_opcua(opcua_client: OPCUAClient):
         try:
             await opcua_client.connect()
-            print(f'Connected to PLC OPCUA server at <{PLC_IP}:{PLC_PORT}>')
+            logging.info(f'Connected to PLC OPCUA server at <{PLC_IP}:{PLC_PORT}>')
         except Exception as e:
-            print(f'Failed to connect to PLC at <{PLC_IP}:{PLC_PORT}>: {e}')
-            print('Retrying a second...')
+            logging.warning(f'Failed to connect to PLC at <{PLC_IP}:{PLC_PORT}>: {e}')
+            logging.warning('Retrying in a second...')
             await asyncio.sleep(1)
             await connect_opcua(opcua_client)
     await connect_opcua(new_client)
@@ -44,18 +54,19 @@ async def opcua_create_subscription_safe(handler: LeafDataChangeHandler | FieldD
     try:
         return await opcua_clients[-1].create_subscription(period=1000, handler=handler)
     except BadTooManySubscriptions:
-        print('OPCUA Client has too many subscriptions, making another one...')
+        logging.warning('OPCUA Client has too many subscriptions, making another one...')
         await add_opcua_client()
         return await opcua_clients[-1].create_subscription(period=1000, handler=handler)
         
-async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient], mqtt_client: mqtt_client.Client):
+async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient]):
+    mqtt_client = MqttClient()
     async def subscribe_recursive(node: Node, base_topic: str, EXCLUDE:Optional[list[str]]=None):
         node_name = (await node.read_display_name()).Text
-        print(f"[MQTT_RELAY] Recursively subscribing to '{node_name}', mapping to topic '{base_topic}'")
+        logging.info(f"[MQTT_RELAY] Recursively subscribing to '{node_name}', mapping to topic '{base_topic}'")
         children = await node.get_children()
         has_grandchildren = len(await children[0].get_children()) != 0
         if not has_grandchildren:  # Leaf node, children is payload
-            print(f'Node {node_name} is leaf')
+            logging.debug(f'[OPCUA->MQTT] Node {node_name} is leaf')
             if (await node.read_node_class()) == 2: 
                 handler = LeafDataChangeHandler(mqtt_client, base_topic, EXCLUDE=EXCLUDE)
                 subscription = await opcua_create_subscription_safe(handler)
@@ -65,10 +76,10 @@ async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient], mqtt_client: mqt
             else: # Sometimes a leaf node is not a UAVariable type, which means it cannot be subscribed to. In this case, subscribe to the fields individually 
                 for field in (await node.get_children()):
                     field_name = (await field.read_display_name()).Text
-                    print(f'Found independent field {field_name}')
+                    logging.debug(f'[OPCUA->MQTT] Found independent field {field_name}')
                     if EXCLUDE:
                         if (field_name) in EXCLUDE:
-                            print(f'Skipping explicitly excluded field {field_name}')
+                            logging.debug(f'[OPCUA->MQTT] Skipping explicitly excluded field {field_name}')
                             continue
                     handler = FieldDataChangeHandler(mqtt_client, base_topic)
                     subscription = await opcua_create_subscription_safe(handler)
@@ -77,106 +88,101 @@ async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient], mqtt_client: mqt
         else:  # Non-leaf node (i.e., it has grandchildren), recurse
             for child in children:
                 child_name = (await child.read_display_name()).Text
-                print(f'Found child {child_name}')
+                logging.debug(f'[OPCUA->MQTT] Found child {child_name}')
                 if EXCLUDE:
                     if child_name in EXCLUDE:
-                        print(f'Skipping explicitly excluded child {child_name}')
+                        logging.debug(f'[OPCUA->MQTT] Skipping explicitly excluded child {child_name}')
                         continue
                 if not child_name:
-                    raise ValueError(f'Child {child} has no display name.')
+                    raise ValueError(f'[OPCUA->MQTT] Child {child} has no display name.')
                 mqtt_sub_topic = f"{base_topic}/{name_to_mqtt(child_name)}"
-                print(f'Generated subtopic: {mqtt_sub_topic} from {child_name}')
+                logging.debug(f'[OPCUA->MQTT] Generated subtopic: {mqtt_sub_topic} from {child_name}')
                 await subscribe_recursive(child, mqtt_sub_topic, EXCLUDE=EXCLUDE)
 
     async with opcua_clients[-1] as opcua_client:
         for mapping in mappings:
-            print(f'[MQTT_RELAY] Mapping {mapping.FROM} to {mapping.TO}')
+            logging.debug(f'[OPCUA->MQTT] Mapping {mapping.FROM} to {mapping.TO}')
             if mapping.FROM.startswith('"'):  # OPC UA -> MQTT
                 root_node: Node = opcua_client.get_node('ns=3;s=' + mapping.FROM)
                 base_topic = mapping.TO
                 await subscribe_recursive(root_node, base_topic, EXCLUDE=mapping.EXCLUDE)
         await asyncio.Future()
 
-async def relay_mqtt_to_opcua(opcua_client: OPCUAClient, mqtt_client: MqttClient):
-    async def handle_message(opcua_client: OPCUAClient, topic, payload):
-        for mapping in mappings:
-            if mapping.FROM == topic:
-                node_id = 'ns=3;s=' + mapping.TO
-                payload_dict = json.loads(payload)
-                if not isinstance(payload_dict, dict):
+async def relay_mqtt_to_opcua(opcua_client: OPCUAClient):
+    mqtt_client = MqttClient()
+    for mapping in mappings:
+        topic = mapping.FROM
+        leaf_node_id = mapping.TO
+        logging.info(f'[MQTT->OPCUA] Mapping {topic} to {leaf_node_id}')
+        
+        async def send_to_opcua(msg, opcua_client=opcua_client, leaf_node_id=leaf_node_id, topic=topic):
+            payload = msg.payload.decode()
+            logging.debug(f'[MQTT->OPCUA] Received payload {payload} on topic {topic}')
+            try:
+                payload = json.loads(payload)
+                if not isinstance(payload, dict):
                     raise ValueError(f'Payload of topic {topic} was expected to be a dict, but it was {payload_dict}')
-                node = opcua_client.get_node(node_id)
+                
+                leaf_node_id = 'ns=3;s=' + mapping.TO
+                node = opcua_client.get_node(leaf_node_id)
                 fields = await node.get_children()
                 nodes = []
                 values = []
                 for field in fields:
-                    payload_key = name_to_mqtt(await field.read_display_name())
-                    if payload_key in payload_dict.keys():
+                    field = name_to_mqtt((await field.read_display_name()).Text)
+                    logging.debug(f'[MQTT->OPCUA] Trying to find payload key for {field}')
+                    if field in payload.keys():
+                        logging.debug(f'[MQTT->OPCUA] Found payload key for {field}, sending to node.')
                         nodes.append(field)
-                        values.append(value_to_ua(payload_dict[payload_key], get_datatype_as_str(field)))
+                        values.append(value_to_ua(payload[field], get_datatype_as_str(field)))
                 
                 await opcua_client.write_values(nodes, values)
-
-    def on_message(client, userdata, msg):
-        loop = asyncio.get_event_loop()
-        run_coroutine_threadsafe(
-            handle_message(opcua_client, msg.topic, msg.payload),
-            loop
-        )
+            except Exception as e:
+                logging.error(f'[MQTT->OPCUA] Could not process payload {msg} on topic {topic} for leaf node {leaf_node_id}')
                 
-    async with opcua_client:
-        mqtt_client.on_message = on_message
-        mqtt_client.subscribe([
-            (mapping.FROM, 0) for mapping in mappings if not mapping.FROM.startswith('"')
-        ])
+        rtm = RuntimeManager()
+        rtm.add_task(
+            mqtt_client.subscribe(topic, callback=send_to_opcua)
+        )
+        
+    await asyncio.Future()
 
-async def listen_for_read_requests(mqtt_client: MqttClient):
+
+async def listen_for_read_requests():
     """This function listens to a special topic called 'read', which accepts a list of topics. This function will then try to re-publish the stored state for those topics, if it exists. 
     """    
     topic = 'relay/read'
-    @mqtt_client.topic_callback(topic)
-    def try_push(client, userdata, msg):
+    mqtt_client = MqttClient()
+    
+    def try_push(msg):
         payload = msg.payload.decode()
         try:
             payload = json.loads(payload)
             for requested_topic in payload['topics']:
                 requested_topic = requested_topic.lstrip('relay')
                 print(f'Read request for state on topic {requested_topic}')
-                push_mqtt(requested_topic, mqtt_client)
+                push_mqtt(requested_topic)
         except Exception as e:
-            print(f'Error parsing payload {payload} to read topics: {e}.')
+            logging.error(f'Error parsing payload {payload} to read topics: {e}.')
             pass
     
-    mqtt_client.message_callback_add(topic, callback=try_push)
-    mqtt_client.subscribe(topic=topic)
+    mqtt_client.subscribe(topic=topic, callback=try_push)
         
     await asyncio.Future()
 
-async def main():
+async def main():    
     # OPC UA Client
     await add_opcua_client()
-
-    client = MqttClient()
-    client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
-    async def connect_mqtt() -> MqttClient:
-        try:
-            client.connect(MQTT_BROKER_IP, MQTT_BROKER_PORT)
-            print(f'Connected to MQTT broker at <{MQTT_BROKER_IP}:{MQTT_BROKER_PORT}>')
-            return client
-        except Exception as e:
-            print(f'Failed to connect to MQTT broker at <{MQTT_BROKER_IP}:{MQTT_BROKER_PORT}>: {e}')
-            await asyncio.sleep(1)
-            return await connect_mqtt()
     
     # MQTT Client
-    mqtt_client = await connect_mqtt()
-    mqtt_client.loop_start()
+    client = MqttClient()
+    await client.connect()
 
     # Tasks
     await asyncio.gather(
-        relay_opcua_to_mqtt(opcua_clients, mqtt_client),
-        # relay_mqtt_to_opcua(opcua_client, mqtt_client),
-        listen_for_read_requests(mqtt_client)
+        relay_opcua_to_mqtt(opcua_clients),
+        relay_mqtt_to_opcua(opcua_clients[0]),
+        listen_for_read_requests()
     )
 
 if __name__ == "__main__":

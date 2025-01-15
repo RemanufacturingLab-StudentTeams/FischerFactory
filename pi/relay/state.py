@@ -1,4 +1,4 @@
-from paho.mqtt.client import Client as MqttClient
+from common import MqttClient
 import json
 from datetime import datetime, date
 
@@ -17,7 +17,8 @@ def partial_state_is_leaf(d): # check that a dict does not contain any other dic
     
     return not any(is_topic(k) for k in d.keys())
 
-def push_mqtt(topic: str, mqtt_client: MqttClient):
+def push_mqtt(topic: str):
+    mqtt_client = MqttClient()
     """Emits data on this topic, if it is a leaf, or on all its subtopics, if not.
 
     Args:
@@ -31,12 +32,12 @@ def push_mqtt(topic: str, mqtt_client: MqttClient):
         if partial_state is None:
             print(f'!!ERROR!! Could not access {topic_part} while trying to access {topic} in state {state}')
     
-    print(f'Sending partial state: {partial_state} over topic {topic}')
+    print(f"Sending partial state: {partial_state} over topic {'relay/' + topic}")
     if partial_state_is_leaf(partial_state):
         mqtt_client.publish(topic='relay/' + topic, payload=json.dumps(partial_state, default=_serialize_fallback))
     else:
         for subtopic in partial_state.keys():
-            push_mqtt(f'{topic}/{subtopic}', mqtt_client=mqtt_client)
+            push_mqtt(f'{topic}/{subtopic}')
     
 def push_opcua():
     #!TODO

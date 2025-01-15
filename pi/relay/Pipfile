@@ -4,11 +4,16 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-asyncua = "*"
-paho-mqtt = "*"
+opcua = "*"
 python-dotenv = "*"
+asyncua = "1.1.5"
+paho-mqtt = "*"
+colorama = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.10"
+python_version = "3.12"
+
+[pipenv]
+allow_prereleases = true

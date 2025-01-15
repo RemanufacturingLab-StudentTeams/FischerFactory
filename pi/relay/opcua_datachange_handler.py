@@ -44,7 +44,7 @@ class LeafDataChangeHandler(DataChangeNotificationHandler):
             print(f'Added to partial state {name}: {(await get_datatype_as_str(child))}')
             self.partial_state[name] = await _read_value_nested(child)
         print(self.partial_state)
-        push_mqtt(self.topic, self.mqtt_client)
+        push_mqtt(self.topic)
     
     def datachange_notification(self, node: Node, value, data: DataChangeNotif) -> None:
         self.queue.put_nowait([node, value, data])
@@ -67,7 +67,7 @@ class LeafDataChangeHandler(DataChangeNotificationHandler):
                             continue
                     name = name_to_mqtt(name)
                     self.partial_state[(name_to_mqtt(name=name))] = await _read_value_nested(child)
-                push_mqtt(self.topic, self.mqtt_client)
+                push_mqtt(self.topic)
                 
         except asyncio.QueueEmpty:
             pass
@@ -93,7 +93,7 @@ class FieldDataChangeHandler(DataChangeNotificationHandler):
         name = name_to_mqtt((await node.read_display_name()).Text)
         print(f'Added to partial state {name}: {(await get_datatype_as_str(node))}')
         self.partial_state[name] = await _read_value_nested(node)
-        push_mqtt(self.topic, self.mqtt_client)
+        push_mqtt(self.topic)
     
     def datachange_notification(self, node: Node, value, data: DataChangeNotif) -> None:
         self.queue.put_nowait([node, value, data])
@@ -108,7 +108,7 @@ class FieldDataChangeHandler(DataChangeNotificationHandler):
                 value = await node.read_value()
                 
                 self.partial_state[name] = await _read_value_nested(node)
-                push_mqtt(self.topic, self.mqtt_client)
+                push_mqtt(self.topic)
                 
         except asyncio.QueueEmpty:
             pass
