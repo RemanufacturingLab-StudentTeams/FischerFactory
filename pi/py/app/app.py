@@ -13,8 +13,11 @@ import websockets
 from websockets.asyncio.server import Server as WebSocketServer
 from websockets.asyncio.server import ServerConnection
 from websockets.http11 import Request
+from websockets import Origin
 from threading import Thread
 import json
+import flask_cors
+from datetime import date, datetime
 
 def init_dash() -> Dash:
     app = Dash(__name__,
@@ -25,8 +28,11 @@ def init_dash() -> Dash:
             "https://cdn.socket.io/4.0.0/socket.io.min.js"
         ],
         use_pages=True,
-        prevent_initial_callbacks=True,
+        prevent_initial_callbacks=True
         )    
+    
+    server = app.server
+    flask_cors.CORS(server)
     
     from dash import page_registry, page_container
     from backend import MqttClient
@@ -187,10 +193,19 @@ def start_ws():
                 )
             )
         
-        async def cb(msg, conn=conn, topic=topic):
+        async def cb(msg: dict, conn=conn, topic=topic):
             logging.debug(f'[WS_SERVER] Received message on {topic}')
-            try:                
-                await conn.send(msg)
+            if msg.get('ts'): # Filter out midnight times, which the PLC ues as a default when it has no time data sometimes
+                t = None
+                try:
+                    t = datetime.strptime(msg['ts'], '%Y-%m-%dT%H:%M:%S.%f%z').time()
+                except Exception:
+                    t = datetime.strptime(msg['ts'], '%Y-%m-%dT%H:%M:%S%z').time()
+                if (t.hour == 0) and (t.minute == 0) and (t.second == 0):
+                    msg['ts'] = ''
+            try:
+                await conn.send(json.dumps(msg))
+                logging.debug(f'[WS_SERVER] Data from {topic} sent to frontend.')
             except Exception as e:
                 logging.error(f"[WS_SERVER] Failed to send message to frontend WebSocket {topic}: {e}")
         rtm.add_task(

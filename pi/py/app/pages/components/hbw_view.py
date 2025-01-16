@@ -27,14 +27,13 @@ def display_hbw(stock):
     buttons = [
         (
             html.Div(
-                stock['stockItem'][f'{x},{y}']['id'],
-                className='puck-' + stock['stockItem'][f'{x},{y}']['type'].lower() # class names will become 'puck-red', 'puck-blue', 'puck-white' or 'empty'
+                stock['stockItem'][i]['id'],
+                className='puck-' + stock['stockItem'][i]['type'].lower() # class names will become 'puck-red', 'puck-blue', 'puck-white' or 'empty'
             )
-            if stock['stockItem'][f'{x},{y}'].get('type', False)
+            if stock['stockItem'][i].get('type', False)
             else html.Div(className='puck-empty')
         )
-            for x in range(3)
-            for y in range(3)
+            for i in range(9)
     ]
     
     return [

@@ -16,6 +16,7 @@ paho-mqtt = "*"
 colorama = "*"
 dash-extensions = "*"
 websockets = "*"
+flask-cors = "*"
 
 [dev-packages]
 
