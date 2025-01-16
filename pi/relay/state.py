@@ -6,11 +6,6 @@ state = {
     # eg: {'f': {'i': {'order': {ts: <Date>, state: 'IN_PROCESS', type: 'RED'}}}}
 }
 
-def _serialize_fallback(obj):
-    if isinstance(obj, (date, datetime)):
-        return obj.isoformat()
-    raise TypeError(f'Type {type(obj)} is not serializable')
-
 def partial_state_is_leaf(d): # check that a dict does not contain any other dicts or lists
     def is_topic(k: str):
         return k.startswith('/')
@@ -34,7 +29,7 @@ def push_mqtt(topic: str):
     
     print(f"Sending partial state: {partial_state} over topic {'relay/' + topic}")
     if partial_state_is_leaf(partial_state):
-        mqtt_client.publish(topic='relay/' + topic, payload=json.dumps(partial_state, default=_serialize_fallback))
+        mqtt_client.publish(topic='relay/' + topic, payload=partial_state)
     else:
         for subtopic in partial_state.keys():
             push_mqtt(f'{topic}/{subtopic}')

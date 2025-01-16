@@ -15,6 +15,11 @@ async def _read_value_nested(node: Node): # Reads the value of a potentially nes
             child_name = (await child.read_display_name()).Text
             res[name_to_mqtt(child_name)] = await _read_value_nested(child)
         return res
+    elif dt ==  'Array':
+        res = []
+        for child in (await node.get_children()):
+            res.append(await _read_value_nested(child))
+        return res
     else:
         return value_to_mqtt(await node.read_value(), dt)
 
@@ -34,15 +39,15 @@ class LeafDataChangeHandler(DataChangeNotificationHandler):
         self.EXCLUDE = EXCLUDE
         
     async def read_initial_value(self, node: Node):
-        for child in (await node.get_children()):
-            name = (await child.read_display_name()).Text
+        for field in (await node.get_children()):
+            name = (await field.read_display_name()).Text
             if self.EXCLUDE:
                 if name in self.EXCLUDE:
                     print(f'Skipping explicitly excluded field {name}')
                     continue
             name = name_to_mqtt(name)
-            print(f'Added to partial state {name}: {(await get_datatype_as_str(child))}')
-            self.partial_state[name] = await _read_value_nested(child)
+            print(f'Added to partial state {name}: {(await get_datatype_as_str(field))}')
+            self.partial_state[name] = await _read_value_nested(field)
         print(self.partial_state)
         push_mqtt(self.topic)
     

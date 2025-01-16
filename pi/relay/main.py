@@ -71,7 +71,7 @@ async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient]):
                 handler = LeafDataChangeHandler(mqtt_client, base_topic, EXCLUDE=EXCLUDE)
                 subscription = await opcua_create_subscription_safe(handler)
                 await handler.read_initial_value(node=node)
-                await subscription.subscribe_data_change(node)    
+                await subscription.subscribe_data_change(node)
                 
             else: # Sometimes a leaf node is not a UAVariable type, which means it cannot be subscribed to. In this case, subscribe to the fields individually 
                 for field in (await node.get_children()):
@@ -149,10 +149,8 @@ async def listen_for_read_requests():
     topic = 'relay/read'
     mqtt_client = MqttClient()
     
-    def try_push(msg):
-        payload = msg.payload.decode()
+    def try_push(payload):
         try:
-            payload = json.loads(payload)
             for requested_topic in payload['topics']:
                 requested_topic = requested_topic.lstrip('relay')
                 print(f'Read request for state on topic {requested_topic}')

@@ -1,7 +1,7 @@
 import paho.mqtt.client as paho_client
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, date
 import re
 from copy import deepcopy
 import asyncio
@@ -19,7 +19,7 @@ class MqttClient:
         if not hasattr(self, 'initialized'):  # Prevent reinitialization
             self.broker_ip = os.getenv('MQTT_BROKER_IP')
             self.broker_port = int(os.getenv('MQTT_BROKER_PORT', 1883))
-            self.client_id = os.getenv('MQTT_CLIENT_ID', 'mqtt_client')
+            self.client_id = os.getenv('MQTT_USERNAME', 'relay')
             
             # MQTT Client setup
             self.client = paho_client.Client(client_id=self.client_id)
@@ -63,9 +63,14 @@ class MqttClient:
     def disconnect(self):
         logging.info("[MQTTCLIENT] Disconnected from MQTT broker")
 
+    def _serialize_fallback(self, obj):
+        if isinstance(obj, (date, datetime)):
+            return obj.isoformat()
+        raise TypeError(f'Type {type(obj)} is not serializable')
+
     def publish(self, topic, payload, qos=1):
         # convert payload to JSON
-        payload = json.dumps(payload)
+        payload = json.dumps(payload, default=self._serialize_fallback)
         
         result = self.client.publish(topic, payload, qos=qos)
         logging.info(f"[MQTTCLIENT] Published message to topic {topic}: {payload} (Result: {result.rc})")

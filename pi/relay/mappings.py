@@ -13,7 +13,10 @@ from relay_types import Mapping, SpecialRuleOPCUA
 
 mappings: list[Mapping] = [
     # PLC -> Dashboard
-    Mapping(FROM='"gtyp_Setup"', TO='f/setup'),
+    Mapping(
+        FROM='"gtyp_Setup"', 
+        TO='f/setup'
+    ),
     Mapping(
         FROM='"gtyp_Interface_Dashboard"."Subscribe"', 
         TO='f/i',
@@ -21,8 +24,15 @@ mappings: list[Mapping] = [
     ),
     # Commented out because it generates an idiotic amount of data and it is not used in the Dashboard code, could be uncommented if useful in the future
     # Reason it generates so much data by the way is because it keeps a 20-item history of each of the 9 slots
-    # Mapping(FROM='"gtyp_HBW"', TO='f/hbw', EXCLUDE=['Rack_Workpiece', 'Workpiece', 'History']),
-    Mapping(FROM='"Queue"', TO='f/queue'),
+    Mapping(
+        FROM='"gtyp_HBW"', 
+        TO='f/hbw', 
+        EXCLUDE=['Rack_Workpiece', 'Workpiece', 'Rack_History', 'History']
+    ),
+    Mapping(
+        FROM='"Queue"', 
+        TO='f/queue'
+    ),
     # PLC -> NFC Reader (PLC then sends the commands to the NFC reader)
     Mapping(
         FROM='"gtyp_Interface_TXT_Controler"."Publish"."ActionButtonNFCModule"', 
@@ -30,16 +40,16 @@ mappings: list[Mapping] = [
         EXCLUDE=['History']
     ),
     
-    # Dashboard -> PLC
+    # # Dashboard -> PLC
     Mapping(FROM='f/o/state/ack', TO='"gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"'),
     Mapping(FROM='f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"'),
-    # Camera -> PLC
+    # # Camera -> PLC
     Mapping(FROM='o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"'),
-    # Dashboard -> PLC (Dashboard sends NFC commands to the PLC)
+    # # Dashboard -> PLC (Dashboard sends NFC commands to the PLC)
     Mapping(FROM='f/o/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
-    # NFC Reader -> PLC (NFC reader responds to PLC with read value)
+    # # NFC Reader -> PLC (NFC reader responds to PLC with read value)
     Mapping(FROM='fl/i/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
-    # Sensors -> PLC (presumably, the reason it says "Subscribe" even though it is PLC *ingress*, is because it is considered Dashboard input?)
+    # # Sensors -> PLC (presumably, the reason it says "Subscribe" even though it is PLC *ingress*, is because it is considered Dashboard input?)
     Mapping(FROM='i/cam', TO='"gtyp_Interface_Dashboard"."Subscribe"."CameraPicture"'),
     Mapping(FROM='i/bme680', TO='"gtyp_Interface_Dashboard"."Subscribe"."EnvironmentSensor"'),
     Mapping(FROM='i/ldr', TO='"gtyp_Interface_Dashboard"."Subscribe"."BrightnessSensor"')

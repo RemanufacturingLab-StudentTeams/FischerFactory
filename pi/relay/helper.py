@@ -51,7 +51,11 @@ async def get_datatype_as_str(node: Node) -> str:
         return datatype_node_ids[dt]
     except KeyError:
         # Nested type
-        return 'Nested'
+        try:
+            await node.read_array_dimensions() # throws error if it is not an Array
+            return 'Array'
+        except ua.uaerrors.BadAttributeIdInvalid:
+            return 'Nested'
     
 def value_to_ua(value: any, data_type: str) -> object:
     """Convert the input value to the correct UA type."""
