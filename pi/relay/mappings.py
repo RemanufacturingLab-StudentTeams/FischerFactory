@@ -22,8 +22,6 @@ mappings: list[Mapping] = [
         TO='f/i',
         EXCLUDE=['History']
     ),
-    # Commented out because it generates an idiotic amount of data and it is not used in the Dashboard code, could be uncommented if useful in the future
-    # Reason it generates so much data by the way is because it keeps a 20-item history of each of the 9 slots
     Mapping(
         FROM='"gtyp_HBW"', 
         TO='f/hbw', 
@@ -42,13 +40,13 @@ mappings: list[Mapping] = [
     
     # Dashboard -> PLC
     Mapping(FROM='f/o/state/ack', TO='"gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"'),
-    # Mapping(FROM='f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"')
-    # Mapping(
-    #     FROM='f/setup',
-    #     TO='"gtyp_Setup"'
-    # ),
+    Mapping(FROM='f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"'),
+    Mapping(
+        FROM='f/setup',
+        TO='"gtyp_Setup"'
+    ),
     # # Camera -> PLC
-    # Mapping(FROM='o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"'),
+    Mapping(FROM='o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"'),
     # # Dashboard -> PLC (Dashboard sends NFC commands to the PLC)
     # Mapping(FROM='f/o/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
     # # NFC Reader -> PLC (NFC reader responds to PLC with read value)

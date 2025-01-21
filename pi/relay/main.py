@@ -112,15 +112,14 @@ async def relay_mqtt_to_opcua(opcua_client: OPCUAClient):
     mqtt_client = MqttClient()
     for mapping in mappings:
         topic = mapping.FROM
-        leaf_node_id = mapping.TO
+        leaf_node_id = 'ns=3;s=' + mapping.TO
         logging.info(f'[MQTT->OPCUA] Mapping {topic} to {leaf_node_id}')
         
         async def send_to_opcua(payload, opcua_client=opcua_client, node_id=leaf_node_id, topic=topic) -> None:
             try:
-                logging.debug(f'[MQTT->OPCUA] Received payload {payload} on topic {topic}')
-                
-                node_id = 'ns=3;s=' + mapping.TO
-                node = opcua_client.get_node(node_id)
+                logging.debug(f'[MQTT->OPCUA] Received payload {payload}: {type(payload)} on topic {topic}')
+                node = opcua_client.get_node(nodeid=node_id)
+                logging.debug(isinstance(payload, dict))
                 
                 if not isinstance(payload, dict):
                     logging.warning(f'Payload of topic {topic} was expected to be a dict, but it was {type(payload)}')

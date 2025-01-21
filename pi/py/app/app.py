@@ -201,8 +201,9 @@ def start_ws():
         rtm = RuntimeManager()
         mqttClient = MqttClient()
         
-        if topic.startswith('relay'):
-            rtm.add_task( # hydrate
+        if topic.startswith('relay') and topic != 'relay/response':
+            # hydrate
+            rtm.add_task( 
                 mqttClient.publish(
                     os.getenv("MQTT_RELAY_TOPIC") + "/read",
                     {

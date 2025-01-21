@@ -92,7 +92,7 @@ body {
     grid-template-areas: 
         "banner banner"
         "side-panel page-content";
-    grid-template-columns: 15% auto;
+    grid-template-columns: 30% auto;
     grid-template-rows: 64px minmax(auto, 1fr);
     overflow: hidden;
 

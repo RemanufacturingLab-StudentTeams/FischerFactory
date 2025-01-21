@@ -172,7 +172,9 @@ def show_baking_time(do_milling):
 
 @callback(
     [
-        Output("dummy", "children")
+        Output("place-order", "className", allow_duplicate=True),
+        Output("place-order", "disabled", allow_duplicate=True),
+        Output("place-order", "title", allow_duplicate=True)
     ],
     Input("place-order", "n_clicks"),
     State("order-color", "value"),
@@ -190,12 +192,11 @@ def place_order(
     milling,
     milling_time
 ):
-
     if color_picker_value is None:
         raise PreventUpdate
 
     logging.info(
-        f"""[DASHBOARD_CUSTOMER] Placing order for puck 
+        f"""Placing order for puck 
             with colour {color_picker_value}
             {'which will be baked for ' + str(baking_time) if baking else 'which will not be baked'}
             {'which will be milled for ' + str(milling_time) if milling else 'which will not be milled'}
@@ -206,7 +207,7 @@ def place_order(
     mqtt_client = MqttClient()
     rtm.add_task(
         mqtt_client.publish(
-            topic="relay/f/o/order",
+            topic="f/o/order",
             payload={
                 "type": color_picker_value.upper(),  # type of puck (i.e., colour)
                 "workpieceParameters": {
@@ -220,7 +221,29 @@ def place_order(
         )
     )
 
-    return []
+    return ("pending",True,"Disabled: Pending")
+
+@callback(
+    [
+        Output("place-order", "className", allow_duplicate=True),
+        Output("place-order", "disabled", allow_duplicate=True),
+        Output("place-order", "title", allow_duplicate=True)
+    ],
+    Input({"source": "mqtt", "topic": "relay/response"}, "message"),
+    prevent_initial_call=True
+)
+def resetPlaceOrder(message):
+    """Resets the place order button when the relay sends a response.
+    """
+    message = json.loads(message.get('data'))
+    if message.get('topic') != "f/o/order":
+        raise PreventUpdate
+    
+    if message.get('err'):
+        logging.error(message.get('err'))
+    else:
+        logging.info(message.get('msg'))
+    return ('label', False, '')
 
 
 @callback(
@@ -303,18 +326,18 @@ def display_queue(queue):
     )
 
 @callback(
-    Output("tracking", "children"), 
-    Input({"source": "mqtt", "topic": "relay/f/i/track"}, "message"))
+        Output("tracking", "children"), 
+        Input({"source": "mqtt", "topic": "relay/f/i/track"}, "message"),
+        prevent_initial_call=True
+    )
 def display_tracking(tracking):
     
-    print(tracking)
-    
-    if tracking is None:
+    if tracking is None or tracking is "":
         raise PreventUpdate
     
     tracking = json.loads(tracking.get('data'))
     
-    return tracking
+    return tracking['trackPuck']
 
 
 display_hbw  # callback function defined in `pages/components/hbw_view.py`.

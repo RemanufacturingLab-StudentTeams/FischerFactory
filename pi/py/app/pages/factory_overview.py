@@ -259,9 +259,9 @@ def clear_rack(n_clicks):
 
 @callback(
     [
-        Output("acknowledge-errors", "className"),
-        Output("acknowledge-errors", "disabled"),
-        Output("acknowledge-errors", "title")
+        Output("acknowledge-errors", "className", allow_duplicate=True),
+        Output("acknowledge-errors", "disabled", allow_duplicate=True),
+        Output("acknowledge-errors", "title", allow_duplicate=True)
     ],
     Input('acknowledge-errors', 'n_clicks'),
     prevent_initial_call=True
@@ -274,11 +274,29 @@ def acknowledgeErrors(n_clicks):
     now = datetime.datetime.now()
     rtm.add_task(mqtt_client.publish('f/o/state/ack', now))
     
-    return (
-        "pending",
-        True,
-        "Disabled: Pending",
-    )
+    return ("pending",True,"Disabled: Pending")
+    
+@callback(
+    [
+        Output("acknowledge-errors", "className", allow_duplicate=True),
+        Output("acknowledge-errors", "disabled", allow_duplicate=True),
+        Output("acknowledge-errors", "title", allow_duplicate=True)
+    ],
+    Input({"source": "mqtt", "topic": "relay/response"}, "message"),
+    prevent_initial_call=True
+)
+def resetAcknowledgeErrors(message):
+    """Resets the acknowledge button when the relay sends a response.
+    """
+    message = json.loads(message.get('data'))
+    if message.get('topic') != "f/o/state/ack":
+        raise PreventUpdate
+
+    if message.get('err'):
+        logging.error(message.get('err'))
+    else:
+        logging.info(message.get('msg'))
+    return ('label', False, '')
 
 display_hbw
 
