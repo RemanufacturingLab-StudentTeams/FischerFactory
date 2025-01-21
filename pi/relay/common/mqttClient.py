@@ -73,10 +73,10 @@ class MqttClient:
         payload = json.dumps(payload, default=self._serialize_fallback)
         
         result = self.client.publish(topic, payload, qos=qos)
-        logging.info(f"[MQTTCLIENT] Published message to topic {topic}: {payload} (Result: {result.rc})")
+        logging.debug(f"[MQTTCLIENT] Published message to topic {topic}: {payload} (Result: {result.rc})")
 
     def subscribe(self, topic, qos=1, callback: Optional[Callable] = None):
-        logging.info(f"[MQTTCLIENT] Subscribing to topic {topic}")
+        logging.debug(f"[MQTTCLIENT] Subscribing to topic {topic}")
         
         @self.client.topic_callback(topic)
         def on_message_wrapper(client, userdata, msg):

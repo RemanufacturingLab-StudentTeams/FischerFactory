@@ -104,6 +104,7 @@ body {
     background-color: var(--bg-color-1);
 
     color: var(--accent-color-text);
+    position: relative;
 }
 
 .side-panel-link {
@@ -112,6 +113,31 @@ body {
 
 .side-panel-link:hover {
     backdrop-filter: brightness(90%);
+}
+
+.log-output {
+    position: absolute;
+    bottom: 0;
+    padding: 15px;
+    margin: 10px;
+    background-color: white;
+    border: 2px solid black;
+    box-sizing: border-box;
+    width: calc(100% - 15px);
+    
+    display: grid;
+    max-height: 65%;
+    overflow-y: scroll;
+}
+
+#log-output > tr {
+    width: 100%;
+    font-size: small;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+#log {
+    display: none;
 }
 
 .page-content {

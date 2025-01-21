@@ -34,6 +34,13 @@ def push_mqtt(topic: str):
         for subtopic in partial_state.keys():
             push_mqtt(f'{topic}/{subtopic}')
     
-def push_opcua():
-    #!TODO
-    return
+def send_response(topic: str, message: str = None, error: str = None):
+    mqtt_client = MqttClient()
+    payload = {
+        'topic': topic
+    }
+    if message: 
+        payload['msg'] = message
+    if error:
+        payload['err'] = error
+    mqtt_client.publish(topic='relay/response', payload=payload)

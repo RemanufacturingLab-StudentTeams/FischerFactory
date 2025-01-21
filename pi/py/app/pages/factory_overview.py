@@ -6,10 +6,13 @@ import asyncio
 import logging
 import dash_daq as daq
 import os
-from common import runtime_manager
+from common import RuntimeManager
 from asyncio import sleep
 from pages.components import hbw_view, display_hbw
 import json
+from backend import MqttClient
+import datetime
+import asyncio
 
 layout = html.Div(
     [
@@ -133,7 +136,7 @@ layout = html.Div(
                         html.Div(
                             [
                                 html.Span("Clear HBW Rack:", className="label"),
-                                html.Button("CLEAR", id="clear-button"),
+                                html.Button("CLEAR", id="clear-rack"),
                                 html.Span(
                                     "Fill HBW Rack (during 60s after PLC startup):",
                                     className="label",
@@ -142,7 +145,7 @@ layout = html.Div(
                                 html.Span("Move to park position:", className="label"),
                                 html.Button("PARKING"),
                                 html.Span("Acknowledge Errors:", className="label"),
-                                html.Button("ACK"),
+                                html.Button("ACK", id='acknowledge-errors'),
                                 html.Span(
                                     "Restart OPCUA/MQTT interface:", className="label"
                                 ),
@@ -233,6 +236,49 @@ def display_plc_version(setup):
     setup = json.loads(setup.get('data'))
     return str(setup.get("versionSPS"))
 
+@callback(
+    [
+        Output("clear-rack", "className"),
+        Output("clear-rack", "disabled"),
+        Output("clear-rack", "title")
+    ],
+    Input('clear-rack', 'n_clicks'),
+    prevent_initial_call=True
+)
+def clear_rack(n_clicks):
+    rtm = RuntimeManager()
+    mqtt_client = MqttClient()
+    rtm.add_task(mqtt_client.publish('relay/f/setup', {
+        'cleanRackHBW': True
+    }))
+    return (
+        "pending",
+        True,
+        "Disabled: Pending",
+    )
+
+@callback(
+    [
+        Output("acknowledge-errors", "className"),
+        Output("acknowledge-errors", "disabled"),
+        Output("acknowledge-errors", "title")
+    ],
+    Input('acknowledge-errors', 'n_clicks'),
+    prevent_initial_call=True
+)
+def acknowledgeErrors(n_clicks):
+    rtm = RuntimeManager()
+    mqtt_client = MqttClient()
+    logging.info('Acknowledging errors...')
+    
+    now = datetime.datetime.now()
+    rtm.add_task(mqtt_client.publish('f/o/state/ack', now))
+    
+    return (
+        "pending",
+        True,
+        "Disabled: Pending",
+    )
 
 display_hbw
 

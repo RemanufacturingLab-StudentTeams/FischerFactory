@@ -2,7 +2,7 @@ import paho.mqtt.client as paho_client
 import os
 from logger import setup, c
 import logging
-from datetime import datetime
+from datetime import datetime, date
 import re
 from copy import deepcopy
 import asyncio
@@ -62,10 +62,19 @@ class MqttClient:
         await asyncio.sleep(self.reconnect_interval)
         await self.connect()
 
-    async def publish(self, topic, payload, qos=1):
+    def _serialize_fallback(self, obj):
+        if isinstance(obj, (date, datetime)):
+            return obj.isoformat()
+        raise TypeError(f'Type {type(obj)} is not serializable')
+
+    async def publish(self, topic, payload: dict, qos=1):
         # convert payload to JSON
-        payload = json.dumps(payload)
-        
+        try:
+            payload = json.dumps(payload, default=self._serialize_fallback)
+        except Exception as e:
+            logging.error(f'[MQTTCLIENT] Failed to serialize: {e}')
+            return
+        logging.debug(f'[MQTTCLIENT] Trying to publish <{payload}> to {topic}...')
         result = self.client.publish(topic, payload, qos=qos)
         logging.info(f"[MQTTCLIENT] Published message to topic {c(topic, 'white', 'cyan')}: {c(payload, 'white', 'cyan')} (Result: {result.rc})")
 

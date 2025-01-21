@@ -40,19 +40,23 @@ mappings: list[Mapping] = [
         EXCLUDE=['History']
     ),
     
-    # # Dashboard -> PLC
+    # Dashboard -> PLC
     Mapping(FROM='f/o/state/ack', TO='"gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"'),
-    Mapping(FROM='f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"'),
+    # Mapping(FROM='f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"')
+    # Mapping(
+    #     FROM='f/setup',
+    #     TO='"gtyp_Setup"'
+    # ),
     # # Camera -> PLC
-    Mapping(FROM='o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"'),
+    # Mapping(FROM='o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"'),
     # # Dashboard -> PLC (Dashboard sends NFC commands to the PLC)
-    Mapping(FROM='f/o/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
+    # Mapping(FROM='f/o/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
     # # NFC Reader -> PLC (NFC reader responds to PLC with read value)
-    Mapping(FROM='fl/i/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
+    # Mapping(FROM='fl/i/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
     # # Sensors -> PLC (presumably, the reason it says "Subscribe" even though it is PLC *ingress*, is because it is considered Dashboard input?)
-    Mapping(FROM='i/cam', TO='"gtyp_Interface_Dashboard"."Subscribe"."CameraPicture"'),
-    Mapping(FROM='i/bme680', TO='"gtyp_Interface_Dashboard"."Subscribe"."EnvironmentSensor"'),
-    Mapping(FROM='i/ldr', TO='"gtyp_Interface_Dashboard"."Subscribe"."BrightnessSensor"')
+    # Mapping(FROM='i/cam', TO='"gtyp_Interface_Dashboard"."Subscribe"."CameraPicture"'),
+    # Mapping(FROM='i/bme680', TO='"gtyp_Interface_Dashboard"."Subscribe"."EnvironmentSensor"'),
+    # Mapping(FROM='i/ldr', TO='"gtyp_Interface_Dashboard"."Subscribe"."BrightnessSensor"')
 ]
 
 special_rules = [

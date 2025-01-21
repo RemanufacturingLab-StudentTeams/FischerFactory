@@ -170,17 +170,17 @@ def show_baking_time(do_baking):
 def show_baking_time(do_milling):
     return {"display": "flex"} if do_milling else {"display": "none"}
 
-
 @callback(
-    [Output("order-store", "data")],
+    [
+        Output("dummy", "children")
+    ],
     Input("place-order", "n_clicks"),
     State("order-color", "value"),
     State("order-baking", "value"),
     State("order-baking-time", "value"),
     State("order-milling", "value"),
     State("order-milling-time", "value"),
-    State("order-store", "data"),
-    prevent_initial_call=True,
+    prevent_initial_call=True
 )
 def place_order(
     n_clicks,
@@ -188,8 +188,7 @@ def place_order(
     baking,
     baking_time,
     milling,
-    milling_time,
-    current_orders,
+    milling_time
 ):
 
     if color_picker_value is None:
@@ -221,11 +220,7 @@ def place_order(
         )
     )
 
-    return (
-        "pending",
-        True,
-        "Disabled: Pending",
-    )  # disables the button until the reset_buttons callback resets it.
+    return []
 
 
 @callback(

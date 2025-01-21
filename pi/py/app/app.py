@@ -18,6 +18,7 @@ from threading import Thread
 import json
 import flask_cors
 from datetime import date, datetime
+from logger import frontend_log
 
 def init_dash() -> Dash:
     app = Dash(__name__,
@@ -49,10 +50,10 @@ def init_dash() -> Dash:
     
     layout = html.Div(
         [
-            FrontEndWebSocket(
-                id={"source": "mqtt", "topic": "relay/f/i/stock"},
-                url="ws://localhost:8765/relay/f/i/stock" # I would LOVE to add a `os.getenv` in here, but if I do that for some reason it stops working. Thanks Plotly Dash.
-            ),
+            *[FrontEndWebSocket(
+                id={"source": "mqtt", "topic": topic},
+                url=f"ws://localhost:8765/{topic}" # I would LOVE to add a `os.getenv` in here, but if I do that for some reason it stops working. Thanks Plotly Dash.
+            ) for topic in ['relay/f/i/stock', 'relay/response']],
             dcc.Location("location", refresh=True),
             html.Div(
                 [
@@ -86,6 +87,15 @@ def init_dash() -> Dash:
                     )
                     for page in page_registry.values()
                     if page["module"] != "pages.not_found_404"
+                ] + [
+                    html.Div(
+                        [
+                            html.H2('Log'),
+                            html.Div(id='log-output')
+                        ],
+                        className='log-output'
+                    ),
+                    html.Div(id='log')
                 ],
                 className="side-panel",
             ),
@@ -151,6 +161,14 @@ def init_dash() -> Dash:
         logging.debug(f"Switched to page: {page_name}")
 
         return ["keepalive" for w in websockets]  # send keepalive signal over WebSockets
+
+    @callback(
+        Output('log-output', 'children'),
+        Input('updater', 'n_intervals')
+    )
+    def display_log(n_intervals):
+        log = list(frontend_log)
+        return log or html.Tr('<empty>')
 
     app.layout = layout    
     
