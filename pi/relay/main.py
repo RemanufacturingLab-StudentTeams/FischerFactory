@@ -49,7 +49,8 @@ async def add_opcua_client():
             await asyncio.sleep(1)
             await connect_opcua(opcua_client)
     await connect_opcua(new_client)
-    
+    await new_client.load_data_type_definitions() # load custom types
+
 async def opcua_create_subscription_safe(handler: LeafDataChangeHandler | FieldDataChangeHandler) -> Subscription:
     try:
         return await opcua_clients[-1].create_subscription(period=1000, handler=handler)
@@ -57,7 +58,7 @@ async def opcua_create_subscription_safe(handler: LeafDataChangeHandler | FieldD
         logging.warning('OPCUA Client has too many subscriptions, making another one...')
         await add_opcua_client()
         return await opcua_clients[-1].create_subscription(period=1000, handler=handler)
-        
+
 async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient]):
     mqtt_client = MqttClient()
     async def subscribe_recursive(node: Node, base_topic: str, EXCLUDE:Optional[list[str]]=None):
@@ -70,7 +71,6 @@ async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient]):
             if (await node.read_node_class()) == 2: 
                 handler = LeafDataChangeHandler(mqtt_client, base_topic, EXCLUDE=EXCLUDE)
                 subscription = await opcua_create_subscription_safe(handler)
-                await handler.read_initial_value(node=node)
                 await subscription.subscribe_data_change(node)
                 
             else: # Sometimes a leaf node is not a UAVariable type, which means it cannot be subscribed to. In this case, subscribe to the fields individually 
@@ -83,7 +83,6 @@ async def relay_opcua_to_mqtt(opcua_clients: list[OPCUAClient]):
                             continue
                     handler = FieldDataChangeHandler(mqtt_client, base_topic)
                     subscription = await opcua_create_subscription_safe(handler)
-                    await handler.read_initial_value(node=field)
                     await subscription.subscribe_data_change(field)
         else:  # Non-leaf node (i.e., it has grandchildren), recurse
             for child in children:
