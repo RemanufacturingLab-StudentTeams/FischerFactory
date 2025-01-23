@@ -39,16 +39,18 @@ mappings: list[Mapping] = [
     ),
     
     # Dashboard -> PLC
-    Mapping(FROM='f/o/state/ack', TO='"gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"'),
-    Mapping(FROM='f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"'),
+    Mapping(FROM='relay/f/o/state/ack', TO='"gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"'),
+    Mapping(FROM='relay/f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"'),
     Mapping(
-        FROM='f/setup',
+        FROM='relay/f/o/setup',
         TO='"gtyp_Setup"'
     ),
+    # Dashboard -> PLC (Dashboard sends NFC commands to the PLC)
+    Mapping(FROM='relay/f/o/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"')
+    
+    # !NOTE: the following mappings are commented out because the original NodeRED dashboard already relays these. If the original dashboard is retired, these have to be un-commented!
     # # Camera -> PLC
-    Mapping(FROM='o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"'),
-    # # Dashboard -> PLC (Dashboard sends NFC commands to the PLC)
-    # Mapping(FROM='f/o/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
+    # Mapping(FROM='o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"'),
     # # NFC Reader -> PLC (NFC reader responds to PLC with read value)
     # Mapping(FROM='fl/i/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
     # # Sensors -> PLC (presumably, the reason it says "Subscribe" even though it is PLC *ingress*, is because it is considered Dashboard input?)

@@ -53,7 +53,7 @@ def init_dash() -> Dash:
             *[FrontEndWebSocket(
                 id={"source": "mqtt", "topic": topic},
                 url=f"ws://localhost:8765/{topic}" # I would LOVE to add a `os.getenv` in here, but if I do that for some reason it stops working. Thanks Plotly Dash.
-            ) for topic in ['relay/f/i/stock', 'relay/response']],
+            ) for topic in ['relay/f/i/stock']],
             dcc.Location("location", refresh=True),
             html.Div(
                 [
@@ -201,7 +201,7 @@ def start_ws():
         rtm = RuntimeManager()
         mqttClient = MqttClient()
         
-        if topic.startswith('relay') and topic != 'relay/response':
+        if topic.startswith('relay'):
             # hydrate
             rtm.add_task( 
                 mqttClient.publish(

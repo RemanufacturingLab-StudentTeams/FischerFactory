@@ -36,11 +36,9 @@ def push_mqtt(topic: str):
     
 def send_response(topic: str, message: str = None, error: str = None):
     mqtt_client = MqttClient()
-    payload = {
-        'topic': topic
-    }
+    payload = {}
     if message: 
         payload['msg'] = message
     if error:
         payload['err'] = error
-    mqtt_client.publish(topic='relay/response', payload=payload)
+    mqtt_client.publish(topic + '/response', payload)

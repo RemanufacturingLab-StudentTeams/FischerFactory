@@ -21,13 +21,14 @@ from common import RuntimeManager
 import json
 import os
 from backend import MqttClient
+from common import format_time_string
 
 layout = html.Div(
     [
         *[WebSocket(
             id={"source": "mqtt", "topic": topic},
             url=f"ws://localhost:8765/{topic}",
-        ) for topic in ['relay/f/queue', 'relay/f/i/order', 'relay/f/i/track']],
+        ) for topic in ['relay/f/queue', 'relay/f/i/order', 'relay/f/i/track', 'relay/f/o/order/response']],
         dcc.Store(
             storage_type="memory", id="order-store"
         ),  # used to remember the orders the customer placed.
@@ -152,7 +153,6 @@ def validate_order_button(color_value, queue):
         return True, "Disabled: Queue is full."
     return False, "Click to place your order."
 
-
 @callback(
     Output("order-baking-time", "style"), 
     Input("order-baking", "value")
@@ -207,7 +207,7 @@ def place_order(
     mqtt_client = MqttClient()
     rtm.add_task(
         mqtt_client.publish(
-            topic="f/o/order",
+            topic="relay/f/o/order",
             payload={
                 "type": color_picker_value.upper(),  # type of puck (i.e., colour)
                 "workpieceParameters": {
@@ -229,22 +229,18 @@ def place_order(
         Output("place-order", "disabled", allow_duplicate=True),
         Output("place-order", "title", allow_duplicate=True)
     ],
-    Input({"source": "mqtt", "topic": "relay/response"}, "message"),
+    Input({"source": "mqtt", "topic": "relay/f/o/order/response"}, "message"),
     prevent_initial_call=True
 )
 def resetPlaceOrder(message):
     """Resets the place order button when the relay sends a response.
     """
     message = json.loads(message.get('data'))
-    if message.get('topic') != "f/o/order":
-        raise PreventUpdate
-    
     if message.get('err'):
         logging.error(message.get('err'))
     else:
         logging.info(message.get('msg'))
     return ('label', False, '')
-
 
 @callback(
     Output("baking-time", "className"),
@@ -264,7 +260,7 @@ def display_state_order(state_order):
         raise PreventUpdate
     
     state_order= json.loads(state_order.get('data'))
-    ts = datetime.strftime(state_order["ts"], "%m/%d/%Y, %H:%M:%S") if state_order.get('ts') else ''
+    ts = format_time_string(state_order.get('ts')) if state_order.get('ts') else ''
     state = state_order["state"] or 'Loading...'
     color = state_order["type"] or ''
 
@@ -289,6 +285,9 @@ def display_queue(queue):
     queue = json.loads(queue.get('data'))
     queue_index: int = queue["queueIndex"] or 0
     queue_full: bool = queue["queueFull"] or False
+
+    print(queue['queue'][0]['ts'])
+    print(type(queue['queue'][0]['ts']))
 
     return (
         [
@@ -317,7 +316,7 @@ def display_queue(queue):
                         if puck["parameters"]["doSaw"]
                         else "No"
                     ),
-                    html.Td(datetime.strftime(puck["ts"], "%m/%d/%Y, %H:%M:%S") if puck.get('ts') else ''),
+                    html.Td(format_time_string(puck['ts']) if puck.get('ts') else ''),
                 ]
             )
             for index, puck in enumerate(queue["queue"][:queue_index])
@@ -338,7 +337,6 @@ def display_tracking(tracking):
     tracking = json.loads(tracking.get('data'))
     
     return tracking['trackPuck']
-
 
 display_hbw  # callback function defined in `pages/components/hbw_view.py`.
 

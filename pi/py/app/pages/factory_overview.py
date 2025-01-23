@@ -20,7 +20,7 @@ layout = html.Div(
             id={"source": "mqtt", "topic": topic},
             url=f"ws://localhost:8765/{topic}"
         ) for topic in [
-            'relay/f/setup', 'Turtlebot/CurrentState'
+            'relay/f/setup', 'relay/f/o/setup/reponse', 'Turtlebot/CurrentState', 'relay/f/o/state/ack/response'
         ]],
         
         html.Link(href="../assets/overview.css", rel="stylesheet"),
@@ -248,7 +248,7 @@ def display_plc_version(setup):
 def clear_rack(n_clicks):
     rtm = RuntimeManager()
     mqtt_client = MqttClient()
-    rtm.add_task(mqtt_client.publish('relay/f/setup', {
+    rtm.add_task(mqtt_client.publish('relay/f/o/setup', {
         'cleanRackHBW': True
     }))
     return (
@@ -272,7 +272,7 @@ def acknowledgeErrors(n_clicks):
     logging.info('Acknowledging errors...')
     
     now = datetime.datetime.now()
-    rtm.add_task(mqtt_client.publish('f/o/state/ack', now))
+    rtm.add_task(mqtt_client.publish('relay/f/o/state/ack', now))
     
     return ("pending",True,"Disabled: Pending")
     
@@ -282,15 +282,13 @@ def acknowledgeErrors(n_clicks):
         Output("acknowledge-errors", "disabled", allow_duplicate=True),
         Output("acknowledge-errors", "title", allow_duplicate=True)
     ],
-    Input({"source": "mqtt", "topic": "relay/response"}, "message"),
+    Input({"source": "mqtt", "topic": "relay/f/o/state/ack/response"}, "message"),
     prevent_initial_call=True
 )
 def resetAcknowledgeErrors(message):
     """Resets the acknowledge button when the relay sends a response.
     """
     message = json.loads(message.get('data'))
-    if message.get('topic') != "f/o/state/ack":
-        raise PreventUpdate
 
     if message.get('err'):
         logging.error(message.get('err'))
