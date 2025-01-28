@@ -9,6 +9,9 @@ def format_time_string(plc_timestamp: str) -> str:
     Returns:
         str: Formatted time string. E.g. "2025/01/23, 14:17:13".
     """    
+    if not plc_timestamp:
+        return ''
+    
     dt = ''
     try: #  ISO 8601 
         dt = datetime.strptime(plc_timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")

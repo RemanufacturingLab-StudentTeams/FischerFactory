@@ -331,7 +331,7 @@ def display_queue(queue):
     )
 def display_tracking(tracking):
     
-    if tracking is None or tracking is "":
+    if tracking is None or tracking == "":
         raise PreventUpdate
     
     tracking = json.loads(tracking.get('data'))

@@ -43,17 +43,18 @@ def init_dash() -> Dash:
     # Global layout for the app
     page_icons = {
         "Factory overview": "fas fa-home",
-        "Factory data": "fas fa-bar-chart",
+        "Factory data": "fas fa-solid fa-industry",
         "Dashboard customer": "fas fa-solid fa-cart-shopping",
+        "Environment sensors": "fas fa-solid fa-chart-line",
         "Debug": "fa fa-bug",
     }
     
     layout = html.Div(
         [
-            *[FrontEndWebSocket(
-                id={"source": "mqtt", "topic": topic},
-                url=f"ws://localhost:8765/{topic}" # I would LOVE to add a `os.getenv` in here, but if I do that for some reason it stops working. Thanks Plotly Dash.
-            ) for topic in ['relay/f/i/stock']],
+            FrontEndWebSocket(
+                id={"source": "mqtt", "topic": 'relay/f/i/stock'},
+                url="ws://localhost:8765/relay/f/i/stock" # I would LOVE to add a `os.getenv` in here, but if I do that for some reason it stops working. Thanks Plotly Dash.
+            ),
             dcc.Location("location", refresh=True),
             html.Div(
                 [

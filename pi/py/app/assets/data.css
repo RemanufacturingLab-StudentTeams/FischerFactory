@@ -7,23 +7,24 @@
     padding: 20px;
 }
 
-.device-data-table {
+.station-data-table {
     overflow-x: scroll;
     width: 100%;
     border-collapse: collapse;
 
     padding: 20px;
+    margin-bottom: 20px;
 }
 
-.device-data-table > tr:first-child {
+.station-data-table > tr:first-child {
     background-color: var(--bg-color-2);
 }
 
-.device-data-table > tr > td,th {
+.station-data-table > tr > td,th {
     text-align: center;
     margin: 20px;
 }
 
-.device-data-table > tr:nth-child(even) {
+.station-data-table > tr:nth-child(even) {
     background-color: var(--bg-color-1);
 }
