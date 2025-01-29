@@ -7,7 +7,6 @@ import re
 from copy import deepcopy
 import asyncio
 from typing import List, Dict, Coroutine
-from .page_topics import *
 import json
 from common import singleton
 from typing import Callable, Optional

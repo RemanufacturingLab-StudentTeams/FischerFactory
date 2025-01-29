@@ -156,7 +156,6 @@ def init_dash() -> Dash:
     def switch_page(href: str, websockets: list[str]):
         import logging  # bit weird to not put this import at the top of the page but the logger setup really needs to run first so ¯\_(ツ)_/¯
 
-        # page_name = pathname.lstrip('/') or 'factory-overview'
         page_name = href.split("/")[-1].split("?")[0] or "factory-overview"
 
         logging.debug(f"Switched to page: {page_name}")
@@ -175,78 +174,7 @@ def init_dash() -> Dash:
     
     return app
 
-connections: dict[str, ServerConnection] = {} # global variables, ew
 
-def start_ws():
-    import os # Cannot put this on the top of the file because it needs to be imported after the main function loads the environment variables
-    import logging # same here, it needs to be set up first 
-    from backend import MqttClient
-    
-    async def connection_handler(conn: ServerConnection):
-        """Handles WebSocket connections and messages."""
-        try:
-            async for message in conn:
-                logging.debug(f"[WS_SERVER] Received: {message}")
-        except websockets.ConnectionClosed | websockets.ConnectionClosedError | websockets.ConnectionClosedOK:
-            logging.debug(f'[WS_SERVER] Client disconnected')
-            topic = [k for k, v in connections if v == conn][0]
-            mqttClient = MqttClient()
-            mqttClient.client.unsubscribe(topic)
-            connections.pop(topic)
-    
-    def request_handler(conn: ServerConnection, req: Request):
-        topic = req.path.lstrip('/')
-        logging.debug(f'[WS_SERVER] Adding ServerConnection for {topic}')
-        connections[topic] = conn
-        
-        rtm = RuntimeManager()
-        mqttClient = MqttClient()
-        
-        if topic.startswith('relay'):
-            # hydrate
-            rtm.add_task( 
-                mqttClient.publish(
-                    os.getenv("MQTT_RELAY_TOPIC") + "/read",
-                    {
-                        "topics": [topic]
-                    }
-                )
-            )
-        
-        async def cb(msg: dict, conn=conn, topic=topic):
-            logging.debug(f'[WS_SERVER] Received message on {topic}')
-            if msg.get('ts'): # Filter out midnight times, which the PLC ues as a default when it has no time data sometimes
-                t = None
-                try:
-                    t = datetime.strptime(msg['ts'], '%Y-%m-%dT%H:%M:%S.%f%z').time()
-                except Exception:
-                    t = datetime.strptime(msg['ts'], '%Y-%m-%dT%H:%M:%S%z').time()
-                if (t.hour == 0) and (t.minute == 0) and (t.second == 0):
-                    msg['ts'] = ''
-            try:
-                await conn.send(json.dumps(msg))
-                logging.debug(f'[WS_SERVER] Data from {topic} sent to frontend.')
-            except Exception as e:
-                logging.error(f"[WS_SERVER] Failed to send message to frontend WebSocket {topic}: {e}")
-        rtm.add_task(
-            mqttClient.subscribe(
-                topic,
-                callback=cb
-            )
-        )
-    
-    async def run_server():
-        logging.info(f"Starting WebSocket server on ws://localhost:{os.getenv('WS_PORT')}...")
-        async with websockets.serve(
-            handler=connection_handler, 
-            host="localhost", 
-            port=8765, 
-            process_request=request_handler
-        ):
-            logging.info("WebSocket server is running.")
-            await asyncio.Future()
-    
-    asyncio.run(run_server())
 
 async def main():
     parser = argparse.ArgumentParser(description="Run the application.")
@@ -267,16 +195,21 @@ async def main():
     await mqtt.connect()
     
     # Start the WebSocket server in a separate Thread
-    Thread(target=start_ws, daemon=True).start()
+    from backend import WebSocketManager
+    ws_manager = WebSocketManager()    
+    asyncio.create_task(ws_manager.run_server())
     
     # Init the Dash app
     app = init_dash()
     
-    # Launch the app
-    app.run(
-        dev_tools_hot_reload=(config.mode == 'dev'), 
-        debug=False, port=os.getenv("PORT")
-    )
+    # Run Dash in an async-friendly way
+    loop = asyncio.get_running_loop()
+    future = loop.run_in_executor(None, lambda: app.run(
+        dev_tools_hot_reload=(config.mode == 'dev'),
+        debug=False, port=int(os.getenv("PORT", 8050))
+    ))
+    
+    await future
     
 if __name__ == "__main__":
     asyncio.run(main())
