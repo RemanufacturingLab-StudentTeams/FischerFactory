@@ -197,7 +197,7 @@ async def main():
     # Start the WebSocket server in a separate Thread
     from backend import WebSocketManager
     ws_manager = WebSocketManager()    
-    asyncio.create_task(ws_manager.run_server())
+    run_server_task = asyncio.create_task(ws_manager.run_server())
     
     # Init the Dash app
     app = init_dash()
