@@ -57,7 +57,9 @@ layout = html.Div(
                             className="arrow-button button",
                         ),
                         html.Button(
-                            "🞁", id="camera-up-button", className="arrow-button button"
+                            "🞁", 
+                            id="camera-up-button", 
+                            className="arrow-button button"
                         ),
                         html.Div(),
                         html.Button(
@@ -77,12 +79,12 @@ layout = html.Div(
                         ),
                         html.Button(
                             "🞂",
-                            id="camera-left-button",
+                            id="camera-right-button",
                             className="arrow-button button",
                         ),
                         html.Button(
                             "🡢",
-                            id="camera-leftwards-button",
+                            id="camera-rightwards-button",
                             className="arrow-button button",
                         ),
                         html.Button(
@@ -297,7 +299,42 @@ def resetAcknowledgeErrors(message):
     return ('label', False, '')
 
 display_hbw
+    
+# PTU control
 
+commands = {
+    'up': ['relmove_up', 10],
+    'right': ['relmove_right', 10],
+    'left': ['relmove_left', 10],
+    'down': ['relmove_down', 10],
+    'downwards': ['start_tilt', 1],
+    'upwards': ['end_tilt', 1],
+    'leftwards': ['start_pan', 1],
+    'rightwards': ['end_pan', 1],
+    'home': ['home', 1],
+    'stop': ['stop', 1]
+}
+
+def gen_ptu_control_callback(direction: str):
+   
+    @callback(
+        Output(f'camera-{direction}-button', 'disabled'),
+        Input(f'camera-{direction}-button', "n_clicks")
+    )
+    def ptu_control_callback(direction=direction):
+        mqttClient = MqttClient()
+        mqttClient.publish(
+            topic="o/ptu",
+            payload={
+                'cmd': commands.get(direction)[0],
+                'degree': commands.get(direction)[1],
+                'ts': datetime.datetime.now()
+            }
+        )
+    
+for direction in commands:
+    gen_ptu_control_callback(direction)
+    
 dash.register_page(
     __name__, path="/", redirect_from=["/factory-overview"], layout=layout
 )

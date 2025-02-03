@@ -1,5 +1,7 @@
 # MQTT Schema
 
+*Note: this schema is a modified version of the [original MQTT interface](https://github.com/fischertechnik/txt_training_factory/blob/master/TxtSmartFactoryLib/doc/MqttInterface.md)*.
+
 MQTT, in this use case, is less "strict" than OPC/UA. It has two characteristics that cause this:
 - Dynamic topic creation: When a client publishes to a topic that does not yet exist on the broker (the TXT controller, or `mosquitto` during dev/test), the broker automatically creates a new topic.
 - Data format: In the ReMan use case, all payloads are free-form JSON strings. That means that sending two messages on the same topic with different data structures will be accepted, as long as they are valid JSON.
