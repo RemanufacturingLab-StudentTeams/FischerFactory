@@ -4,7 +4,6 @@ A dashboard made entirely in Python, made to monitor and control the FischerFact
 
 ## Requirements
 
-To run, this dashboard requires:
 - Linux Bash
 - Python 3.12.8
 - Pip 24.3.1
@@ -66,7 +65,7 @@ For data sources other than the PLC, only steps 3 until 5 are applicable. Note t
 
 For sending data from the frontend to the PLC, it works simpler:
 
-1. A Dash callback invokes `MqttClient.publish` to publish data on, say, `relay/f/o/state/ack`. It disables and greys out the button and adds the `pending` class to signify that there is a pending action for that button.
+1. A Dash callback invokes `MqttClient.publish` to publish data on, say, `relay/f/o/state/ack`. It disables and greys out the button and adds the `pending` class to sign 7ify that there is a pending action for that button.
 2. The relay is subscribed to this topic and stores the new data in its internal `state` variable. It sends the data to the PLC using OPC/UA over `ns=3;s="gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"`. 
 3. It publishes a message to `relay/f/o/state/ack/response` like this: 
 ```json
