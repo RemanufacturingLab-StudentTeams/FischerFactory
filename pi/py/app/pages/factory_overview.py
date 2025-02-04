@@ -20,7 +20,11 @@ layout = html.Div(
             id={"source": "mqtt", "topic": topic},
             url=f"ws://localhost:8765/{topic}"
         ) for topic in [
-            'relay/f/setup', 'relay/f/o/setup/reponse', 'Turtlebot/CurrentState', 'relay/f/o/state/ack/response'
+            'relay/f/setup', 
+            'relay/f/o/setup/reponse', 
+            'Turtlebot/CurrentState', 
+            'relay/f/o/state/ack/response',
+            'relay/o/ptu/response'
         ]],
         
         html.Link(href="../assets/overview.css", rel="stylesheet"),
@@ -297,8 +301,6 @@ def resetAcknowledgeErrors(message):
     else:
         logging.info(message.get('msg'))
     return ('label', False, '')
-
-display_hbw
     
 # PTU control
 
@@ -318,23 +320,53 @@ commands = {
 def gen_ptu_control_callback(direction: str):
    
     @callback(
-        Output(f'camera-{direction}-button', 'disabled'),
-        Input(f'camera-{direction}-button', "n_clicks")
+        Output(f'camera-{direction}-button', 'className', allow_duplicate=True),
+        Output(f'camera-{direction}-button', 'disabled', allow_duplicate=True),
+        Output(f'camera-{direction}-button', 'title', allow_duplicate=True),
+        Input(f'camera-{direction}-button', "n_clicks"),
+        prevent_initial_call=True
     )
-    def ptu_control_callback(direction=direction):
+    def ptu_control_callback(n_clicks, direction=direction):
+        print(direction)
         mqttClient = MqttClient()
-        mqttClient.publish(
-            topic="o/ptu",
-            payload={
-                'cmd': commands.get(direction)[0],
-                'degree': commands.get(direction)[1],
-                'ts': datetime.datetime.now()
-            }
+        rtm = RuntimeManager()
+        rtm.add_task(
+            mqttClient.publish(
+                topic="relay/o/ptu",
+                payload={
+                    'cmd': commands.get(direction)[0],
+                    'degree': commands.get(direction)[1],
+                    'ts': datetime.datetime.now()
+                }
+            )
         )
+        logging.info(f'Sending PTU command for direction <{direction}> to PLC...')
+        return ("pending",True,"Disabled: Pending")
+    
+    @callback(
+        Output(f'camera-{direction}-button', 'className', allow_duplicate=True),
+        Output(f'camera-{direction}-button', 'disabled', allow_duplicate=True),
+        Output(f'camera-{direction}-button', 'title', allow_duplicate=True),
+        Input({"source": "mqtt", "topic": "relay/o/ptu/response"}, "message"),
+        State(f'camera-{direction}-button', 'disabled'),
+        prevent_initial_call=True
+    )
+    def reset_ptu_button(message, is_disabled, direction=direction):
+        if not is_disabled:
+            raise PreventUpdate
+        
+        message = json.loads(message.get('data'))
+        if message.get('err'):
+            logging.error(message.get('err'))
+        else:
+            logging.info(message.get('msg'))
+        return ('button', False, '')
     
 for direction in commands:
     gen_ptu_control_callback(direction)
     
+display_hbw    
+
 dash.register_page(
     __name__, path="/", redirect_from=["/factory-overview"], layout=layout
 )

@@ -17,6 +17,7 @@ from opcua_datachange_handler import LeafDataChangeHandler, FieldDataChangeHandl
 from typing import Optional
 from state import push_mqtt, send_response
 from common import MqttClient, singleton, RuntimeManager, setup
+import atexit
 
 # Load environment variables
 os.environ.clear()
@@ -35,7 +36,7 @@ MQTT_BROKER_PORT = int(os.getenv('MQTT_BROKER_PORT'))
 MQTT_USERNAME = os.getenv('MQTT_USERNAME')
 MQTT_PASSWORD = os.getenv('MQTT_PASSWORD')
 
-opcua_clients = []
+opcua_clients: list[OPCUAClient] = []
 async def add_opcua_client():
     new_client = OPCUAClient(f"opc.tcp://{PLC_IP}:{PLC_PORT}")
     opcua_clients.append(new_client)
@@ -50,6 +51,15 @@ async def add_opcua_client():
             await connect_opcua(opcua_client)
     await connect_opcua(new_client)
     await new_client.load_data_type_definitions() # load custom types
+    
+async def disconnect_opcua_clients():
+    coros = [c.close_session() for c in opcua_clients]
+    await asyncio.gather(*coros)
+    
+def disconnect_opcua_clients_sync():
+    asyncio.run(disconnect_opcua_clients())
+    
+atexit.register(disconnect_opcua_clients_sync)
 
 async def opcua_create_subscription_safe(handler: LeafDataChangeHandler | FieldDataChangeHandler) -> Subscription:
     try:
@@ -140,7 +150,7 @@ async def relay_mqtt_to_opcua(opcua_client: OPCUAClient):
                     await opcua_client.write_values(nodes_to_send, values)
                     logging.info(f'[MQTT->OPCUA] Sent values {values} to OPCUA.')
                 
-                    send_response(topic=topic, message=f'Sent values {values} to Nodes: {field_names}')
+                    send_response(topic=topic, message=f'Sent values {payload} to Node: {node_id} for fields {field_names}')
             except Exception as e:
                 logging.error(f'[MQTT->OPCUA] Could not process payload {payload} on topic {topic} for leaf node {node_id}: {e}')
                 send_response(topic=topic, error=f'Failed to process payload {payload} for Node {node_id}: {e}')
