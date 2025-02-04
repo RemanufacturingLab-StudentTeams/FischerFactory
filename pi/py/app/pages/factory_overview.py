@@ -13,6 +13,8 @@ import json
 from backend import MqttClient
 import datetime
 import asyncio
+import base64
+import cv2
 
 layout = html.Div(
     [
@@ -31,7 +33,7 @@ layout = html.Div(
         html.Div(id="dummy"),
         html.Div(
             [
-                html.Div([html.H2("Camera"), html.Img()], className="camera"),
+                html.Div([html.H2("Camera"), html.Img(id='camera-output')], className="camera"),
             ],
             className="camera-container",
         ),
@@ -364,6 +366,30 @@ def gen_ptu_control_callback(direction: str):
     
 for direction in commands:
     gen_ptu_control_callback(direction)
+    
+# Camera image
+
+@callback(
+    Output('camera-output', 'src'),
+    Input('updater', 'n_intervals')
+)
+def capture_image(n_intervals):
+    """Captures an image periodically using the USB camera and displays it as a html.Img.
+    """
+    
+    try:
+        capture = cv2.VideoCapture(0)
+        ret, frame = capture.read()
+        capture.release()
+        
+        if not ret:
+            raise PreventUpdate
+        
+        _, buffer = cv2.imencode('.jpg', frame)
+        encoded_image = base64.b64encode(buffer).decode('utf-8')
+        return f'data:image/jpeg;base64,{encoded_image}'
+    except Exception as e:
+        logging.warning(f'Error while trying to capture camera image: {e} ({type(e)})')
     
 display_hbw    
 

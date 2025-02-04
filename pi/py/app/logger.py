@@ -34,6 +34,8 @@ def c(text, color, reset='white'):
     return f"{colors.get(color, '')}{text}{colors.get(reset)}"
 
 def frontend_c(text: str, color) -> html.Span:
+    if color != 'black':
+        return html.Span(text, style={'color': color, 'background-color': 'black'})
     return html.Span(text, style={'color': color})
 
 COLORS = {

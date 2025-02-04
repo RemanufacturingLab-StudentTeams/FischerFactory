@@ -17,6 +17,7 @@ colorama = "*"
 dash-extensions = "*"
 websockets = "*"
 flask-cors = "*"
+opencv-python = "*"
 
 [dev-packages]
 

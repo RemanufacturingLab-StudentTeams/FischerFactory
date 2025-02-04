@@ -206,7 +206,9 @@ async def main():
     loop = asyncio.get_running_loop()
     future = loop.run_in_executor(None, lambda: app.run(
         dev_tools_hot_reload=(config.mode == 'dev'),
-        debug=False, port=int(os.getenv("PORT", 8050))
+        debug=False, 
+        host='0.0.0.0',
+        port=int(os.getenv("PORT", 8050))
     ))
     
     await future
