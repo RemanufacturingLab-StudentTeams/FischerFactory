@@ -8,6 +8,8 @@ Make sure the RPi has an ethernet cable to the PLC switch (or to the router), an
 4) Wait until the LED's on all the modules attached to the PLC are not flashing anymore and stay green, then switch the PLC from stop-mode to run-mode by the small hardware switch.
 5) If the TXT controller is ready with its boot procedure, touch the touch screen to run the program.
  
+*Note: Very often, the TXT broker does not initially connect. See the [documentation](./TXT_connectivity_fix.md) on how to fix this.*
+
 Now you are ready to run the Factory. Note the node-red dashboard is at 192.168.0.5:1880/ui
 If you want to monitor the node-red messages, the MQTT Explorer might be helpful. Connect to 192.168.0.5:1880. No need to login with username / password.
  
