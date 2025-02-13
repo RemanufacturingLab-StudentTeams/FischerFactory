@@ -90,6 +90,8 @@ def value_to_ua(value: any, data_type: str) -> object:
         else:
             raise ValueError(f"Invalid datetime format for {data_type}: {value}")
     elif data_type == 'String':
+        if value is None:
+            return ''
         return ua.DataValue(ua.Variant(str(value), ua.VariantType.String))
     elif data_type == 'Word':  # 16 bits
         return int(value) & 0xFFFF

@@ -52,7 +52,10 @@ mappings: list[Mapping] = [
     
     # !NOTE: the following mappings are commented out because the original NodeRED dashboard already relays these. If the original dashboard is retired, these have to be un-commented!
     # NFC Reader -> PLC (NFC reader responds to PLC with read value)
-    Mapping(FROM='fl/i/nfc/ds', TO='"gtyp_Interface_TXT_Controller"."Subscribe"."State_NFC_Device"')
+    Mapping(
+        FROM='fl/i/nfc/ds', 
+        TO='"gtyp_Interface_TXT_Controler"."Subscribe"."State_NFC_Device"' # I am aware of the spelling error. Blame FischerTechnik for that.
+    )
     # # Sensors -> PLC (presumably, the reason it says "Subscribe" even though it is PLC *ingress*, is because it is considered Dashboard input?)
     # Mapping(FROM='i/cam', TO='"gtyp_Interface_Dashboard"."Subscribe"."CameraPicture"'),
     # Mapping(FROM='i/bme680', TO='"gtyp_Interface_Dashboard"."Subscribe"."EnvironmentSensor"'),
