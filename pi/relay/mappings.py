@@ -45,7 +45,7 @@ mappings: list[Mapping] = [
         TO='"gtyp_Setup"'
     ),
     # Dashboard -> PLC (Dashboard sends NFC commands to the PLC)
-    # Mapping(FROM='f/o/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
+    Mapping(FROM='f/o/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
     
     # Dashboard -> PLC (PTU commands)
     Mapping(FROM='o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"'),

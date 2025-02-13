@@ -65,7 +65,7 @@ class MqttClient:
 
     def _serialize_fallback(self, obj):
         if isinstance(obj, (date, datetime)):
-            return obj.isoformat()
+            return obj.isoformat() + 'Z'
         raise TypeError(f'Type {type(obj)} is not serializable')
 
     def publish(self, topic, payload, qos=1):
