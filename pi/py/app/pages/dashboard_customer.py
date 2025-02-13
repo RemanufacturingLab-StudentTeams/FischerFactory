@@ -28,7 +28,7 @@ layout = html.Div(
         *[WebSocket(
             id={"source": "mqtt", "topic": topic},
             url=f"ws://localhost:8765/{topic}",
-        ) for topic in ['relay/f/queue', 'relay/f/i/order', 'relay/f/i/track', 'relay/f/o/order/response']],
+        ) for topic in ['f/queue', 'f/i/order', 'f/i/track', 'f/o/order/response']],
         dcc.Store(
             storage_type="memory", id="order-store"
         ),  # used to remember the orders the customer placed.
@@ -140,7 +140,7 @@ layout = html.Div(
     Output("place-order", "disabled"),
     Output("place-order", "title"),
     Input("order-color", "value"),
-    Input({"source": "mqtt", "topic": "relay/f/queue"}, "message"),
+    Input({"source": "mqtt", "topic": "f/queue"}, "message"),
 )
 def validate_order_button(color_value, queue):
     if color_value is None:
@@ -207,7 +207,7 @@ def place_order(
     mqtt_client = MqttClient()
     rtm.add_task(
         mqtt_client.publish(
-            topic="relay/f/o/order",
+            topic="f/o/order",
             payload={
                 "type": color_picker_value.upper(),  # type of puck (i.e., colour)
                 "workpieceParameters": {
@@ -229,7 +229,7 @@ def place_order(
         Output("place-order", "disabled", allow_duplicate=True),
         Output("place-order", "title", allow_duplicate=True)
     ],
-    Input({"source": "mqtt", "topic": "relay/f/o/order/response"}, "message"),
+    Input({"source": "mqtt", "topic": "f/o/order/response"}, "message"),
     prevent_initial_call=True
 )
 def resetPlaceOrder(message):
@@ -253,7 +253,7 @@ def hide_time_fields(order_baking, order_milling):
 
 @callback(
     Output("state-order-table", "children"), 
-    Input({"source": "mqtt", "topic": "relay/f/i/order"}, "message"))
+    Input({"source": "mqtt", "topic": "f/i/order"}, "message"))
 def display_state_order(state_order):
     
     if state_order is None:
@@ -276,7 +276,7 @@ def display_state_order(state_order):
 
 @callback(
     Output("order-queue-table", "children"), 
-    Input({"source": "mqtt", "topic": "relay/f/queue"}, "message"),
+    Input({"source": "mqtt", "topic": "f/queue"}, "message"),
     prevent_initial_call=True)
 def display_queue(queue):
     if queue is None:
@@ -326,7 +326,7 @@ def display_queue(queue):
 
 @callback(
         Output("tracking", "children"), 
-        Input({"source": "mqtt", "topic": "relay/f/i/track"}, "message"),
+        Input({"source": "mqtt", "topic": "f/i/track"}, "message"),
         prevent_initial_call=True
     )
 def display_tracking(tracking):

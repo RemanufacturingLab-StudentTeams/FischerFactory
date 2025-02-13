@@ -27,9 +27,9 @@ def push_mqtt(topic: str):
         partial_state = partial_state.get('/'+topic_part)
         if partial_state is None:
             print(f'!!ERROR!! Could not access {topic_part} while trying to access {topic} in state {state}')
-    logging.debug(f"Sending partial state: {partial_state} over topic {'relay/' + topic}")
+    logging.debug(f"Sending partial state: {partial_state} over topic {topic}")
     if partial_state_is_leaf(partial_state):
-        mqtt_client.publish(topic='relay/' + topic, payload=partial_state)
+        mqtt_client.publish(topic=topic, payload=partial_state)
     else:
         for subtopic in partial_state.keys():
             push_mqtt(f'{topic}/{subtopic}')

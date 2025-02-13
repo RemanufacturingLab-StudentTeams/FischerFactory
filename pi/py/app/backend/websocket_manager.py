@@ -34,11 +34,11 @@ class WebSocketManager:
         rtm = RuntimeManager()
         mqttClient = MqttClient()
         
-        if topic.startswith('relay'):
+        if topic.startswith('f/'):
             # hydrate
             rtm.add_task( 
                 mqttClient.publish(
-                    os.getenv("MQTT_RELAY_TOPIC") + "/read",
+                    "read",
                     {
                         "topics": [topic]
                     }

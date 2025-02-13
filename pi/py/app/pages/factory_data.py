@@ -13,12 +13,12 @@ layout = html.Div([
             id={"source": "mqtt", "topic": topic},
             url=f"ws://localhost:8765/{topic}"
         ) for topic in [
-            'relay/f/i/state/dsi',
-            'relay/f/i/state/dso',
-            'relay/f/i/state/mpo',
-            'relay/f/i/state/sld',
-            'relay/f/i/state/vgr',
-            'relay/f/i/state/hbw'
+            'f/i/state/dsi',
+            'f/i/state/dso',
+            'f/i/state/mpo',
+            'f/i/state/sld',
+            'f/i/state/vgr',
+            'f/i/state/hbw'
         ]],
         
         html.Link(href="../assets/data.css", rel="stylesheet"),
@@ -59,7 +59,7 @@ layout = html.Div([
 def gen_callback(station: str):
     @callback(
         Output(f'{station}-table', 'children'),
-        Input({'source': 'mqtt', 'topic': f'relay/f/i/state/{station}'}, 'message')
+        Input({'source': 'mqtt', 'topic': f'f/i/state/{station}'}, 'message')
     )
     def display(state_in):      
         if state_in is None:

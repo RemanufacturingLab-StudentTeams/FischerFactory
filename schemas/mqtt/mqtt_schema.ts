@@ -350,7 +350,7 @@ type schema = {
                     topic: 'fl/o/nfc/ds',
                     payload: {
                         ts: Date
-                        cmd: string
+                        cmd: 'read' | 'read_uid' | 'ack' | 'delete'
                         workpiece: {
                             id: string
                             type: string

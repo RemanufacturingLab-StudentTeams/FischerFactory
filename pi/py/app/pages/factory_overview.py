@@ -22,11 +22,13 @@ layout = html.Div(
             id={"source": "mqtt", "topic": topic},
             url=f"ws://localhost:8765/{topic}"
         ) for topic in [
-            'relay/f/setup', 
-            'relay/f/o/setup/reponse', 
+            'f/setup', 
+            'f/o/setup/reponse', 
             'Turtlebot/CurrentState', 
-            'relay/f/o/state/ack/response',
-            'relay/o/ptu/response'
+            'f/o/state/ack/response',
+            'o/ptu/response',
+            'fl/i/nfc/ds',
+            'fl/o/nfc/ds'
         ]],
         
         html.Link(href="../assets/overview.css", rel="stylesheet"),
@@ -133,11 +135,11 @@ layout = html.Div(
                         ),
                         html.Div(
                             [
-                                html.H3("NFC Control"),
-                                html.Button("NFC READ"),
-                                html.Button("NFC READ_UID"),
-                                html.Button("ACK"),
-                                html.Button("NFC DELETE"),
+                                html.H3("NFC Commands from PLC"),
+                                html.Button("NFC READ", id='nfc-command-read'),
+                                html.Button("NFC READ_UID", id='nfc-command-read-uid'),
+                                html.Button("ACK", id='nfc-command-ack'),
+                                html.Button("NFC DELETE", id='nfc-command-delete'),
                             ],
                             className="nfc-control-button-menu",
                         ),
@@ -161,12 +163,11 @@ layout = html.Div(
                             ],
                             className="factory-control-button-menu table",
                         ),
-                        html.H3("Order"),
+                        html.H3("NFC Output"),
                         html.Div(
                             [
-                                html.Button("WHITE"),
-                                html.Button("BLUE"),
-                                html.Button("RED"),
+                                html.Button("No puck detected", id='nfc-detected-puck-id'),
+                                html.Button("No colour detected", id='nfc-detected-puck-type')
                             ],
                             className="order-button-menu",
                         ),
@@ -235,7 +236,7 @@ layout = html.Div(
 
 @callback(
     Output("plc-version", "children"), 
-    Input({"source": "mqtt", "topic": "relay/f/setup"}, "message"))
+    Input({"source": "mqtt", "topic": "f/setup"}, "message"))
 def display_plc_version(setup):
 
     if setup is None:
@@ -256,7 +257,7 @@ def display_plc_version(setup):
 def clear_rack(n_clicks):
     rtm = RuntimeManager()
     mqtt_client = MqttClient()
-    rtm.add_task(mqtt_client.publish('relay/f/o/setup', {
+    rtm.add_task(mqtt_client.publish('f/o/setup', {
         'cleanRackHBW': True
     }))
     return (
@@ -280,7 +281,7 @@ def acknowledgeErrors(n_clicks):
     logging.info('Acknowledging errors...')
     
     now = datetime.datetime.now()
-    rtm.add_task(mqtt_client.publish('relay/f/o/state/ack', now))
+    rtm.add_task(mqtt_client.publish('f/o/state/ack', now))
     
     return ("pending",True,"Disabled: Pending")
     
@@ -290,7 +291,7 @@ def acknowledgeErrors(n_clicks):
         Output("acknowledge-errors", "disabled", allow_duplicate=True),
         Output("acknowledge-errors", "title", allow_duplicate=True)
     ],
-    Input({"source": "mqtt", "topic": "relay/f/o/state/ack/response"}, "message"),
+    Input({"source": "mqtt", "topic": "f/o/state/ack/response"}, "message"),
     prevent_initial_call=True
 )
 def resetAcknowledgeErrors(message):
@@ -305,7 +306,6 @@ def resetAcknowledgeErrors(message):
     return ('label', False, '')
     
 # PTU control
-
 commands = {
     'up': ['relmove_up', 10],
     'right': ['relmove_right', 10],
@@ -334,7 +334,7 @@ def gen_ptu_control_callback(direction: str):
         rtm = RuntimeManager()
         rtm.add_task(
             mqttClient.publish(
-                topic="relay/o/ptu",
+                topic="o/ptu",
                 payload={
                     'cmd': commands.get(direction)[0],
                     'degree': commands.get(direction)[1],
@@ -349,7 +349,7 @@ def gen_ptu_control_callback(direction: str):
         Output(f'camera-{direction}-button', 'className', allow_duplicate=True),
         Output(f'camera-{direction}-button', 'disabled', allow_duplicate=True),
         Output(f'camera-{direction}-button', 'title', allow_duplicate=True),
-        Input({"source": "mqtt", "topic": "relay/o/ptu/response"}, "message"),
+        Input({"source": "mqtt", "topic": "o/ptu/response"}, "message"),
         State(f'camera-{direction}-button', 'disabled'),
         prevent_initial_call=True
     )
@@ -368,7 +368,6 @@ for direction in commands:
     gen_ptu_control_callback(direction)
     
 # Camera image
-
 @callback(
     Output('camera-output', 'src'),
     Input('updater', 'n_intervals')
@@ -390,6 +389,49 @@ def capture_image(n_intervals):
         return f'data:image/jpeg;base64,{encoded_image}'
     except Exception as e:
         logging.warning(f'Error while trying to capture camera image: {e} ({type(e)})')
+    
+# NFC Reader
+    
+@callback(
+    [
+        Output('nfc-command-read', 'style'),
+        Output('nfc-command-read-uid', 'style'),
+        Output('nfc-command-ack', 'style'),
+        Output('nfc-command-delete', 'style')
+    ],
+    Input({"source": "mqtt", "topic": "fl/o/nfc/ds"}, "message")
+)
+def display_nfc_commands(command):
+    if command is None:
+       raise PreventUpdate 
+    command = json.loads(command.get('data'))
+    
+    off = {"background-color": "gray"}
+    on = {"background-color": "#0094CE"}
+    
+    return (
+        on if command == 'read' else off,
+        on if command == 'read_uid' else off,
+        on if command == 'ack' else off,
+        on if command == 'delete' else off,
+    )
+    
+@callback(
+    [
+        Output('nfc-detected-puck-id'),
+        Output('nfc-detected-puck-type')
+    ],
+    Input({"source": "mqtt", "topic": "fl/i/nfc/ds"}, "message")
+)
+def display_nfc_output(detected_puck):
+    if detected_puck is None:
+        raise PreventUpdate
+    detected_puck = json.loads(detected_puck.get('data')).get('workpiece')
+    
+    return (
+        detected_puck['id'] if (detected_puck is not None) else 'No puck ID detected', 
+        detected_puck['type'] if (detected_puck is not None) else 'No puck colour detected'
+    )
     
 display_hbw    
 

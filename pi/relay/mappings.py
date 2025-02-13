@@ -34,26 +34,25 @@ mappings: list[Mapping] = [
     # PLC -> NFC Reader (PLC then sends the commands to the NFC reader)
     Mapping(
         FROM='"gtyp_Interface_TXT_Controler"."Publish"."ActionButtonNFCModule"', 
-        TO='fl/o/nfc/ds', 
-        EXCLUDE=['History']
+        TO='fl/o/nfc/ds'
     ),
     
     # Dashboard -> PLC
-    Mapping(FROM='relay/f/o/state/ack', TO='"gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"'),
-    Mapping(FROM='relay/f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"'),
+    Mapping(FROM='f/o/state/ack', TO='"gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"'),
+    Mapping(FROM='f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"'),
     Mapping(
-        FROM='relay/f/o/setup',
+        FROM='f/o/setup',
         TO='"gtyp_Setup"'
     ),
     # Dashboard -> PLC (Dashboard sends NFC commands to the PLC)
-    Mapping(FROM='relay/f/o/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
+    # Mapping(FROM='f/o/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
     
     # Dashboard -> PLC (PTU commands)
-    Mapping(FROM='relay/o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"')
+    Mapping(FROM='o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"'),
     
     # !NOTE: the following mappings are commented out because the original NodeRED dashboard already relays these. If the original dashboard is retired, these have to be un-commented!
-    # # NFC Reader -> PLC (NFC reader responds to PLC with read value)
-    # Mapping(FROM='fl/i/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
+    # NFC Reader -> PLC (NFC reader responds to PLC with read value)
+    Mapping(FROM='fl/i/nfc/ds', TO='"gtyp_Interface_TXT_Controller"."Subscribe"."State_NFC_Device"')
     # # Sensors -> PLC (presumably, the reason it says "Subscribe" even though it is PLC *ingress*, is because it is considered Dashboard input?)
     # Mapping(FROM='i/cam', TO='"gtyp_Interface_Dashboard"."Subscribe"."CameraPicture"'),
     # Mapping(FROM='i/bme680', TO='"gtyp_Interface_Dashboard"."Subscribe"."EnvironmentSensor"'),

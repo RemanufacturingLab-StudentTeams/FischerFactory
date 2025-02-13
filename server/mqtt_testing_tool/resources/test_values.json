@@ -198,7 +198,7 @@
     }
   }, 
   {
-    "topic": "relay/f/setup",
+    "topic": "f/setup",
     "payload": {
       "versionSPS": 1.0
     }
