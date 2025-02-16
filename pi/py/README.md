@@ -16,7 +16,7 @@ Further requirements are found in the `Pipenv` file. These can be automatically 
 Two environment files exist: `.env.dev` and `.env.prod`. The former is used when running the program with the `--dev` argument (that is, not running it with the run script, but with `pipenv run python app/app.py --dev`). It is required that all of these variables have a value, or the program might exhibit undefined behaviour.
 
 Key | Example value | Possible values | Explanation
-|-|-|-|
+|-|-|-|-|
 MQTT_BROKER_IP | 10.35.4.253 | | IP address of the TXT broker on the `iotroam` network.
 MQTT_BROKER_PORT | 1883 | |  Port of the TXT broker on the `iotroam` network.
 MQTT_USERNAME | pi | | Username that the dashboard program uses to establish the MQTT connection with the broker.
@@ -26,7 +26,7 @@ PORT | 8050 | | Port that the dashboard will be accessible on for users.
 WS_PORT | 8765 | | WebSocket port that the dashboard uses to send data to the frontend callbacks.
 LOG_LEVEL | DEBUG | DEBUG, INFO, ERROR, CRITICAL | The minimum level of importance a log message must have to be shown. For example, if set to INFO (recommended for production), it will display INFO, ERROR and CRITICAL messages, but not DEBUG messages.
 LOG_MESSAGES | TRUE | TRUE, FALSE, FILE | Log *incoming* MQTT and OPCUA messages. Setting this to TRUE generates a *lot* of logs. If set to FILE, it will only log to `logs/external_logs`.
-PROJECT_ROOT_PATH | /home/wsladmin/FischerFactory | | This value is inserted/updated by the run.sh script. 
+PROJECT_ROOT_PATH | /home/wsladmin/FischerFactory | | This value is inserted/updated by the `run.sh` script. 
 
 If these values are changed, the program should restart to apply the changes. 
 
@@ -44,7 +44,15 @@ An options exists to download the running configuration of the FischerFactory to
 
 *!TODO: IMPLEMENT THIS*
 
-## General Architecture and Dataflow
+## General Design
+
+The dashboard is split up in two main parts: the frontend in the `pages` folder and the backend in the `backend` folder. In general, the main idea is that backend service classes abstract the business logic away from the frontend, so this is relatively easily developed. 
+
+These service classes all follow the `singleton` decorator pattern, to ensure they can be used in multiple places with a consistent internal state without having to manage multiple instances of the class. 
+
+There is also a custom singleton `RuntimeManager` class which allows code in synchronous environments, like the frontend, to use `async` functions without having to work with multiple event loops.
+
+## Dataflow
 
 See `pi/py/diagram.uxf` for a high-level overview in the form of an (informal) UML diagram. (Note: it was made using the `UMLet` extension for VSCode, it will open with that). It shows the general dataflow in the FischerFactory. In general:
 
@@ -74,3 +82,9 @@ For sending data from the frontend to the PLC, it works simpler:
 }
 ```
 4. On the frontend again, there is a Dash callback called `reset_acknowledge_button` that listens to `relay/f/o/state/ack/response` that will re-enable the button and logs the response message.
+
+## Frontend
+
+On the frontend, each page is in its own separate file. This file contains both the HTML layout and the callbacks to make it dynamic. Because the callbacks are standard Python functions, they can be dynamically generated and this is used as much as possible to maintain DRY codestyle. For instance, for the factory station data page, instead of making a callback for each station, the `gen_callback` function is used to generate all six station `display` callbacks by calling it six times. 
+
+The CSS layout is designed to be as similar as possible to the original Node-RED layout. This is not per se a requirement. It also makes heavy use of the CSS Grid feature, specifically `grid-areas`. 
