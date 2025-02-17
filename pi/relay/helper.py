@@ -33,6 +33,33 @@ def name_to_mqtt(name: str):
             name = rule.MEANS
     return _convert(name)
 
+nodes_to_children = {
+    # holds nodes and their children, so they only have to be read from the server once
+}
+
+async def get_children_fast(node: Node):
+    if nodes_to_children.get(node.nodeid.to_string()): # if we have already encountered this node before, pull the children from memory
+        return nodes_to_children[node.nodeid.to_string()]
+    
+    children = await node.get_children()
+    nodes_to_children[node.nodeid.to_string()] = children
+    return children
+
+nodes_to_display_names = {
+    # holds nodes and their display names, so they only have to be read from the server once
+}
+
+async def get_display_name_fast(node: Node):
+    if nodes_to_display_names.get(node.nodeid.to_string()): # if we have already encountered this node before, pull the display name from memory
+        return nodes_to_display_names[node.nodeid.to_string()]
+    display_name = await node.read_display_name()
+    nodes_to_display_names[node.nodeid.to_string()] = display_name
+    return display_name
+
+nodes_to_datatypes = {
+    # holds nodeIDs and their corresponding datatypes, so they only have to be read from the server once
+}
+
 async def get_datatype_as_str(node: Node) -> str:
     """Determine the data type from the node ID prefix."""
     
@@ -46,15 +73,22 @@ async def get_datatype_as_str(node: Node) -> str:
         10: 'Float'
     }
     
+    if nodes_to_datatypes.get(node.nodeid.to_string()) is not None: # if we have already encountered this node, pull from memory
+        return nodes_to_datatypes.get(node.nodeid.to_string())
+    
     dt = (await node.read_data_type()).Identifier
-    try:
+    
+    if datatype_node_ids.get(dt) is not None:
+        nodes_to_datatypes[node.nodeid.to_string()] = datatype_node_ids[dt]
         return datatype_node_ids[dt]
-    except KeyError:
+    else:
         # Nested type
         try:
             await node.read_array_dimensions() # throws error if it is not an Array
+            nodes_to_datatypes[node.nodeid.to_string()] = 'Array'
             return 'Array'
         except ua.uaerrors.BadAttributeIdInvalid:
+            nodes_to_datatypes[node.nodeid.to_string()] = 'Nested'
             return 'Nested'
     
 def value_to_ua(value: any, data_type: str) -> object:
