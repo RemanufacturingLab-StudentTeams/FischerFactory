@@ -11,7 +11,7 @@ import json
 layout = html.Div([
         *[WebSocket(
             id={"source": "mqtt", "topic": topic},
-            url=f"ws://localhost:8765/{topic}"
+            url=f"ws://10.35.4.254:8765/{topic}"
         ) for topic in [
             'f/i/state/dsi',
             'f/i/state/dso',

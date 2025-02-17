@@ -128,7 +128,6 @@ async def relay_mqtt_to_opcua(opcua_client: OPCUAClient):
             try:
                 logging.debug(f'[MQTT->OPCUA] Received payload {payload}: {type(payload)} on topic {topic}')
                 node = opcua_client.get_node(nodeid=node_id)
-                logging.debug(isinstance(payload, dict))
                 
                 if not isinstance(payload, dict):
                     logging.warning(f'Payload of topic {topic} was expected to be a dict, but it was {type(payload)}')
@@ -136,36 +135,42 @@ async def relay_mqtt_to_opcua(opcua_client: OPCUAClient):
                     logging.info(f'[MQTT->OPCUA] Sent single value {payload} to OPCUA.')
                     send_response(topic=topic, message=f'Sent value {payload} to Node: {node_id}')
                 else:
-                    async def get_targets_and_values_for_node(node):   
+                    async def get_targets_and_values_for_node(node: Node, targets = [], values = []):
                         fields = await node.get_children()
                         field_names: list[str] = [name_to_mqtt((await f.read_display_name()).Text) for f in fields]
-                        targets: list[Node] = []
-                        values = []
                             
                         for i, field in enumerate(fields):
                             field_name = field_names[i]
-                            if field_name in payload.keys():
+                            if (field_name in payload.keys()) and (payload[field_name] is not None):
                                 logging.debug(f'[MQTT->OPCUA] Found payload key for {field_name}, sending to node.')
-                                datatype = await get_datatype_as_str(field)
-                                ua_value = value_to_ua(payload[field_name], datatype)
+                                datatype = (await get_datatype_as_str(field))
                                 if datatype == 'Nested':
-                                    sub_targets, sub_values = await get_targets_and_values_for_node(field) # recurse
+                                    logging.debug(f'[MQTT->OPCUA] value {payload[field_name]} is nested, recursing...')
+                                    sub_targets, sub_values = await get_targets_and_values_for_node(field, targets, values) # recurse
                                     targets += sub_targets
                                     values += sub_values
+                                elif datatype == 'Array':
+                                    logging.debug(f'[MQTT->OPCUA] value {payload[field_name]} is Array, listing children...')
+                                    array_nodes = (await field.get_children())
+                                    for (i, e) in enumerate(payload[field_name] or []):
+                                        targets.append(array_nodes[i])
+                                        values.append(e)
                                 else:
+                                    ua_value = value_to_ua(payload[field_name], datatype)
                                     targets.append(field)
                                     values.append(ua_value)
                         
                         return targets, values
                     
                     nodes_to_send, values = await get_targets_and_values_for_node(node)
+                    logging.info(f'[MQTT->OPCUA] Sending to valus for node {node}...')
                     await opcua_client.write_values(nodes_to_send, values)
                     logging.info(f'[MQTT->OPCUA] Sent values {values} to OPCUA.')
                 
-                    send_response(topic=topic, message=f'Sent values {payload} to Node: {node_id} for fields {field_names}')
+                    send_response(topic=topic, message=f'Sent values {payload} to Node: {node_id}')
             except Exception as e:
-                logging.error(f'[MQTT->OPCUA] Could not process payload {payload} on topic {topic} for leaf node {node_id} with fields {field_names}: {e}')
-                send_response(topic=topic, error=f'Failed to process payload {payload} for Node {node_id}: {e}')
+                logging.error(f'[MQTT->OPCUA] Could not process payload {payload} on topic {topic} for leaf node {node_id}: {e} ({type(e)})')
+                send_response(topic=topic, error=f'Failed to process payload {payload} for Node {node_id}: {e} ({type(e)})')
                 
         mqtt_client.subscribe(topic, callback=send_to_opcua)
     await asyncio.Future()

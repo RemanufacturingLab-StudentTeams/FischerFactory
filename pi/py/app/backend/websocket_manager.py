@@ -38,7 +38,7 @@ class WebSocketManager:
             # hydrate
             rtm.add_task( 
                 mqttClient.publish(
-                    "read",
+                    "relay/read",
                     {
                         "topics": [topic]
                     }
@@ -47,8 +47,11 @@ class WebSocketManager:
         
         async def cb(msg: dict, conn=conn, topic=topic):
             logging.debug(f'[WS_SERVER] Received message on {topic}')
-            if msg.get('ts'): # Filter out midnight times, which the PLC ues as a default when it has no time data sometimes
+            
+            if msg.get('ts'): # Filter timezone and out midnight times, which the PLC ues as a default when it has no time data sometimes
                 t = None
+                if msg['ts'].endswith('Z'):
+                    msg['ts'] = msg['ts'][:-1]
                 try:
                     t = datetime.strptime(msg['ts'], '%Y-%m-%dT%H:%M:%S.%f%z').time()
                 except Exception:
@@ -71,10 +74,10 @@ class WebSocketManager:
         )
     
     async def run_server(self):
-        logging.info(f"Starting WebSocket server on ws://localhost:{os.getenv('WS_PORT')}...")
+        logging.info(f"Starting WebSocket server on ws://0.0.0.0:{os.getenv('WS_PORT')}...")
         async with websockets.serve(
             handler=self.connection_handler, 
-            host="localhost", 
+            host="0.0.0.0", 
             port=8765, 
             process_request=self.request_handler
         ):

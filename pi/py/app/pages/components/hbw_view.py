@@ -15,7 +15,7 @@ hbw_view = html.Div(
 
 @callback(
     Output('hbw-view-container', 'children'),
-    Input({'source': 'mqtt', 'topic': 'relay/f/i/stock'}, 'message'),
+    Input({'source': 'mqtt', 'topic': 'f/i/stock'}, 'message'),
     prevent_initial_call=True
 )
 def display_hbw(stock):        

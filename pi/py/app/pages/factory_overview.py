@@ -20,7 +20,7 @@ layout = html.Div(
     [
         *[WebSocket(
             id={"source": "mqtt", "topic": topic},
-            url=f"ws://localhost:8765/{topic}"
+            url=f"ws://10.35.4.254:8765/{topic}"
         ) for topic in [
             'f/setup', 
             'f/o/setup/reponse', 
@@ -404,7 +404,7 @@ def capture_image(n_intervals):
 def display_nfc_commands(command):
     if command is None:
        raise PreventUpdate 
-    command = json.loads(command.get('data'))
+    command = json.loads(command.get('data'))['cmd']
     
     off = {"background-color": "gray"}
     on = {"background-color": "#0094CE"}
@@ -418,8 +418,8 @@ def display_nfc_commands(command):
     
 @callback(
     [
-        Output('nfc-detected-puck-id'),
-        Output('nfc-detected-puck-type')
+        Output('nfc-detected-puck-id', 'children'),
+        Output('nfc-detected-puck-type', 'children')
     ],
     Input({"source": "mqtt", "topic": "fl/i/nfc/ds"}, "message")
 )

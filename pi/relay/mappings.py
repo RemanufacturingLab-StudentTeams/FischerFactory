@@ -13,24 +13,24 @@ from relay_types import Mapping, SpecialRuleOPCUA
 
 mappings: list[Mapping] = [
     # PLC -> Dashboard
-    Mapping(
-        FROM='"gtyp_Setup"', 
-        TO='f/setup'
-    ),
-    Mapping(
-        FROM='"gtyp_Interface_Dashboard"."Subscribe"', 
-        TO='f/i',
-        EXCLUDE=['History']
-    ),
-    Mapping(
-        FROM='"gtyp_HBW"', 
-        TO='f/hbw', 
-        EXCLUDE=['Rack_Workpiece', 'Workpiece', 'Rack_History', 'History']
-    ),
-    Mapping(
-        FROM='"Queue"', 
-        TO='f/queue'
-    ),
+    # Mapping(
+    #     FROM='"gtyp_Setup"', 
+    #     TO='f/setup'
+    # ),
+    # Mapping(
+    #     FROM='"gtyp_Interface_Dashboard"."Subscribe"', 
+    #     TO='f/i',
+    #     EXCLUDE=['History']
+    # ),
+    # Mapping(
+    #     FROM='"gtyp_HBW"', 
+    #     TO='f/hbw', 
+    #     EXCLUDE=['Rack_Workpiece', 'Workpiece', 'Rack_History', 'History']
+    # ),
+    # Mapping(
+    #     FROM='"Queue"', 
+    #     TO='f/queue'
+    # ),
     # PLC -> NFC Reader (PLC then sends the commands to the NFC reader)
     Mapping(
         FROM='"gtyp_Interface_TXT_Controler"."Publish"."ActionButtonNFCModule"', 
@@ -38,17 +38,17 @@ mappings: list[Mapping] = [
     ),
     
     # Dashboard -> PLC
-    Mapping(FROM='f/o/state/ack', TO='"gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"'),
-    Mapping(FROM='f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"'),
-    Mapping(
-        FROM='f/o/setup',
-        TO='"gtyp_Setup"'
-    ),
+    # Mapping(FROM='f/o/state/ack', TO='"gtyp_Interface_Dashboard"."Publish"."ldt_AcknowledgeButton"'),
+    # Mapping(FROM='f/o/order', TO='"gtyp_Interface_Dashboard"."Publish"."OrderWorkpieceButton"'),
+    # Mapping(
+    #     FROM='f/o/setup',
+    #     TO='"gtyp_Setup"'
+    # ),
     # Dashboard -> PLC (Dashboard sends NFC commands to the PLC)
     Mapping(FROM='f/o/nfc/ds', TO='"gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"'),
     
     # Dashboard -> PLC (PTU commands)
-    Mapping(FROM='o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"'),
+    # Mapping(FROM='o/ptu', TO='"gtyp_Interface_Dashboard"."Publish"."PosPanTiltUnit"'),
     
     # !NOTE: the following mappings are commented out because the original NodeRED dashboard already relays these. If the original dashboard is retired, these have to be un-commented!
     # NFC Reader -> PLC (NFC reader responds to PLC with read value)

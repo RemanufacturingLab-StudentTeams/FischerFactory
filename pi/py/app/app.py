@@ -53,7 +53,7 @@ def init_dash() -> Dash:
         [
             FrontEndWebSocket(
                 id={"source": "mqtt", "topic": 'f/i/stock'},
-                url="ws://localhost:8765/f/i/stock" # I would LOVE to add a `os.getenv` in here, but if I do that for some reason it stops working. Thanks Plotly Dash.
+                url="ws://10.35.4.254:8765/f/i/stock" # I would LOVE to add a `os.getenv` in here, but if I do that for some reason it stops working. Thanks Plotly Dash.
             ),
             dcc.Location("location", refresh=True),
             html.Div(
