@@ -151,8 +151,7 @@ async def relay_mqtt_to_opcua(opcua_client: OPCUAClient):
                                     logging.debug(f'[MQTT->OPCUA] value {payload[field_name]} is Array, listing children...')
                                     array_nodes = (await get_children_fast(field))
                                     for (i, e) in enumerate(payload[field_name] or []):
-                                        targets.append(array_nodes[i])
-                                        values.append(e)
+                                        await get_targets_and_values_for_node(array_nodes[i], targets, values, e)
                                 else:
                                     ua_value = value_to_ua(payload[field_name], datatype)
                                     targets.append(field)
@@ -167,10 +166,12 @@ async def relay_mqtt_to_opcua(opcua_client: OPCUAClient):
                     await opcua_client.write_values(nodes_to_send, values)
                     logging.info(f'[MQTT->OPCUA] Sent values {values_concise} to Node {node_id} with fields {nodes_to_send_display_names}')
                 
-                    send_response(topic=topic, message=f'Sent values {values_concise} to Node {node_id} with fields {nodes_to_send_display_names}')
+                    if topic.startswith('f/') or topic.startswith('o/'):
+                        send_response(topic=topic, message=f'Sent values {values_concise} to Node {node_id} with fields {nodes_to_send_display_names}')
             except Exception as e:
                 logging.error(f'[MQTT->OPCUA] Could not process payload {payload} on topic {topic} for leaf node {node_id}: {e} ({type(e)})')
-                send_response(topic=topic, error=f'Failed to process payload {payload} for Node {node_id}: {e} ({type(e)})')
+                if topic.startswith('f/') or topic.startswith('o/'):
+                    send_response(topic=topic, error=f'Failed to process payload {payload} for Node {node_id}: {e} ({type(e)})')
                 
         mqtt_client.subscribe(topic, callback=send_to_opcua)
     await asyncio.Future()

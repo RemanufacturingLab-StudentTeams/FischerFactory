@@ -138,7 +138,7 @@ layout = html.Div(
                                 html.H3("NFC Commands from PLC"),
                                 html.Button("NFC READ", id='nfc-command-read'),
                                 html.Button("NFC READ_UID", id='nfc-command-read-uid'),
-                                html.Button("ACK", id='nfc-command-ack'),
+                                html.Button("NFC WRITE", id='nfc-command-write'),
                                 html.Button("NFC DELETE", id='nfc-command-delete'),
                             ],
                             className="nfc-control-button-menu",
@@ -396,7 +396,7 @@ def capture_image(n_intervals):
     [
         Output('nfc-command-read', 'style'),
         Output('nfc-command-read-uid', 'style'),
-        Output('nfc-command-ack', 'style'),
+        Output('nfc-command-write', 'style'),
         Output('nfc-command-delete', 'style')
     ],
     Input({"source": "mqtt", "topic": "fl/o/nfc/ds"}, "message")
@@ -412,7 +412,7 @@ def display_nfc_commands(command):
     return (
         on if command == 'read' else off,
         on if command == 'read_uid' else off,
-        on if command == 'ack' else off,
+        on if command == 'write' else off,
         on if command == 'delete' else off,
     )
     

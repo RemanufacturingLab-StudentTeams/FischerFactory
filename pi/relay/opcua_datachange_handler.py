@@ -1,7 +1,7 @@
 from asyncua import Node
 from asyncua.common.subscription import DataChangeNotificationHandlerAsync, DataChangeNotif
 from paho.mqtt.client import Client as MqttClient
-from helper import name_to_mqtt, value_to_mqtt, get_datatype_as_str
+from helper import get_display_name_fast, name_to_mqtt, value_to_mqtt, get_datatype_as_str
 from state import push_mqtt, state
 import asyncio
 import json
@@ -13,7 +13,7 @@ from datetime import date, datetime
 def _parse_value(value: Any, EXCLUDE=None) -> Any:
     if not isinstance(value, (date, datetime, int, str, bool, float)):
         if isinstance(value, list):
-            return [_parse_value(v) for v in value]
+            return [_parse_value(v) for v in value if (hasattr(v, '__dict__') and v.__dict__.get('i_code') != 0)]
         return {
             name_to_mqtt(k): _parse_value(v) 
             for k, v in value.__dict__.items() if k != EXCLUDE
@@ -66,7 +66,7 @@ class FieldDataChangeHandler(DataChangeNotificationHandlerAsync):
         try:        
             v: Variant = data.monitored_item.Value.Value
             parsed = _parse_value(v.Value)
-            name = name_to_mqtt((await node.read_display_name()).Text)
+            name = name_to_mqtt((await get_display_name_fast(node)).Text)
             self.partial_state[name] = parsed
             push_mqtt(self.topic)
                 

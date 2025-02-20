@@ -34,7 +34,7 @@ class WebSocketManager:
         rtm = RuntimeManager()
         mqttClient = MqttClient()
         
-        if topic.startswith('f/'):
+        if topic.startswith('f/') and not topic.endswith('/response'):
             # hydrate
             rtm.add_task( 
                 mqttClient.publish(
@@ -52,10 +52,17 @@ class WebSocketManager:
                 t = None
                 if msg['ts'].endswith('Z'):
                     msg['ts'] = msg['ts'][:-1]
+                
+                if '+' in msg['ts']:
+                    msg['ts'] = msg['ts'].split('+')[0]
+                    
                 try:
-                    t = datetime.strptime(msg['ts'], '%Y-%m-%dT%H:%M:%S.%f%z').time()
+                    t = datetime.strptime(msg['ts'], '%Y-%m-%dT%H:%M:%S.%f').time()
                 except Exception:
-                    t = datetime.strptime(msg['ts'], '%Y-%m-%dT%H:%M:%S%z').time()
+                    try:
+                        t = datetime.strptime(msg['ts'], '%Y-%m-%dT%H:%M:%S').time()
+                    except Exception:
+                        logging.error(f"[WS_SERVER] Could not parse datetime: {msg['ts']}")
                 if (t.hour == 0) and (t.minute == 0) and (t.second == 0):
                     msg['ts'] = ''
             try:
