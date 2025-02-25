@@ -1,0 +1,24 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+opcua = "*"
+python-dotenv = "*"
+dash = "*"
+dash-html-components = "==2.0.0"
+dash-core-components = "==2.0.0"
+plotly = "==5.24.1"
+asyncua = "1.1.5"
+dash-daq = "*"
+paho-mqtt = "*"
+colorama = "*"
+dash-extensions = "*"
+websockets = "*"
+flask-cors = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"

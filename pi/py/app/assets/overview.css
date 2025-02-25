@@ -1,0 +1,145 @@
+/* Styling for the "Factory Overview" page. */
+
+.overview {
+    display: grid;
+    grid-template-areas: 
+    "camera-container camera-container camera-container camera-control hbw-view"
+    "camera-container camera-container camera-container factory-control factory-control"
+    "camera-container camera-container camera-container factory-control factory-control"
+    "component-status component-status component-status factory-control factory-control"
+    "turtlebot-control turtlebot-control extension-control extension-control ."
+    ;
+    grid-template-columns: 1fr 1fr 1fr 1.5fr 1.5fr;
+    grid-template-rows: repeat(5, auto);
+    background-color: var(--bg-color-1);
+}
+
+.overview > div {
+    margin: 5px;
+    padding: 15px;
+    background-color: white;
+}
+
+.camera-container {
+    grid-area: camera-container;
+    background-color: white;
+    padding: 15px;
+}
+
+.component-status {
+    grid-area: component-status;
+
+}
+
+.camera-control {
+    grid-area: camera-control;
+    background-color: white;
+}
+
+.arrow-button {
+    font-size: calc(140%);
+    font-weight: bold;
+}
+
+#camera-control-button-menu {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 5px;
+
+    height: 250px;
+}
+
+#camera-control-button-menu > button {
+    padding: 0px;
+}
+
+#camera-up-button, #camera-upwards-button, #camera-down-button, #camera-downwards-button {
+    grid-column: span 2;
+}
+
+#camera-leftwards-button, #camera-left-button, #camera-rightwards-button, #camera-right-button {
+    grid-row: span 2;
+}
+
+#camera-home-button {
+    grid-column: span 2;
+    grid-row: span 2;
+    font-size: calc(200%);
+}
+
+#camera-stop-button {
+    background-color: red;
+    font-size: calc(200%);
+}
+
+.hbw-view {
+    grid-area: hbw-view;
+}
+
+.hbw-view-container {
+    display: grid;
+    grid-template-columns: 0.3fr 1fr 1fr 1fr;
+    grid-template-rows: 0.4fr 1fr 1fr 1fr;
+    gap: 5px;
+
+    height: 250px;
+}
+
+.hbw-view-container > span.label {
+    text-align: center;
+    align-self: center;
+}
+
+.factory-control {
+    grid-area: factory-control;
+}
+
+.factory-control-container {
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.factory-control-header {
+    grid-column: span 2;
+}
+
+.nfc-control-button-menu {
+    display: grid;
+    gap: 7px;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+}
+
+.nfc-control-button-menu > h3 {
+    grid-column: span 2;
+}
+
+.factory-control-button-menu {
+    grid-row: span 3;
+}
+
+.factory-control-button-menu > button {
+    width: 125px;
+}
+
+.order-button-menu {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 7px;
+}
+
+.order-button-menu > button {
+    flex-grow: 1;
+}
+
+.turtlebot-control {
+    grid-area: turtlebot-control;
+}
+
+
+.extension-control {
+    grid-area: extension-control;
+}

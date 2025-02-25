@@ -1,0 +1,46 @@
+.dashboard-customer {
+    display: grid;
+    grid-template-areas: 
+    "order-config order-queue hbw-view"
+    "order-state-container tracking-container  ."
+    ;
+    grid-template-columns: 1fr 1.5fr 1fr;
+    grid-template-rows: 2fr 1fr;
+    background-color: var(--bg-color-1);
+}
+
+.order-queue {
+    grid-row: span 2;
+}
+
+.dashboard-customer > div {
+    margin: 5px;
+    padding: 15px;
+    background-color: white;
+}
+
+.order-config {
+    display: flex;
+    flex-flow: column nowrap;
+    padding: 5px;
+}
+
+.order-config > div:not(.hidden) {
+    padding: 10px 0px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.order-config > button:last-child {
+    margin-top: 20px;
+}
+
+.order-config .dash-dropdown {
+    width: 100%;
+}
+
+.queue-full-banner {
+    grid-column: 1 / -1; 
+    border: 2px solid red;
+    color: red;
+}

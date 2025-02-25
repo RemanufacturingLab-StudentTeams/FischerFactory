@@ -7,8 +7,6 @@ The Fischertechnik Lernfabrik offers a collection of Node-RED flows, that have b
 - Creating a local Node-RED dashboard
 - Translate the OPC/UA data to MQTT so the central ReMan server can consume the PLC data
 
-*There are plans to move away from Node-RED and rewrite the code to NodeJS (the underlying technology of Node-RED). The flows are expected to move to legacy when that happens.*
-
 ## Deployment
 
 ### npm

@@ -9,16 +9,22 @@ pi/nodejs/dist
 server/mqtt_testing_tool/target
 **/Cargo.lock
 **/target/
-server/influx/data/influxd.bolt
-
+**/__pycache__/
+*.pyc
+**/package-lock.json
 
 # Local development files
 todo.md
+**/tmp
+**/tmp.*
+.vscode
 
 # Production files
 server/influx/config/*
 server/influx/data/*
 server/influx/telegraf/telegraf.prod.conf
+server/influx/data/influxd.bolt
+**/logs/*
 
 # Downloaded files
 # InfluxDB

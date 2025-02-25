@@ -20,25 +20,76 @@ type schema = {
             //If the puck is rejected 'AtEnd' will not be published 
             //Only one of the OnBlue,OnRed,OnWhite will be published
             //Incase the oven is used 'OutsiteOven' will be published twice, once when entering and when exiting.
-            payload: "Warehouse" | "BeforeCrane" | "OnCrane" | "OutsiteOven" | "InsideOven" | "OnBelt" | "OnSaw" | "OnSortBelt" | "Behindcolorsens" | "OnRed" | "OnBlue" | "OnWhite" | "AtEnd"
-
+            payload: {
+                trackPuck: "Warehouse" | "BeforeCrane" | "OnCrane" | "OutsiteOven" | "InsideOven" | "OnBelt" | "OnSaw" | "OnSortBelt" | "Behindcolorsens" | "OnRed" | "OnBlue" | "OnWhite" | "AtEnd"
+            }
         }
 
+        queue: { // ordering queue
+            topic: 'f/queue'
+            payload: {
+                queueFull: boolean
+                queueIndex: number
+                queue: FixedLengthArray<{
+                    ts: Date
+                    type: 'RED' | 'WHITE' | 'BLUE'
+                    workpieceParameters: WorkpieceParameters
+                }, 7>
+            }
+        }
 
-
+        setup: {
+            topic: 'f/setup'
+            payload: {
+                versionSPS: number // PLC version
+                fillRackHBW: boolean
+                startTONFillHBW: boolean // Start the timer for filling HBW
+                cleanRackHBW: boolean
+                acknowledgeButton: boolean
+                parkPosition: boolean
+            }
+        }
 
         i: { // topics that are published to to translate OPC UA messages from the PLC to MQTT
+            ptu: { // PosPanTiltUnit
+                pos: { 
+                    topic: 'f/i/ptu/pos'
+                    payload: {
+                        ts: Date
+                        pan: number // [-1.000...0.000...1.000]
+                        tilt: number // [-1.000...0.000...1.000]
+                    }
+                }
+            }
+
             alert: {
-                // Alert message from OPC UA
-                topic: 'f/i/alert',
-                payload:
-                {
-                    code: number,
-                    data: string,
-                    id: string,
+                topic: 'f/i/alert'
+                payload: {
                     ts: Date
+                    id: 'bme680/t' | 'bme680/h' | 'bme680/p' | 'bme680/iaq' | 'ldr' | 'cam' // id of the component that triggered the alert
+                    data: string
+                    /**
+                    * Alarm codes:
+                    100 = 'Alarm: Motion detected!': Motion in the camera image
+                    200 = 'Alarm: Danger of frost! (%1)': Temperature < 4.0°C
+                    300 = 'Alarm: High humidity! (%1)': Humidity > 80%
+                     */
+                    code: number
                 }
             },
+    
+            // Note: not used in the FischerFactory. 
+            broadcast: {
+                topic: 'f/i/broadcast'
+                payload: {
+                    ts: Date,
+                    hardwareId: string
+                    hardwareModel: string
+                    softwareName: string
+                    softwareVersion: string
+                    message: string
+                }
+            }
 
             state: {
                 // DSI state
@@ -48,6 +99,11 @@ type schema = {
                         ts: Date
                         station: 'dsi'
                         code: number // 0 available, 1 not available
+                        description: string
+                        active: 1
+                        error: number
+                        errorMessage: string
+                        target: 'dsi'
                     }
                 },
                 // DSO state is sent over MQTT after 'gtyp_Interface_Dashboard"."Subscribe"."State_DSO' nodes are polled
@@ -57,6 +113,11 @@ type schema = {
                         ts: Date
                         station: "dso"
                         code: number // 0 available, 1 not available
+                        description: string
+                        active: 1
+                        error: number
+                        errorMessage: string
+                        target: 'dso'
                     }
                 },
 
@@ -113,6 +174,8 @@ type schema = {
                         code: number // Bit code for lamps: Red=4 Yellow=2 Green=1
                         description: string,
                         active: number,
+                        error: number,
+                        errorMessage: string,
                         target: 'vgr' // target node for process
                     }
 
@@ -127,13 +190,20 @@ type schema = {
                         code: number // Bit code for lamps: Red=4 Yellow=2 Green=1
                         description: string,
                         active: 1,
+                        error: number,
+                        errorMessage: string,
                         target: "hbw",
-                        err: false,
-                        errorMessage: string
                     }
+                }
 
-                },
-            },
+            }
+            
+            track: {
+                topic: 'f/i/track'
+                payload: {
+                    trackPuck: string
+                }
+            }
 
             stock: {
                 topic: 'f/i/stock',
@@ -202,6 +272,7 @@ type schema = {
                 topic: 'f/o/order'
                 payload: {
                     type: 'RED' | 'WHITE' | 'BLUE'
+                    workpieceParameters: WorkpieceParameters
                     ts: Date
                 }
             },
@@ -252,19 +323,44 @@ type schema = {
         }
     },
 
-    fl: { // no idea what this is, it may be a typo 
+    fl: {
         i: {
             // NFC reader - deliver read values from MQTT to OPC UA
             nfc: {
                 ds: {
                     topic: 'fl/i/nfc/ds'
+                    payload: {
+                        ts: Date
+                        workpiece: {
+                            id: string
+                            type: string
+                            state: string
+                        }
+                        history: FixedLengthArray<{
+                            code: number
+                            ts: Date
+                        }, 9>
+                    }
                 }
             }
         },
         o: {
-            nfc: {
+            nfc: { // relay MQTT payload from fl/i/nfc/ds to OPC UA after adding a command (cmd)
                 ds: {
-                    topic: 'fl/o/nfc/ds'
+                    topic: 'fl/o/nfc/ds',
+                    payload: {
+                        ts: Date
+                        cmd: string
+                        workpiece: {
+                            id: string
+                            type: string
+                            state: string
+                        },
+                        history: FixedLengthArray<{
+                            code: number
+                            ts: Date
+                        }, 9>
+                    }
                 }
             }
         },
@@ -322,7 +418,7 @@ type schema = {
         }
     },
 
-    // Inputs from MQTT publishers other than the Node-RED program.
+    // Original inputs from MQTT publishers other than the PLC. Note that the PLC will also be publishing these over Interface_Dashboard.Subscribe over OPC UA, but these are essentially relays - better to subscribe to the original datasource.
     i: {
         ldr: { // Photoresistor
             topic: 'i/ldr',
@@ -330,21 +426,6 @@ type schema = {
                 br: number // brightness [0..100.0]
                 ldr: number // Resistance [0..15000] [Ohm]
                 ts: Date
-            }
-        },
-
-        ptu: {
-            topic: 'i/ptu'
-            payload: {
-                ts: Date
-            }
-            pos: {
-                topic: 'i/ptu/pos'
-                payload: {
-                    ts: Date
-                    pan: number // [-1.000...0.000...1.000]
-                    tilt: number // [-1.000...0.000...1.000]
-                }
             }
         },
 
@@ -366,37 +447,8 @@ type schema = {
                 ts: Date
                 data: string // URI: data:image/jpeg;base64
             }
-        },
-
-        alert: {
-            topic: 'i/alert'
-            payload: {
-                ts: Date
-                id: 'bme680/t' | 'bme680/h' | 'bme680/p' | 'bme680/iaq' | 'ldr' | 'cam' // id of the component that triggered the alert
-                data: string
-                /**
-                * Alarm codes:
-                100 = 'Alarm: Motion detected!': Motion in the camera image
-                200 = 'Alarm: Danger of frost! (%1)': Temperature < 4.0°C
-                300 = 'Alarm: High humidity! (%1)': Humidity > 80%
-                 */
-                code: number
-            }
-        },
-
-        // Note: not used in the FischerFactory. 
-        broadcast: {
-            topic: 'i/broadcast'
-            payload: {
-                ts: Date,
-                hardwareId: string
-                hardwareModel: string
-                softwareName: string
-                softwareVersion: string
-                message: string
-            }
         }
-    },
+    }
 
     Turtlebot: {
         // The TurtleBotPosition type only provides the topic suffix. To get the full topic name,
@@ -511,7 +563,7 @@ type schema = {
 
 }
 
-type FixedLengthArray<T, L extends number> = L extends 0 ? never[] : [T, ...Array<T>];
+export type FixedLengthArray<T, L extends number> = L extends 0 ? never[] : [T, ...Array<T>];
 type TurtleBotPosition = {
     X: {
         topicSuffix: '/X'
@@ -537,4 +589,11 @@ type TurtleBotPosition = {
         topicSuffix: '/OpenClosed'
         payload: number
     }
+}
+
+type WorkpieceParameters = {
+    doOven: boolean
+    ovenTime: Date
+    doSaw: boolean
+    sawTime: Date
 }

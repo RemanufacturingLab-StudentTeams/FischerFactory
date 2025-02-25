@@ -17,34 +17,33 @@ enum DataType {
     Word // Is a bit string of 16 bits: W#16#0 to W#16#FFFF.
 }
 
+import { FixedLengthArray } from "../mqtt/mqtt_schema"
+
+/**
+ * Nodes that the PLC publishes to, and that the Raspberry Pi consumes.
+ */ 
 type gtyp_Interface_Dashboard = {
-    // Nodes that the PLC publishes to, and that the Raspberry Pi consumes.
     Subscribe: {
-
-        State_Track:{ //node(s) used for tracking feature
-            track_puck: DataType.String
-        }
-
-        EnvironmentSensor:
+        EnvironmentSensor: // For these nodes, the BME680 publishes its data over MQTT, which the relay publishes to OPC UA. Presumably, there are in gtyp_Interface_Subscribe_Dashboard because the Dashboard can subscribe to these. However, the Dashboard can also just subscribe to the original MQTT datasource directly, so this is, as far as I understand it, not necessary.
         {
             test: DataType.Boolean
             ldt_ts: DataType.DateTime
-            r_t: DataType.Float
-            r_rt: DataType.Float
-            r_h: DataType.Float
-            r_rh: DataType.Float
-            r_p: DataType.Float
-            i_iaq: DataType.Int16
-            i_aq: DataType.Int16
-            di_gr: DataType.Int32
+            r_t: DataType.Float // e.g., 19.8
+            r_rt: DataType.Float // e.g., 22.95
+            r_h: DataType.Float // e.g., 51.9
+            r_rh: DataType.Float // e.g., 42.64
+            r_p: DataType.Float // e.g., 1018.1
+            i_iaq: DataType.Int16 // e.g., 59
+            i_aq: DataType.Int16 // e.g., 3
+            di_gr: DataType.Int32 // e.g., 919245
         }
-        BrightnessSensor:
+        BrightnessSensor: // For these nodes, the Photoresistor publishes its data over MQTT, which the relay publishes to OPC UA. Presumably, there are in gtyp_Interface_Subscribe_Dashboard because the Dashboard can subscribe to these. However, the Dashboard can also just subscribe to the original MQTT datasource directly, so this is, as far as I understand it, not necessary.
         {
             ldt_ts: DataType.DateTime
-            r_br: DataType.Float
-            i_ldr: DataType.Int16
+            r_br: DataType.Float // e.g., 88.0
+            i_ldr: DataType.Int16 // e.g., 1804
         }
-        CameraPicture:
+        CameraPicture: // For these nodes, the Camera publishes its data over MQTT, which the relay publishes to OPC UA. Presumably, there are in gtyp_Interface_Subscribe_Dashboard because the Dashboard can subscribe to these. However, the Dashboard can also just subscribe to the original MQTT datasource directly, so this is, as far as I understand it, not necessary.
         {
             ldt_ts: DataType.DateTime
             s_data: DataType.String
@@ -79,17 +78,15 @@ type gtyp_Interface_Dashboard = {
         State_DSI: typ_State_Client,
         State_DSO: typ_State_Client,
 
-        Stock_HBW:
-        {
-            ldt_ts: DataType.DateTime
-            StockItem: typ_StockItem,
-            s_location: DataType.String
+        State_Track:{ //node(s) used for tracking feature
+            track_puck: DataType.String
         }
+
         State_Order:
         {
             ldt_ts: DataType.DateTime
-            s_state: DataType.String
-            s_type: DataType.String
+            s_state: DataType.String // 'WAITING_FOR_ORDER' | 'ORDERED' | 'SHIPPED' | 'IN_PROCESS'
+            s_type: DataType.String // 'RED' | 'BLUE' | 'WHITE'
         }
         State_NFC_Device:
         {
@@ -100,6 +97,13 @@ type gtyp_Interface_Dashboard = {
                 ldt_ts: DataType.DateTime
                 i_code: DataType.Int16
             }
+        }
+
+        Stock_HBW:
+        {
+            ldt_ts: DataType.DateTime
+            StockItem: typ_StockItem,
+            s_location: DataType.String
         }
     },
 
@@ -135,9 +139,9 @@ type gtyp_Interface_Dashboard = {
             Workpiece_Parameters:
             {
                 DoOven: DataType.Boolean
-                OvenTime: DataType.DateTime
+                OvenTime: DataType.Int32
                 DoSaw: DataType.Boolean
-                SawTime: DataType.DateTime
+                SawTime: DataType.Int32
             }
         }
         ActionButtonNFCModule:
@@ -169,7 +173,7 @@ type gtyp_VGR = {
     rotate_Axis: typ_Axis
     Workpiece: typ_Workpiece
     Worpiece_Parameters: typ_Workpiece_Parameters
-    History: typ_History[]
+    History: FixedLengthArray<typ_History, 20>
     di_Pos_DSI_horizontal: DataType.Int32
     di_Pos_DSI_Collect_vertical: DataType.Int32
     di_Pos_DSI_Discard_vertical: DataType.Int32
@@ -228,7 +232,7 @@ type gtyp_MPO = {
     i_PWM_Vacuum: DataType.Int16
     Workpiece: typ_Workpiece
     Workpiece_Parameters: typ_Workpiece_Parameters
-    History: typ_History[]
+    History: FixedLengthArray<typ_History, 20>
 }
 
 type gtyp_SSC = {
@@ -246,7 +250,7 @@ type gtyp_SSC = {
     Horizontal_Axis: typ_Axis
     Vertical_Axis: typ_Axis
     Workpiece: typ_Workpiece
-    History: typ_History[]
+    History: FixedLengthArray<typ_History, 20>
 }
 
 type gtyp_HBW = {
@@ -273,7 +277,7 @@ type gtyp_HBW = {
     i_PWM_ConveyorBelt: DataType.Int16
     i_PWM_Cantilever: DataType.Int16
     Workpiece: typ_Workpiece
-    History: typ_History[] // [1..20]
+    History: FixedLengthArray<typ_History, 20> // [1..20]
     Rack_Pos: {
         di_PosRack_Horizontal: DataType.Int32
         di_PosRack_Vertical: DataType.Int32
@@ -298,7 +302,7 @@ type gtyp_SLD = {
     w_Threshold_White_Red: DataType.Word
     w_Threshold_Red_Blue: DataType.Word
     Workpiece: typ_Workpiece
-    History: typ_History[] // [1..20]
+    History: FixedLengthArray<typ_History[], 20> // [1..20]
 }
 
 type gtyp_Interface_TXT_Controler = {
@@ -306,7 +310,7 @@ type gtyp_Interface_TXT_Controler = {
         State_NFC_Device: {
             ldt_ts: DataType.DateTime,
             Workpiece: typ_Workpiece,
-            History: typ_History[] // [1..20]
+            History: FixedLengthArray<typ_History[], 20> // [1..20]
         }
     },
 
@@ -315,9 +319,19 @@ type gtyp_Interface_TXT_Controler = {
             ldt_ts: DataType.DateTime,
             s_cmd: DataType.String,
             Workpiece: typ_Workpiece,
-            History: typ_History[] // [1..20]
+            History: FixedLengthArray<typ_History[], 20> // [1..20]
         }
     }
+}
+
+type Queue = {
+    x_Queue_Full: DataType.Boolean
+    i_Queue_Index: DataType.Int16 // index where the next element will be written (so 0 if the queue is empty)
+    Queue: FixedLengthArray<{
+        ldt_ts: DataType.DateTime
+        s_type: 'RED' | 'WHITE' | 'BLUE'
+        Workpiece_Parameters: typ_Workpiece_Parameters
+    }, 7>
 }
 
 type typ_State_Client = {
@@ -368,7 +382,7 @@ type gtyp_Setup = {
 type typ_Workpiece = {
 
     // Unique id of Workpiece
-    s_id: DataType.String,
+    s_id: DataType.String, // e.g., '04f8a942ef6c80' or '0425a942ef6c80'
 
     // Type of workpiece ("RED"/"WHITE"/"BLUE")
     s_type: DataType.String,
@@ -426,4 +440,4 @@ type typ_History = {
     i_code: DataType.Int16
 }
 
-type typ_Rack_History = typ_History[] // Max size 20
+type typ_Rack_History = FixedLengthArray<typ_History[], 20> // Max size 20

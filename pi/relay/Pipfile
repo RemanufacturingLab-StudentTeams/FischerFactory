@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+opcua = "*"
+python-dotenv = "*"
+asyncua = "1.1.5"
+paho-mqtt = "*"
+colorama = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"
+
+[pipenv]
+allow_prereleases = true

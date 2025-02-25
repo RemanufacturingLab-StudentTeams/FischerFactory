@@ -196,5 +196,11 @@
       "aq": 40,
       "h": 19
     }
+  }, 
+  {
+    "topic": "relay/f/setup",
+    "payload": {
+      "versionSPS": 1.0
+    }
   }
 ]

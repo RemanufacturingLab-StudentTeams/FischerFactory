@@ -1,0 +1,30 @@
+/* Styling for the "Factory Data" page. */
+@import './style.css';
+
+.factory-data {
+    display: flex;
+    flex-flow: column nowrap;
+    padding: 20px;
+}
+
+.station-data-table {
+    overflow-x: scroll;
+    width: 100%;
+    border-collapse: collapse;
+
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.station-data-table > tr:first-child {
+    background-color: var(--bg-color-2);
+}
+
+.station-data-table > tr > td,th {
+    text-align: center;
+    margin: 20px;
+}
+
+.station-data-table > tr:nth-child(even) {
+    background-color: var(--bg-color-1);
+}
