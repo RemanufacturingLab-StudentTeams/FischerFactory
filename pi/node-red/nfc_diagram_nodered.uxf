@@ -1,0 +1,35 @@
+<diagram program="umletino" version="15.1"><zoom_level>10</zoom_level><help_text>Space for diagram notes</help_text><element><id>UMLClass</id><coordinates><x>40</x><y>160</y><w>210</w><h>190</h></coordinates><panel_attributes>&lt;&lt;Sensor&gt;&gt;
+NFCReader
+--
+- receiveCommand: "fl/o/nfc/ds"
+--
+- publishReadValue: "fl/i/nfc/ds"</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>350</x><y>240</y><w>510</w><h>130</h></coordinates><panel_attributes>&lt;&lt;RPi&gt;&gt;
+Node-RED backend
+--
+/"fl/i/nfc/ds" -&gt; "gtyp_Interface_TXT_Controler"."Subscribe"."State_NFC_Device"/
+--
+/"fl/i/nfc/ds" -&gt; "f/i/nfc/ds"/
+--
+/"f/o/nfc/ds" -&gt; "gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"/
+--
+/"gtyp_Interface_TXT_Controler"."Publish"."ActionButtonNFCModule" -&gt; "fl/o/nfc/ds"/</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>970</x><y>240</y><w>510</w><h>210</h></coordinates><panel_attributes>&lt;&lt;PLC&gt;&gt;
+OPCUAServer
+--
+ - node: "gtyp_Interface_TXT_Controler"."Subscribe"."State_NFC_Device"
+- - "ldt_ts"
+- - "s_id"
+- - "s_state"
+- - "s_type"
+- - "History"[i]."i_code"
+- - "History"[i]."ldt_ts"
+--
+ -  node: "gtyp_Interface_Dashboard"."Publish"."ActionButtonNFCModule"
+- - "s_cmd"
+- - "ldt_ts"</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>40</x><y>370</y><w>210</w><h>120</h></coordinates><panel_attributes>&lt;&lt;RPi&gt;&gt;
+Node-RED frontend
+--
+- NFC_DELETE: "f/o/nfc/ds"
+- NFC_READ: "f/o/nfc/ds"
+- NFC_READ_UID: "f/o/nfc/ds"
+-
+- displayNFCValues: "f/i/nfc/ds"</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>240</x><y>320</y><w>130</w><h>150</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>110;10;30;10;30;130;10;130</additional_attributes></element><element><id>Relation</id><coordinates><x>300</x><y>340</y><w>690</w><h>110</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>50;10;10;10;10;90;670;90</additional_attributes></element><element><id>Relation</id><coordinates><x>0</x><y>110</y><w>960</w><h>260</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>40;100;10;100;10;10;940;10;940;240;860;240</additional_attributes></element><element><id>Relation</id><coordinates><x>850</x><y>320</y><w>140</w><h>110</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>120;90;50;90;50;10;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>850</x><y>280</y><w>140</w><h>30</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>120;10;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>240</x><y>280</y><w>130</w><h>30</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>110;10;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>260</x><y>280</y><w>110</w><h>50</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>90;30;10;30;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>0</x><y>300</y><w>940</w><h>250</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;-</panel_attributes><additional_attributes>40;170;10;170;10;230;920;230;920;10;860;10</additional_attributes></element></diagram>
