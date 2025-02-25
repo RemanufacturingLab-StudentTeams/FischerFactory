@@ -88,3 +88,7 @@ For sending data from the frontend to the PLC, it works simpler:
 On the frontend, each page is in its own separate file. This file contains both the HTML layout and the callbacks to make it dynamic. Because the callbacks are standard Python functions, they can be dynamically generated and this is used as much as possible to maintain DRY codestyle. For instance, for the factory station data page, instead of making a callback for each station, the `gen_callback` function is used to generate all six station `display` callbacks by calling it six times. 
 
 The CSS layout is designed to be as similar as possible to the original Node-RED layout. This is not per se a requirement. It also makes heavy use of the CSS Grid feature, specifically `grid-areas`. 
+
+## Known problems
+
+When developing on the dashboard, the dashboard in the web browser must be closed before the Python program is restarted. Restarting the Python program with the dashboard still open causes errors and undefined behaviour. This is a known problem for Dash web applications, and is not because of the implementation.
